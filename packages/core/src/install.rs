@@ -296,7 +296,8 @@ fn get_linkable_directory(dir: &str, list: &[&str], plan: &Plan) -> Option<PathB
     }
     let root = root?;
     let prefix = format!("{dir}/");
-    if plan.data.keys().any(|k| k.starts_with(&prefix)) || plan.loader.keys().any(|k| k.starts_with(&prefix)) {
+    if plan.data.keys().any(|k| k.starts_with(&prefix)) || plan.loader.keys().any(|k| k.starts_with(&prefix))
+    {
         return None;
     }
     let mut have = BTreeSet::new();
@@ -524,7 +525,10 @@ impl<'a> Installer<'a> {
                 }
                 Op::CreateDir => {
                     let path = self.path(&e.path);
-                    if !is_symlink(&path) && path.is_dir() && std::fs::read_dir(&path).map_err(io_err(&path))?.next().is_none() {
+                    if !is_symlink(&path)
+                        && path.is_dir()
+                        && std::fs::read_dir(&path).map_err(io_err(&path))?.next().is_none()
+                    {
                         with_retry(&path, || std::fs::remove_dir(&path))?;
                     }
                 }
@@ -554,12 +558,19 @@ impl<'a> Installer<'a> {
         Ok(report)
     }
 
-    fn check_and_restore_original_file(&self, file_sha: &str, path: &Path, hashes: &mut Hashes) -> Result<()> {
+    fn check_and_restore_original_file(
+        &self,
+        file_sha: &str,
+        path: &Path,
+        hashes: &mut Hashes,
+    ) -> Result<()> {
         if let Ok(target) = std::fs::read_link(path) {
             set_writable(&target, true, hashes);
         }
         let moved = moved_aside_path(path);
-        let size = std::fs::metadata(self.objects().path(file_sha)).ok().map(|m| m.len());
+        let size = std::fs::metadata(self.objects().path(file_sha))
+            .ok()
+            .map(|m| m.len());
         let intact = std::fs::symlink_metadata(&moved)
             .is_ok_and(|m| m.is_file() && size.is_none_or(|n| n == m.len()))
             && hashes.unchanged(&moved) == Some(true);
@@ -856,7 +867,11 @@ impl<'a> Installer<'a> {
                 data += now;
             }
         }
-        let copied = if FLAG_USE_SYMLINKS { None } else { Some(plan.added.values()) };
+        let copied = if FLAG_USE_SYMLINKS {
+            None
+        } else {
+            Some(plan.added.values())
+        };
         for src in copied.into_iter().flatten().chain(plan.loader.values()) {
             game += size(src);
         }
@@ -1007,7 +1022,12 @@ impl<'a> Installer<'a> {
         }
         let mut links = BTreeMap::new();
         if FLAG_USE_SYMLINKS {
-            let rels: Vec<&str> = plan.added.keys().chain(plan.loader.keys()).map(String::as_str).collect();
+            let rels: Vec<&str> = plan
+                .added
+                .keys()
+                .chain(plan.loader.keys())
+                .map(String::as_str)
+                .collect();
             self.link_level("", &rels, plan, &after, &mut steps, &mut links);
         } else {
             let mut dirs = BTreeSet::new();
@@ -1110,8 +1130,7 @@ impl<'a> Installer<'a> {
                 told = std::time::Instant::now();
             }
         }
-        let out = j.commit();
-        out
+        j.commit()
     }
 
     /// The steps that put the added files of `entries` under `dir`, linking as
@@ -1126,7 +1145,11 @@ impl<'a> Installer<'a> {
         steps: &mut Vec<(Op, String, Option<String>, Option<String>)>,
         links: &mut BTreeMap<String, PathBuf>,
     ) {
-        let prefix = if dir.is_empty() { String::new() } else { format!("{dir}/") };
+        let prefix = if dir.is_empty() {
+            String::new()
+        } else {
+            format!("{dir}/")
+        };
         let mut subs: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
         for &rel in entries {
             match rel[prefix.len()..].split_once('/') {
@@ -1200,7 +1223,9 @@ impl<'a> Installer<'a> {
             if idle && is_plain_file(&moved_aside_path(&self.path(rel))) {
                 let (dir, name) = rel.rsplit_once('/').map_or(("", rel.as_str()), |(d, n)| (d, n));
                 let sep = if dir.is_empty() { "" } else { "/" };
-                out.push(Drift::Addition(format!("{dir}{sep}.{name}.{MOVE_ASIDE_EXTENSION}")));
+                out.push(Drift::Addition(format!(
+                    "{dir}{sep}.{name}.{MOVE_ASIDE_EXTENSION}"
+                )));
             }
             match sha256_opt(&self.path(rel))? {
                 None => out.push(Drift::Missing(rel.clone())),

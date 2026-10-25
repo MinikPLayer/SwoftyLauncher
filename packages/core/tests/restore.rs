@@ -404,7 +404,10 @@ fn a_kill_while_installing_maps_rolls_back_to_the_baseline() {
 #[cfg(target_os = "linux")]
 fn aside(f: &Fixture, rel: &str) -> PathBuf {
     let path = f.game.join(rel);
-    path.with_file_name(format!(".{}.swofty-orig", path.file_name().unwrap().to_string_lossy()))
+    path.with_file_name(format!(
+        ".{}.swofty-orig",
+        path.file_name().unwrap().to_string_lossy()
+    ))
 }
 
 #[cfg(target_os = "linux")]
@@ -430,7 +433,12 @@ fn a_replaced_file_waits_beside_its_link_and_is_renamed_back() {
     let inst = Installer::new(&f.data, &game);
     let ino = inode(&f.game.join(GVDB));
     inst.apply(&f.plan("a")).unwrap();
-    assert!(std::fs::symlink_metadata(f.game.join(GVDB)).unwrap().file_type().is_symlink());
+    assert!(
+        std::fs::symlink_metadata(f.game.join(GVDB))
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
     assert_eq!(f.read(GVDB), "db-A");
     assert_eq!(std::fs::read_to_string(aside(&f, GVDB)).unwrap(), "db-v1");
     assert_eq!(inode(&aside(&f, GVDB)), ino, "moved, not copied");
@@ -549,7 +557,12 @@ fn originals_left_aside_without_a_journal_are_settled() {
     for j in Journal::open(&f.data).unwrap() {
         j.close().unwrap();
     }
-    assert!(inst.verify().unwrap().iter().any(|d| matches!(d, Drift::Addition(p) if p.ends_with(".swofty-orig"))));
+    assert!(
+        inst.verify()
+            .unwrap()
+            .iter()
+            .any(|d| matches!(d, Drift::Addition(p) if p.ends_with(".swofty-orig")))
+    );
     inst.tidy(&f.data.join("logs")).unwrap();
     assert_eq!(f.read(GVDB), "db-v1");
     no_asides(&f);
