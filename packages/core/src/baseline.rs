@@ -133,6 +133,48 @@ impl Hashes {
         }
     }
 
+    /// Keep the digest of `path` after a change that touched only its
+    /// permissions (and so its change time), not its bytes.
+    pub fn restamp(&mut self, path: &Path) {
+        if let (Some(now), Some((was, sha))) = (Stamp::of(path), self.files.get(path))
+            && now.len == was.len
+            && now.modified == was.modified
+            && now.ino == was.ino
+        {
+            let sha = sha.clone();
+            self.files.insert(path.to_path_buf(), (now, sha));
+            self.dirty = true;
+        }
+    }
+
+    /// Rename `from` to `to`, and with it the digest, when `from` still had the
+    /// metadata it was hashed with. The rename changes the change time only, so
+    /// the digest stays good for the file under its new name.
+    pub fn rename(&mut self, from: &Path, to: &Path) -> std::io::Result<()> {
+        let held = self
+            .files
+            .remove(from)
+            .filter(|(stamp, _)| Stamp::of(from) == Some(*stamp));
+        std::fs::rename(from, to)?;
+        self.dirty = true;
+        if let (Some((was, sha)), Some(now)) = (held, Stamp::of(to))
+            && now.len == was.len
+            && now.modified == was.modified
+            && now.ino == was.ino
+        {
+            self.files.insert(to.to_path_buf(), (now, sha));
+        }
+        Ok(())
+    }
+
+    /// Whether `path` still has exactly the metadata it was hashed with, so
+    /// nothing wrote to it since; `None` when no digest is kept for it.
+    pub fn unchanged(&self, path: &Path) -> Option<bool> {
+        self.files
+            .get(path)
+            .map(|(stamp, _)| Stamp::of(path) == Some(*stamp))
+    }
+
     /// Record the digest of bytes the caller just wrote to `path`.
     pub fn wrote(&mut self, path: &Path, sha: &str) {
         match Stamp::of(path) {

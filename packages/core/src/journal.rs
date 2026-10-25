@@ -10,6 +10,7 @@ pub enum Op {
     ReplaceFile,
     CreateFile,
     CreateDir,
+    LinkDir,
     RegistryOverride,
 }
 

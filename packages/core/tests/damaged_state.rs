@@ -112,6 +112,8 @@ impl Drop for Fixture {
 
 fn write(path: &Path, body: &str) {
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    // Replace rather than write through: a placed file may be a read-only link.
+    std::fs::remove_file(path).ok();
     std::fs::write(path, body).unwrap();
 }
 

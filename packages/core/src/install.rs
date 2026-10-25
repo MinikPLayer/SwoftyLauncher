@@ -12,6 +12,7 @@ use crate::{Error, Result, io_err, with_retry};
 pub const PROXY: &str = "version.dll";
 pub const LOADER_DIR: &str = "swofty";
 pub const OVERRIDE_HEADER: &str = "[Software\\\\Wine\\\\AppDefaults\\\\F1_25.exe\\\\DllOverrides]";
+pub const MOVE_ASIDE_EXTENSION: &str = "swofty-orig";
 const OVERRIDE_VALUE: &str = "\"version\"=\"native,builtin\"";
 
 #[derive(Debug, Clone)]
@@ -189,6 +190,120 @@ const STATE_PER_FILE: u64 = 2048;
 
 fn quiet(_: &str) {}
 
+/// Linux places the built files as symlinks into the data folder
+/// Other platforms fall back to the old copying method.
+const FLAG_USE_SYMLINKS: bool = cfg!(target_os = "linux");
+
+fn is_symlink(path: &Path) -> bool {
+    std::fs::symlink_metadata(path).is_ok_and(|m| m.file_type().is_symlink())
+}
+
+fn is_plain_file(path: &Path) -> bool {
+    std::fs::symlink_metadata(path).is_ok_and(|m| m.is_file())
+}
+
+fn moved_aside_path(path: &Path) -> PathBuf {
+    path.with_file_name(format!(
+        ".{}.{MOVE_ASIDE_EXTENSION}",
+        path.file_name().unwrap_or_default().to_string_lossy()
+    ))
+}
+
+#[cfg(unix)]
+fn create_symlink(src: &Path, dst: &Path) -> std::io::Result<()> {
+    std::os::unix::fs::symlink(src, dst)
+}
+
+#[cfg(not(unix))]
+fn create_symlink(_: &Path, _: &Path) -> std::io::Result<()> {
+    Err(std::io::ErrorKind::Unsupported.into())
+}
+
+#[cfg(unix)]
+fn set_writable(path: &Path, writable: bool, hashes: &mut Hashes) {
+    use std::os::unix::fs::PermissionsExt;
+    let Ok(meta) = std::fs::symlink_metadata(path) else {
+        return;
+    };
+    let set = |hashes: &mut Hashes| {
+        let mode = meta.permissions().mode();
+        let want = if writable { mode | 0o200 } else { mode & !0o222 };
+        if want != mode {
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(want)).ok();
+            hashes.restamp(path);
+        }
+    };
+    if meta.is_dir() {
+        if writable {
+            set(hashes);
+        }
+        for e in std::fs::read_dir(path).into_iter().flatten().flatten() {
+            set_writable(&e.path(), writable, hashes);
+        }
+        if !writable {
+            set(hashes);
+        }
+    } else if meta.is_file() {
+        set(hashes);
+    }
+}
+
+#[cfg(not(unix))]
+fn set_writable(_: &Path, _: bool, _: &mut Hashes) {}
+
+fn remove_readonly_link(path: &Path, hashes: &mut Hashes) -> Result<()> {
+    if let Ok(target) = std::fs::read_link(path) {
+        set_writable(&target, true, hashes);
+    }
+    with_retry(path, || std::fs::remove_file(path))
+}
+
+fn list_directory_files_recursive(dir: &Path, prefix: &str, out: &mut BTreeSet<String>) -> Option<()> {
+    let mut any = false;
+    for e in std::fs::read_dir(dir).ok()?.flatten() {
+        any = true;
+        let rel = format!("{prefix}{}", e.file_name().to_string_lossy());
+        if e.file_type().ok()?.is_dir() {
+            list_directory_files_recursive(&e.path(), &format!("{rel}/"), out)?;
+        } else {
+            out.insert(rel);
+        }
+    }
+    any.then_some(())
+}
+
+/// Returns the source directory in the data folder that `dir` can be symlinked
+/// to as a whole, or `None` if the files must be linked individually.
+///
+/// Linking is possible when all files in `list` come from the same source
+/// directory, with the same relative paths below it as below `dir`, that
+/// directory contains no other files, and nothing else is being placed under
+/// `dir` by the data or loader entries of the plan.
+fn get_linkable_directory(dir: &str, list: &[&str], plan: &Plan) -> Option<PathBuf> {
+    let mut root: Option<PathBuf> = None;
+    let mut want = BTreeSet::new();
+    for &rel in list {
+        let src = plan.added.get(rel)?;
+        let inner = &rel[dir.len() + 1..];
+        if !src.ends_with(inner) {
+            return None;
+        }
+        let top = src.ancestors().nth(inner.split('/').count())?;
+        if root.get_or_insert_with(|| top.to_path_buf()) != top {
+            return None;
+        }
+        want.insert(inner.to_owned());
+    }
+    let root = root?;
+    let prefix = format!("{dir}/");
+    if plan.data.keys().any(|k| k.starts_with(&prefix)) || plan.loader.keys().any(|k| k.starts_with(&prefix)) {
+        return None;
+    }
+    let mut have = BTreeSet::new();
+    list_directory_files_recursive(&root, "", &mut have)?;
+    (have == want).then_some(root)
+}
+
 fn rel_parts(rel: &str) -> Vec<String> {
     let parts: Vec<&str> = rel.split('/').collect();
     (1..parts.len()).map(|i| parts[..i].join("/")).collect()
@@ -360,21 +475,39 @@ impl<'a> Installer<'a> {
             match e.op {
                 Op::ReplaceFile => {
                     let path = self.path(&e.path);
-                    let now = hashes.sha256_opt(&path)?;
                     let before = e.before.as_deref().expect("replace-file has before");
-                    if now.as_deref() == Some(before) {
+                    let moved = moved_aside_path(&path);
+                    let parked = is_plain_file(&moved);
+                    let linked = is_symlink(&path);
+                    if parked && (linked || std::fs::symlink_metadata(&path).is_err()) {
+                        // The original is at its hidden name, with our link over
+                        // its place or, after a crash between the two renames,
+                        // nothing there at all.
+                        self.check_and_restore_original_file(before, &path, hashes)?;
                         continue;
                     }
-                    let ours = now == e.after || e.state == State::Pending;
-                    if ours && same_build {
-                        self.restore_original(before, &path)?;
-                        hashes.wrote(&path, before);
+                    let now = hashes.sha256_opt(&path)?;
+                    if parked {
+                        // Something else stands in the original's place; what
+                        // was moved aside is out of date.
+                        std::fs::remove_file(&moved).ok();
+                    }
+                    if now.as_deref() == Some(before) && !linked {
+                        continue;
+                    }
+                    let ours = linked || now == e.after || e.state == State::Pending;
+                    if ours && (same_build || linked) {
+                        self.check_and_restore_original_file(before, &path, hashes)?;
                     } else {
                         report.push(Drift::LeftInPlace(e.path.clone()));
                     }
                 }
                 Op::CreateFile => {
                     let path = self.path(&e.path);
+                    if is_symlink(&path) {
+                        remove_readonly_link(&path, hashes)?;
+                        continue;
+                    }
                     match hashes.sha256_opt(&path)? {
                         None => {}
                         Some(now) if e.state == State::Pending || Some(&now) == e.after.as_ref() => {
@@ -383,9 +516,15 @@ impl<'a> Installer<'a> {
                         Some(_) => report.push(Drift::LeftInPlace(e.path.clone())),
                     }
                 }
+                Op::LinkDir => {
+                    let path = self.path(&e.path);
+                    if is_symlink(&path) {
+                        remove_readonly_link(&path, hashes)?;
+                    }
+                }
                 Op::CreateDir => {
                     let path = self.path(&e.path);
-                    if path.is_dir() && std::fs::read_dir(&path).map_err(io_err(&path))?.next().is_none() {
+                    if !is_symlink(&path) && path.is_dir() && std::fs::read_dir(&path).map_err(io_err(&path))?.next().is_none() {
                         with_retry(&path, || std::fs::remove_dir(&path))?;
                     }
                 }
@@ -402,6 +541,10 @@ impl<'a> Installer<'a> {
         for e in &j.entries {
             match e.op {
                 Op::ReplaceFile | Op::CreateFile => placed.remove(&e.path),
+                Op::LinkDir => {
+                    let prefix = placed::key(&format!("{}/", e.path));
+                    placed.files.retain(|k, _| !k.starts_with(&prefix));
+                }
                 Op::RegistryOverride => placed.registry = None,
                 Op::CreateDir => {}
             }
@@ -409,6 +552,53 @@ impl<'a> Installer<'a> {
         placed.save(self.data)?;
         j.close()?;
         Ok(report)
+    }
+
+    fn check_and_restore_original_file(&self, file_sha: &str, path: &Path, hashes: &mut Hashes) -> Result<()> {
+        if let Ok(target) = std::fs::read_link(path) {
+            set_writable(&target, true, hashes);
+        }
+        let moved = moved_aside_path(path);
+        let size = std::fs::metadata(self.objects().path(file_sha)).ok().map(|m| m.len());
+        let intact = std::fs::symlink_metadata(&moved)
+            .is_ok_and(|m| m.is_file() && size.is_none_or(|n| n == m.len()))
+            && hashes.unchanged(&moved) == Some(true);
+        if intact {
+            with_retry(path, || hashes.rename(&moved, path))?;
+            crate::sync_dir(path.parent());
+            return Ok(());
+        }
+        std::fs::remove_file(&moved).ok();
+        self.restore_original(file_sha, path)?;
+        hashes.wrote(path, file_sha);
+        Ok(())
+    }
+
+    /// Settle the originals left aside by a session that lost its journal
+    fn settle_asides(&self, hashes: &mut Hashes, links: bool) -> Result<()> {
+        if !Journal::open(self.data)?.is_empty() {
+            return Ok(());
+        }
+        let Ok(baseline) = self.baseline() else {
+            return Ok(());
+        };
+        for (rel, rec) in &baseline.files {
+            let path = self.path(rel);
+            let moved = moved_aside_path(&path);
+            if !is_plain_file(&moved) {
+                continue;
+            }
+            let linked = is_symlink(&path);
+            if linked && !links {
+                continue;
+            }
+            if linked || std::fs::symlink_metadata(&path).is_err() {
+                self.check_and_restore_original_file(&rec.sha256, &path, hashes)?;
+            } else {
+                with_retry(&moved, || std::fs::remove_file(&moved))?;
+            }
+        }
+        Ok(())
     }
 
     fn restore_original(&self, sha: &str, path: &Path) -> Result<()> {
@@ -432,6 +622,13 @@ impl<'a> Installer<'a> {
     /// added files are removed, with any folders that held only them. Anything
     /// not owned is left alone.
     pub fn clear(&self, conflicts: &[Conflict]) -> Result<Vec<String>> {
+        let mut hashes = Hashes::load(self.data);
+        let out = self.clear_with(conflicts, &mut hashes);
+        hashes.save();
+        out
+    }
+
+    fn clear_with(&self, conflicts: &[Conflict], hashes: &mut Hashes) -> Result<Vec<String>> {
         let baseline = self.baseline()?;
         let mut placed = Placed::load(self.data)?;
         let mut notes = Vec::new();
@@ -442,12 +639,10 @@ impl<'a> Installer<'a> {
                     .files
                     .get(&c.path)
                     .ok_or_else(|| Error::Other(format!("{} has no backed-up original", c.path)))?;
-                self.restore_original(&rec.sha256, &path)?;
+                self.check_and_restore_original_file(&rec.sha256, &path, hashes)?;
                 notes.push(format!("put the original {} back", c.path));
             } else {
-                if path.is_file() {
-                    with_retry(&path, || std::fs::remove_file(&path))?;
-                }
+                self.remove_ours(&c.path, hashes)?;
                 self.prune_dirs(&c.path)?;
                 notes.push(format!("removed {}", c.path));
             }
@@ -461,8 +656,16 @@ impl<'a> Installer<'a> {
     /// open journal accounts for: a session that lost its journal left them.
     /// Only files that still hold exactly the recorded bytes are touched.
     pub fn sweep(&self) -> Result<Vec<String>> {
+        let mut hashes = Hashes::load(self.data);
+        let out = self.sweep_with(&mut hashes);
+        hashes.save();
+        out
+    }
+
+    fn sweep_with(&self, hashes: &mut Hashes) -> Result<Vec<String>> {
         let mut placed = Placed::load(self.data)?;
         if placed.files.is_empty() && placed.registry.is_none() {
+            self.settle_asides(hashes, true)?;
             return Ok(Vec::new());
         }
         let open = Journal::open(self.data)?;
@@ -496,7 +699,7 @@ impl<'a> Installer<'a> {
                 if f.replaced {
                     match baseline.files.get(&f.path) {
                         Some(rec) if self.objects().has(&rec.sha256) => {
-                            self.restore_original(&rec.sha256, &path)?;
+                            self.check_and_restore_original_file(&rec.sha256, &path, hashes)?;
                             notes.push(format!("put the original {} back", f.path));
                         }
                         _ => {
@@ -508,7 +711,7 @@ impl<'a> Installer<'a> {
                         }
                     }
                 } else {
-                    with_retry(&path, || std::fs::remove_file(&path))?;
+                    self.remove_ours(&f.path, hashes)?;
                     self.prune_dirs(&f.path)?;
                     notes.push(format!("removed {}", f.path));
                 }
@@ -516,7 +719,25 @@ impl<'a> Installer<'a> {
             placed.files.remove(&key);
         }
         placed.save(self.data)?;
+        self.settle_asides(hashes, true)?;
         Ok(notes)
+    }
+
+    /// Remove an added file of ours. One inside a folder that is a link goes
+    /// with the link: removing the file itself would delete it from the data
+    /// folder.
+    fn remove_ours(&self, rel: &str, hashes: &mut Hashes) -> Result<()> {
+        let path = self.path(rel);
+        let link = rel_parts(rel)
+            .iter()
+            .map(|d| self.path(d))
+            .find(|d| is_symlink(d))
+            .or_else(|| is_symlink(&path).then_some(path.clone()));
+        match link {
+            Some(link) => remove_readonly_link(&link, hashes),
+            None if path.is_file() => with_retry(&path, || std::fs::remove_file(&path)),
+            None => Ok(()),
+        }
     }
 
     fn prune_dirs(&self, rel: &str) -> Result<()> {
@@ -536,6 +757,10 @@ impl<'a> Installer<'a> {
     /// folders it leaves empty, once no journal is open. Returns how many files
     /// moved.
     pub fn tidy(&self, logs: &Path) -> Result<usize> {
+        let mut hashes = Hashes::load(self.data);
+        let settled = self.settle_asides(&mut hashes, true);
+        hashes.save();
+        settled?;
         let loader = self.path(LOADER_DIR);
         let prefix = format!("{LOADER_DIR}/");
         if !loader.is_dir()
@@ -598,6 +823,7 @@ impl<'a> Installer<'a> {
 
     fn apply_with(&self, plan: &Plan, hashes: &mut Hashes) -> Result<()> {
         self.roll_back_with(false, hashes)?;
+        self.settle_asides(hashes, false)?;
         if plan.is_vanilla() {
             return Ok(());
         }
@@ -623,12 +849,15 @@ impl<'a> Installer<'a> {
         let (mut game, mut data) = (0, 0);
         for (rel, src) in &plan.data {
             let now = size(&self.path(rel));
-            game += size(src).saturating_sub(now);
+            if !FLAG_USE_SYMLINKS {
+                game += size(src).saturating_sub(now);
+            }
             if !baseline.files.contains_key(rel) {
                 data += now;
             }
         }
-        for src in plan.added.values().chain(plan.loader.values()) {
+        let copied = if FLAG_USE_SYMLINKS { None } else { Some(plan.added.values()) };
+        for src in copied.into_iter().flatten().chain(plan.loader.values()) {
             game += size(src);
         }
         data += (plan.data.len() + plan.added.len() + plan.loader.len()) as u64 * STATE_PER_FILE;
@@ -776,19 +1005,25 @@ impl<'a> Installer<'a> {
                 Some(after[rel.as_str()].clone()),
             ));
         }
-        let mut dirs = BTreeSet::new();
-        for rel in plan.added.keys().chain(plan.loader.keys()) {
-            for dir in rel_parts(rel) {
-                if !self.path(&dir).is_dir() && dirs.insert(dir.clone()) {
-                    steps.push((Op::CreateDir, dir, None, None));
+        let mut links = BTreeMap::new();
+        if FLAG_USE_SYMLINKS {
+            let rels: Vec<&str> = plan.added.keys().chain(plan.loader.keys()).map(String::as_str).collect();
+            self.link_level("", &rels, plan, &after, &mut steps, &mut links);
+        } else {
+            let mut dirs = BTreeSet::new();
+            for rel in plan.added.keys().chain(plan.loader.keys()) {
+                for dir in rel_parts(rel) {
+                    if !self.path(&dir).is_dir() && dirs.insert(dir.clone()) {
+                        steps.push((Op::CreateDir, dir, None, None));
+                    }
                 }
+                steps.push((
+                    Op::CreateFile,
+                    rel.clone(),
+                    None,
+                    Some(after[rel.as_str()].clone()),
+                ));
             }
-            steps.push((
-                Op::CreateFile,
-                rel.clone(),
-                None,
-                Some(after[rel.as_str()].clone()),
-            ));
         }
         let registry = match registry {
             Some((reg, name, text, out)) => {
@@ -812,9 +1047,36 @@ impl<'a> Installer<'a> {
             let e = &j.entries[i];
             let path = self.path(&e.path);
             match e.op {
+                Op::ReplaceFile if FLAG_USE_SYMLINKS => {
+                    let src = std::path::absolute(sources[e.path.as_str()]).map_err(io_err(&path))?;
+                    let tmp = path.with_file_name(format!(
+                        ".{}.swofty-link",
+                        path.file_name().unwrap_or_default().to_string_lossy()
+                    ));
+                    std::fs::remove_file(&tmp).ok();
+                    create_symlink(&src, &tmp).map_err(io_err(&tmp))?;
+                    // The stock file moves aside by rename, so nothing is written
+                    // now or when it comes back. A crash between the two renames
+                    // leaves it at the hidden name with the entry pending, which
+                    // the rollback renames back.
+                    let moved = moved_aside_path(&path);
+                    hashes.rename(&path, &moved).map_err(io_err(&moved))?;
+                    std::fs::rename(&tmp, &path).map_err(io_err(&path))?;
+                    set_writable(&src, false, hashes);
+                }
                 Op::ReplaceFile => {
                     std::fs::copy(sources[e.path.as_str()], &path)
                         .map_err(|err| crate::quarantine::copy_error(&e.path, &path, err))?;
+                }
+                Op::LinkDir => {
+                    let src = std::path::absolute(&links[e.path.as_str()]).map_err(io_err(&path))?;
+                    create_symlink(&src, &path).map_err(io_err(&path))?;
+                    set_writable(&src, false, hashes);
+                }
+                Op::CreateFile if FLAG_USE_SYMLINKS && !plan.loader.contains_key(&e.path) => {
+                    let src = std::path::absolute(sources[e.path.as_str()]).map_err(io_err(&path))?;
+                    create_symlink(&src, &path).map_err(io_err(&path))?;
+                    set_writable(&src, false, hashes);
                 }
                 Op::CreateDir => std::fs::create_dir(&path).map_err(io_err(&path))?,
                 // Windows refused the file as a threat. The entry stays pending, so
@@ -848,7 +1110,42 @@ impl<'a> Installer<'a> {
                 told = std::time::Instant::now();
             }
         }
-        j.commit()
+        let out = j.commit();
+        out
+    }
+
+    /// The steps that put the added files of `entries` under `dir`, linking as
+    /// little as possible: a file is linked on its own, a folder the game
+    /// folder lacks is linked whole, and a folder it has is gone into.
+    fn link_level(
+        &self,
+        dir: &str,
+        entries: &[&str],
+        plan: &Plan,
+        after: &BTreeMap<&str, String>,
+        steps: &mut Vec<(Op, String, Option<String>, Option<String>)>,
+        links: &mut BTreeMap<String, PathBuf>,
+    ) {
+        let prefix = if dir.is_empty() { String::new() } else { format!("{dir}/") };
+        let mut subs: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+        for &rel in entries {
+            match rel[prefix.len()..].split_once('/') {
+                None => steps.push((Op::CreateFile, rel.to_owned(), None, Some(after[rel].clone()))),
+                Some((d, _)) => subs.entry(d).or_default().push(rel),
+            }
+        }
+        for (d, list) in subs {
+            let child = format!("{prefix}{d}");
+            if self.path(&child).is_dir() {
+                self.link_level(&child, &list, plan, after, steps, links);
+            } else if let Some(src) = get_linkable_directory(&child, &list, plan) {
+                steps.push((Op::LinkDir, child.clone(), None, None));
+                links.insert(child, src);
+            } else {
+                steps.push((Op::CreateDir, child.clone(), None, None));
+                self.link_level(&child, &list, plan, after, steps, links);
+            }
+        }
     }
 
     pub fn restore(&self) -> Result<Vec<Drift>> {
@@ -883,6 +1180,10 @@ impl<'a> Installer<'a> {
                 self.objects().restore_to(&rec.sha256, &path)?;
             }
         }
+        let mut hashes = Hashes::load(self.data);
+        let settled = self.settle_asides(&mut hashes, true);
+        hashes.save();
+        settled?;
         report.extend(self.verify()?);
         Ok(report)
     }
@@ -893,7 +1194,14 @@ impl<'a> Installer<'a> {
             .map(|j| Drift::OpenJournal(j.id))
             .collect();
         let baseline = self.baseline()?;
+        let idle = out.is_empty();
         for (rel, rec) in &baseline.files {
+            // Outside a session a stock file set aside is a leftover.
+            if idle && is_plain_file(&moved_aside_path(&self.path(rel))) {
+                let (dir, name) = rel.rsplit_once('/').map_or(("", rel.as_str()), |(d, n)| (d, n));
+                let sep = if dir.is_empty() { "" } else { "/" };
+                out.push(Drift::Addition(format!("{dir}{sep}.{name}.{MOVE_ASIDE_EXTENSION}")));
+            }
             match sha256_opt(&self.path(rel))? {
                 None => out.push(Drift::Missing(rel.clone())),
                 Some(s) if s != rec.sha256 => out.push(Drift::Changed(rel.clone())),

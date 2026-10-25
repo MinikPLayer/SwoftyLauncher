@@ -129,6 +129,8 @@ impl Drop for Fixture {
 
 fn write(path: &Path, body: &str) {
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    // Replace rather than write through: a placed file may be a read-only link.
+    std::fs::remove_file(path).ok();
     std::fs::write(path, body).unwrap();
 }
 
@@ -196,7 +198,7 @@ fn a_kill_between_any_two_steps_rolls_back_to_the_baseline() {
         if let Some(e) = open[0].entries.get(k).filter(|e| e.state == State::Pending) {
             match e.op {
                 Op::ReplaceFile | Op::CreateFile => write(&f.game.join(&e.path), "partial"),
-                Op::CreateDir => std::fs::create_dir_all(f.game.join(&e.path)).unwrap(),
+                Op::CreateDir | Op::LinkDir => std::fs::create_dir_all(f.game.join(&e.path)).unwrap(),
                 Op::RegistryOverride => {
                     let mut t = std::fs::read_to_string(&f.reg).unwrap();
                     t.push_str(&format!("\n{OVERRIDE_HEADER}\n"));
@@ -387,7 +389,7 @@ fn a_kill_while_installing_maps_rolls_back_to_the_baseline() {
         if let Some(e) = open[0].entries.get(k).filter(|e| e.state == State::Pending) {
             match e.op {
                 Op::ReplaceFile | Op::CreateFile => write(&f.game.join(&e.path), "partial"),
-                Op::CreateDir => std::fs::create_dir_all(f.game.join(&e.path)).unwrap(),
+                Op::CreateDir | Op::LinkDir => std::fs::create_dir_all(f.game.join(&e.path)).unwrap(),
                 Op::RegistryOverride => {}
             }
         }
@@ -396,4 +398,161 @@ fn a_kill_while_installing_maps_rolls_back_to_the_baseline() {
         assert_eq!(f.snapshot(), original, "k={k}");
         assert_eq!(restarted.verify().unwrap(), [], "k={k}");
     }
+}
+
+/// A stock file moved aside for a link waits at this hidden name.
+#[cfg(target_os = "linux")]
+fn aside(f: &Fixture, rel: &str) -> PathBuf {
+    let path = f.game.join(rel);
+    path.with_file_name(format!(".{}.swofty-orig", path.file_name().unwrap().to_string_lossy()))
+}
+
+#[cfg(target_os = "linux")]
+fn inode(path: &Path) -> u64 {
+    use std::os::unix::fs::MetadataExt;
+    std::fs::symlink_metadata(path).unwrap().ino()
+}
+
+/// No hidden original anywhere in the game folder.
+#[cfg(target_os = "linux")]
+fn no_asides(f: &Fixture) {
+    for rel in f.snapshot().keys() {
+        assert!(!rel.contains(".swofty-orig"), "{rel} was left behind");
+    }
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn a_replaced_file_waits_beside_its_link_and_is_renamed_back() {
+    let f = Fixture::new("aside-normal");
+    let original = f.snapshot();
+    let game = f.game("1");
+    let inst = Installer::new(&f.data, &game);
+    let ino = inode(&f.game.join(GVDB));
+    inst.apply(&f.plan("a")).unwrap();
+    assert!(std::fs::symlink_metadata(f.game.join(GVDB)).unwrap().file_type().is_symlink());
+    assert_eq!(f.read(GVDB), "db-A");
+    assert_eq!(std::fs::read_to_string(aside(&f, GVDB)).unwrap(), "db-v1");
+    assert_eq!(inode(&aside(&f, GVDB)), ino, "moved, not copied");
+
+    let done = inst.roll_back(false).unwrap();
+    assert_eq!(done.len(), 1);
+    assert_eq!(done[0].drift, []);
+    assert_eq!(f.snapshot(), original);
+    assert_eq!(inode(&f.game.join(GVDB)), ino, "renamed back, not copied");
+    no_asides(&f);
+    assert_eq!(inst.verify().unwrap(), []);
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn a_crash_after_the_original_moved_aside_puts_it_back() {
+    for linked in [false, true] {
+        let f = Fixture::new(&format!("aside-crash{linked}"));
+        let original = f.snapshot();
+        let game = f.game("1");
+        let ino = inode(&f.game.join(GVDB));
+        let mut inst = Installer::new(&f.data, &game);
+        // The entries are journalled; the first one is the replaced file.
+        inst.stop_after = Some(usize::from(linked));
+        assert!(inst.apply(&f.plan("a")).is_err());
+        if !linked {
+            // Killed between the two renames: only the hidden name holds it.
+            // Nothing vouches for it (the hash record was never saved), so the
+            // backup is copied back instead.
+            std::fs::rename(f.game.join(GVDB), aside(&f, GVDB)).unwrap();
+            assert!(!f.game.join(GVDB).exists());
+        }
+        let open = Journal::open(&f.data).unwrap();
+        assert_eq!(open[0].entries[0].state, State::Pending);
+
+        let restarted = Installer::new(&f.data, &game);
+        assert_eq!(restarted.recover().unwrap(), [], "linked={linked}");
+        assert_eq!(f.snapshot(), original, "linked={linked}");
+        if linked {
+            assert_eq!(inode(&f.game.join(GVDB)), ino, "renamed back");
+        }
+        no_asides(&f);
+        assert_eq!(restarted.verify().unwrap(), []);
+    }
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn a_hidden_original_deleted_by_hand_is_restored_from_the_backup() {
+    let f = Fixture::new("aside-deleted");
+    let original = f.snapshot();
+    let game = f.game("1");
+    let inst = Installer::new(&f.data, &game);
+    inst.apply(&f.plan("a")).unwrap();
+    std::fs::remove_file(aside(&f, GVDB)).unwrap();
+    assert_eq!(inst.roll_back(false).unwrap()[0].drift, []);
+    assert_eq!(f.snapshot(), original);
+    no_asides(&f);
+    assert_eq!(inst.verify().unwrap(), []);
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn a_hidden_original_that_was_changed_is_not_trusted() {
+    // A different size, and the same size with other bytes.
+    for body in ["not the original at all", "db-v2"] {
+        let f = Fixture::new(&format!("aside-changed{}", body.len()));
+        let original = f.snapshot();
+        let game = f.game("1");
+        let inst = Installer::new(&f.data, &game);
+        inst.apply(&f.plan("a")).unwrap();
+        std::fs::write(aside(&f, GVDB), body).unwrap();
+        assert_eq!(inst.roll_back(false).unwrap()[0].drift, [], "{body}");
+        assert_eq!(f.read(GVDB), "db-v1", "{body}");
+        assert_eq!(f.snapshot(), original, "{body}");
+        no_asides(&f);
+        assert_eq!(inst.verify().unwrap(), []);
+    }
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn an_install_right_after_a_rollback_moves_the_original_aside_again() {
+    let f = Fixture::new("aside-twice");
+    let original = f.snapshot();
+    let game = f.game("1");
+    let inst = Installer::new(&f.data, &game);
+    let ino = inode(&f.game.join(GVDB));
+    for _ in 0..3 {
+        inst.apply(&f.plan("a")).unwrap();
+        assert_eq!(f.read(GVDB), "db-A");
+        assert_eq!(inode(&aside(&f, GVDB)), ino);
+        inst.roll_back(false).unwrap();
+        assert_eq!(f.snapshot(), original);
+        no_asides(&f);
+    }
+    // A different profile over a rolled-back one, and a restore at the end.
+    inst.apply(&f.plan("b")).unwrap();
+    inst.apply(&f.plan("a")).unwrap();
+    assert_eq!(std::fs::read_to_string(aside(&f, GVDB)).unwrap(), "db-v1");
+    assert!(!aside(&f, UI).exists());
+    inst.restore().unwrap();
+    assert_eq!(f.snapshot(), original);
+    no_asides(&f);
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn originals_left_aside_without_a_journal_are_settled() {
+    let f = Fixture::new("aside-nojournal");
+    let original = f.snapshot();
+    let game = f.game("1");
+    let inst = Installer::new(&f.data, &game);
+    inst.apply(&f.plan("a")).unwrap();
+    // The journal is lost; the link and the hidden original remain.
+    for j in Journal::open(&f.data).unwrap() {
+        j.close().unwrap();
+    }
+    assert!(inst.verify().unwrap().iter().any(|d| matches!(d, Drift::Addition(p) if p.ends_with(".swofty-orig"))));
+    inst.tidy(&f.data.join("logs")).unwrap();
+    assert_eq!(f.read(GVDB), "db-v1");
+    no_asides(&f);
+    inst.restore().unwrap();
+    assert_eq!(f.snapshot(), original);
 }
