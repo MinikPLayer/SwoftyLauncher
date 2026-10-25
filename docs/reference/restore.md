@@ -54,13 +54,29 @@ The next install records each original again as it first sees it, checked agains
 
 Record every change of an install in the journal, in one write, before applying the first. Undo changes in reverse order, including steps that may have been interrupted or never started.
 
-Restore replaced files from backups. Remove files and empty folders created by the launcher. Remove the Wine override added for the session.
+Restore replaced files from backups. Remove files, links and empty folders created by the launcher. Remove the Wine override added for the session.
 
 If a file has unexpected contents, leave it alone and report it. Never restore files from an old game build over a newer one.
 
+## Links on Linux
+
+On Linux the install links files into the game folder instead of copying them, and moves stock files to be replaced aside, instead of restoring them by copy. Windows still copies files in and restores originals from `baseline/objects`.
+
+- `place` makes a symlink to the built file in the data folder. It creates the link under a temporary name and renames it into place.
+- The install creates as few links as possible. A file is linked on its own. A folder the game folder lacks is linked as a whole (journal op `LinkDir`), but only when all its files come from one folder in the data folder with the same relative paths, that folder holds exactly those files, and nothing else in the plan (`data` or loader files) targets it. A folder the game folder already has is entered, and the same rules apply to what is inside it.
+- `version.dll` and the `swofty/` loader files stay real copies.
+- A linked source is made read-only, so a write through the link can't change the data folder. The write bit is given back before the link is removed. `Hashes::restamp` keeps the hash cache valid across the chmod, which changes ctime.
+- A stock file the link replaces is renamed to the hidden sibling `.<name>.swofty-orig`. Rolling back gives the link's source its write bit back and renames the hidden file over the link, which writes no data.
+- `baseline/objects` stays the source of truth. The hidden file is trusted only when it is a regular file, its size equals the backed-up copy, its metadata is unchanged since it was hashed (`Hashes::unchanged`), and the hash cache still has an entry for it (`Hashes::rename` moves the entry with the file). The hash is not taken again, since reading it would cost what the move saves. Otherwise the original is restored from `baseline/objects`, which checks the hash.
+- Removing a file inside a linked folder removes the link, never the target. This covers rollback, sweep, `clear` and `remove_ours`.
+
+If the process dies between the two renames, the entry is still pending, the original is at the hidden name and nothing is at the original path. Rollback renames it back, or copies it from `baseline/objects` when no hash record was saved. With the link in place, rollback renames the original over the link, which replaces it.
+
+`settle_asides` handles hidden files left with no journal: it renames them back where a symlink or nothing stands, and deletes them where the game folder has a real file again. At the start of an install it leaves the places where a symlink stands alone. It does nothing while a journal is open. It runs from sweep, `tidy`, `restore` and at the start of an install. `swofty verify` reports a hidden original left with no running session as an addition.
+
 ## Free space
 
-Before an install backs up or copies anything, it adds up what it writes on each volume: on the game folder's, the files it copies less the files they replace; on the data folder's, the originals it backs up for the first time and 2 KB per file for the journal and the other state files. Both folders on one volume count together. When a volume has less free space than that, the install stops with `not enough free space on <drive>: this profile needs about <X> GB, <Y> GB free`, in GB of 1024³ bytes. A write that fails on a full volume during the install stops it with the same message, and the session rolls back.
+Before an install backs up or copies anything, it adds up what it writes on each volume: on the game folder's, the files it copies less the files they replace (linked files are not counted); on the data folder's, the originals it backs up for the first time and 2 KB per file for the journal and the other state files. Both folders on one volume count together. When a volume has less free space than that, the install stops with `not enough free space on <drive>: this profile needs about <X> GB, <Y> GB free`, in GB of 1024³ bytes. A write that fails on a full volume during the install stops it with the same message, and the session rolls back.
 
 ## Sessions
 
@@ -99,7 +115,7 @@ In rebuild mode a game file is recorded as an original only when its bytes are a
 
 ## Tests
 
-`packages/core/tests/restore.rs` covers profile changes, interrupted changes and game updates using a test folder. `packages/core/tests/session_recovery.rs` covers crashed and killed sessions, leftovers of lost journals and files copied in by hand. `packages/core/tests/damaged_state.rs` covers damaged state files.
+`packages/core/tests/restore.rs` covers profile changes, interrupted changes and game updates using a test folder. On Linux it also covers rollback by rename, a crash around the rename, a hidden original deleted or replaced by hand, repeated cycles and hidden originals left with no journal. `packages/core/tests/session_recovery.rs` covers crashed and killed sessions, leftovers of lost journals and files copied in by hand. `packages/core/tests/damaged_state.rs` covers damaged state files.
 
 ```sh
 cargo test -p swofty-core --test restore --test session_recovery --test damaged_state
