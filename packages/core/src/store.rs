@@ -1422,6 +1422,37 @@ mod tests {
     }
 
     #[test]
+    fn a_profile_takes_its_overlay_folder_along() {
+        let root = tmp("overlay-folder");
+        let store = Store::new(&root);
+        store.create_profile("grid", None).unwrap();
+        store.create_profile("main", None).unwrap();
+        let work = store.overlay_work_dir("grid").join("work");
+        std::fs::create_dir_all(&work).unwrap();
+        std::fs::create_dir_all(store.overlay_upper_dir("grid")).unwrap();
+        std::fs::write(store.overlay_upper_dir("grid").join("loader.log"), "log").unwrap();
+        // The kernel makes the work dir's `work` folder without any permission.
+        #[cfg(unix)]
+        std::fs::set_permissions(&work, std::os::unix::fs::PermissionsExt::from_mode(0o0)).unwrap();
+        assert!(
+            store
+                .plan_profile_deletion("grid")
+                .unwrap()
+                .paths
+                .contains(&store.profile_dir("grid"))
+        );
+        store.rename_profile("grid", "vrgrid").unwrap();
+        assert!(!store.profile_dir("grid").exists());
+        assert_eq!(
+            std::fs::read_to_string(store.overlay_upper_dir("vrgrid").join("loader.log")).unwrap(),
+            "log"
+        );
+        store.delete_profile("vrgrid").unwrap();
+        assert!(!store.profile_dir("vrgrid").exists() && !store.profiles_dir().join("vrgrid.json").exists());
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
     fn keeps_vanilla_and_the_last_profile() {
         let root = tmp("delete-last");
         let store = Store::new(&root);

@@ -428,7 +428,10 @@ fn wrapper(store: &Store, profile: &str, args: &RunArgs, g: &Game) -> Result<Exi
     }
     say("info", &format!("game build supported: {}", probe.report));
     let mut overlay = None;
-    if args.use_overlayfs {
+    if args.use_overlayfs && !cfg!(target_os = "linux") {
+        say("info", "overlayfs: --use-overlayfs only applies on Linux; ignoring it");
+    }
+    if args.use_overlayfs && cfg!(target_os = "linux") {
         let proton = proton_path(&args.steam_command);
         match overlay::choose(store, &profile, g, &artifacts, proton.as_deref(), apply)? {
             Choice::Overlay(o) => overlay = Some(*o),
