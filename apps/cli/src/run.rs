@@ -1002,7 +1002,7 @@ fn play(
             (None, EA_UNREAD.to_owned())
         }
         None => {
-            let status = wait_game(&mut spawn(target, "game_stdout.log")?, tick)?;
+            let status = wait_game(&mut spawn(target, "game_stdout.log")?, overlay.is_some(), tick)?;
             (status.code(), why_no_code(status))
         }
     };
@@ -1306,7 +1306,7 @@ fn keep_game_logs(game: &Path, fallback: &Path, dir: &Path, before: Option<&LogM
 /// Wait for the game; a stop signal to the wrapper (Steam's Stop button, a
 /// kill, a closed terminal) closes the game it started instead of leaving
 /// the session's files in the game folder.
-fn wait_game(child: &mut Child, mut tick: impl FnMut()) -> Result<ExitStatus> {
+fn wait_game(child: &mut Child, mounted: bool, mut tick: impl FnMut()) -> Result<ExitStatus> {
     let mut asked = false;
     loop {
         if let Some(status) = child.try_wait()? {
@@ -1315,7 +1315,11 @@ fn wait_game(child: &mut Child, mut tick: impl FnMut()) -> Result<ExitStatus> {
         tick();
         if !asked && ending() {
             asked = true;
-            info("asked to stop: closing F1 25, then rolling its game files back");
+            info(if mounted {
+                "asked to stop: closing F1 25"
+            } else {
+                "asked to stop: closing F1 25, then rolling its game files back"
+            });
             let ours: Vec<u32> = game_processes()
                 .into_iter()
                 .filter(|g| descends_from(g.pid, std::process::id()))

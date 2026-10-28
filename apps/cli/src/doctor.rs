@@ -180,7 +180,26 @@ pub fn report(store: &Store, session: Option<&Game>) -> (Vec<String>, bool) {
                 "no wrapper"
             };
             row("launch option", format!("user {user} ({state}): {o}"));
+            if cfg!(target_os = "linux") && steam::wrapper_installed(&o) {
+                row(
+                    "overlayfs option",
+                    if o.contains("--use-overlayfs") {
+                        "--use-overlayfs is in the launch option".into()
+                    } else {
+                        "off (add --use-overlayfs after `run` to use it)".into()
+                    },
+                );
+            }
         }
+    }
+    if cfg!(target_os = "linux") {
+        row(
+            "overlayfs mount",
+            match crate::overlay::doctor_check(store) {
+                Ok(()) => "works: an unprivileged OverlayFS mount succeeded".into(),
+                Err(why) => format!("fails ({why}); --use-overlayfs would fall back to copying"),
+            },
+        );
     }
     (lines, true)
 }

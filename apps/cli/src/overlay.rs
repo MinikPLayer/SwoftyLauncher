@@ -282,6 +282,37 @@ fn reason_of(stderr: &str, code: Option<i32>) -> String {
         })
 }
 
+/// Try one mount of three empty layers in a scratch folder, for the doctor's
+/// report: whether the system lets Swofty mount at all.
+pub fn doctor_check(store: &Store) -> std::result::Result<(), String> {
+    let dir = store.overlay_state_dir().join("doctor");
+    let layer = |name: &str| dir.join(name);
+    let result = (|| {
+        for name in ["common", "profile", "game"] {
+            std::fs::create_dir_all(layer(name)).map_err(|e| e.to_string())?;
+        }
+        let o = Overlay {
+            profile: String::new(),
+            game: layer("game"),
+            prepared: Prepared {
+                common: layer("common"),
+                profile: layer("profile"),
+                layers: Default::default(),
+                rebuilt: Vec::new(),
+            },
+            upper: layer("upper"),
+            work: layer("work"),
+            target: layer("target"),
+            stub: PathBuf::new(),
+            hook: PathBuf::new(),
+        };
+        o.check()
+    })();
+    overlayfs::unlock(&dir);
+    std::fs::remove_dir_all(&dir).ok();
+    result
+}
+
 /// Pick the mode for a launch that asked for OverlayFS: build the layers and
 /// try the mount, or fall back to copying with the player's say.
 pub fn choose(
