@@ -508,10 +508,10 @@ pub fn target_of(data: &Path, game: &Path) -> Option<PathBuf> {
 }
 
 // ---------------------------------------------------------------------------
-// Addon folders, seen from the launcher
+// The game's folders, seen from the launcher
 // ---------------------------------------------------------------------------
 
-/// Why the launcher can't reach the game's view of an addon folder.
+/// Why the launcher can't reach the game's view of its own folder.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Unreachable(pub String);
 
@@ -528,21 +528,21 @@ pub fn mount_view(pid: u32, target: &Path) -> PathBuf {
     p
 }
 
-/// The folder of addon `id` in an overlay session, as the game sees it:
+/// The game folder in an overlay session, as the game sees it, for the files
+/// the launcher and the game share (a bridge's mailbox, which each side
+/// writes and deletes in):
 /// - `Ok(Some)` with the path through the live session's mount namespace, or
 ///   with the profile's upper dir when the last session was an overlay one
 ///   and none is live;
-/// - `Ok(None)` when the game folder's own is right (copy mode, Windows);
+/// - `Ok(None)` when the game folder itself is right (copy mode, Windows);
 /// - `Err` when a session is live but its view can't be reached. Writing the
 ///   real folder or a live upper dir would corrupt the bridge instead.
-pub fn addon_dir(
+pub fn game_view(
     data: &Path,
     game: &Path,
     profile: &str,
-    id: &str,
     proc: &dyn Proc,
 ) -> std::result::Result<Option<PathBuf>, Unreachable> {
-    let addon = Path::new(LOADER_DIR).join(crate::build::ADDONS_DIR).join(id);
     if let Some(live) = LiveSession::read(data) {
         if !crate::copies::same_dir(&live.game, game) {
             return Ok(None);
@@ -553,10 +553,10 @@ pub fn addon_dir(
         if alive {
             let view = mount_view(a.pid, &live.target);
             return match proc.is_dir(&view.join(LOADER_DIR)) {
-                Ok(true) => Ok(Some(view.join(addon))),
+                Ok(true) => Ok(Some(view)),
                 Ok(false) => {
                     LiveSession::clear(data);
-                    last_dir(data, game, profile, &addon)
+                    last_view(data, game, profile)
                 }
                 Err(e) => Err(Unreachable(format!(
                     "the game runs in an OverlayFS session the launcher can't reach \
@@ -567,24 +567,41 @@ pub fn addon_dir(
         }
         LiveSession::clear(data);
     }
-    last_dir(data, game, profile, &addon)
+    last_view(data, game, profile)
 }
 
-fn last_dir(
-    data: &Path,
-    game: &Path,
-    profile: &str,
-    addon: &Path,
-) -> std::result::Result<Option<PathBuf>, Unreachable> {
+fn last_view(data: &Path, game: &Path, profile: &str) -> std::result::Result<Option<PathBuf>, Unreachable> {
     let Some(last) = LastSession::read(data).filter(|l| crate::copies::same_dir(&l.game, game)) else {
         return Ok(None);
     };
-    let upper = if last.profile == profile {
+    Ok(Some(if last.profile == profile {
         last.upper
     } else {
         data.join("profiles").join(profile).join("writes")
-    };
-    Ok(Some(upper.join(addon)))
+    }))
+}
+
+/// The folder of addon `id` in an overlay session, as the game sees it; the
+/// same answers as [`game_view`].
+pub fn addon_dir(
+    data: &Path,
+    game: &Path,
+    profile: &str,
+    id: &str,
+    proc: &dyn Proc,
+) -> std::result::Result<Option<PathBuf>, Unreachable> {
+    let addon = Path::new(LOADER_DIR).join(crate::build::ADDONS_DIR).join(id);
+    Ok(game_view(data, game, profile, proc)?.map(|view| view.join(addon)))
+}
+
+/// The game folder as the game sees it, for the active profile: the folder
+/// itself unless an overlay session is live or was the last one.
+pub fn host_view(data: &Path, game: &Path) -> std::result::Result<PathBuf, Unreachable> {
+    if !cfg!(target_os = "linux") {
+        return Ok(game.to_owned());
+    }
+    let profile = crate::store::Store::new(data.to_path_buf()).active_profile();
+    Ok(game_view(data, game, &profile, &HostProc)?.unwrap_or_else(|| game.to_owned()))
 }
 
 // ---------------------------------------------------------------------------
@@ -939,6 +956,58 @@ mod tests {
         let want = mount_view(4242, &s.target).join("swofty/addons/swofty.career-editor");
         assert_eq!(got, Some(want.clone()));
         assert!(want.starts_with("/proc/4242/root"));
+        std::fs::remove_dir_all(&data).ok();
+    }
+
+    #[test]
+    fn game_view_is_the_mount_while_live_and_the_upper_dir_after() {
+        let data = temp("view");
+        let game = data.join("game");
+        std::fs::create_dir_all(&game).unwrap();
+        assert_eq!(
+            game_view(&data, &game, "default", &proc_with(true)).unwrap(),
+            None
+        );
+        let s = live(&data, &game);
+        assert_eq!(
+            game_view(&data, &game, "default", &proc_with(true)).unwrap(),
+            Some(mount_view(4242, &s.target))
+        );
+        // The game's own view is never the real folder or the live upper dir.
+        let denied = FakeProc {
+            denied: true,
+            ..proc_with(true)
+        };
+        assert!(game_view(&data, &game, "default", &denied).is_err());
+        assert_eq!(
+            game_view(&data, &game, "default", &proc_with(false)).unwrap(),
+            Some(s.upper.clone())
+        );
+        assert_eq!(
+            game_view(&data, &game, "other", &proc_with(false)).unwrap(),
+            Some(data.join("profiles/other/writes"))
+        );
+        assert_eq!(
+            addon_dir(&data, &game, "default", "x.y", &proc_with(false)).unwrap(),
+            Some(s.upper.join("swofty/addons/x.y"))
+        );
+        std::fs::remove_dir_all(&data).ok();
+    }
+
+    #[test]
+    fn host_view_is_the_game_folder_without_an_overlay_session() {
+        let data = temp("host-view");
+        let game = data.join("game");
+        std::fs::create_dir_all(&game).unwrap();
+        assert_eq!(host_view(&data, &game).unwrap(), game);
+        live(&data, &game);
+        // The anchor is no process here, so the session is stale: the last one's upper dir.
+        let want = if cfg!(target_os = "linux") {
+            data.join("profiles/default/writes")
+        } else {
+            game.clone()
+        };
+        assert_eq!(host_view(&data, &game).unwrap(), want);
         std::fs::remove_dir_all(&data).ok();
     }
 

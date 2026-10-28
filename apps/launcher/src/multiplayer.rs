@@ -406,7 +406,8 @@ fn read_local(store: &Store, profile: &str, dir: &Path) -> Result<Local, String>
     Local::read(store, &profile, &game.identity).map_err(|e| e.to_string())
 }
 
-fn read_game(dir: &Path, running: bool) -> Option<GameStatus> {
+fn read_game(data: &Path, dir: &Path, running: bool) -> Option<GameStatus> {
+    let dir = &mp_game::view(data, dir).ok()?;
     mp_game::last_status(dir).or_else(|| {
         running
             .then(|| mp_game::send(dir, &Command::Status, STATUS_TIMEOUT).ok())
@@ -643,11 +644,12 @@ impl Shell {
             return;
         };
         let running = !self.processes.is_empty();
+        let data = self.store.root.clone();
         self.mp_page.game_polling = true;
         cx.spawn(async move |this, cx| {
             let status = cx
                 .background_executor()
-                .spawn(async move { read_game(&dir, running) })
+                .spawn(async move { read_game(&data, &dir, running) })
                 .await;
             this.update(cx, |s, cx| {
                 let m = &mut s.mp_page;
@@ -750,7 +752,7 @@ impl Shell {
                     let local = read_local(&store, &profile, &dir).inspect_err(|e| {
                         diag::line(format!("session not started: couldn't read the addons: {e}"));
                     })?;
-                    let setup = Setup::new(Api::new(&token), &dir, local);
+                    let setup = Setup::new(Api::new(&token), &store.root, &dir, local);
                     Ok::<_, String>(match start {
                         Start::Create(settings) => Session::create(setup, settings),
                         Start::Join(code) => Session::join(setup, &code),

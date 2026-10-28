@@ -1640,3 +1640,27 @@ fn memory_names_the_page_file_when_windows_gives_the_commit_limit() {
     );
     assert_eq!(memory_text(32 * gb, None), ", 32 GB memory");
 }
+
+#[test]
+fn an_overlay_sessions_netplay_files_come_from_its_upper_dir() {
+    let root = tmp("overlay-room");
+    let (store, game) = fake_data(&root);
+    let upper = root.join("upper");
+    crate::overlayfs::LastSession {
+        game: game.clone(),
+        profile: "default".into(),
+        upper: upper.clone(),
+    }
+    .write(&store.root)
+    .unwrap();
+    put(
+        &upper.join(crate::multiplayer::bridge::STATUS_FILE),
+        r#"{"pid":42,"self":2,"base":41000,"game_port":21414}"#,
+    );
+    put(&upper.join(NET_TRACE), "# swofty net trace\n");
+    let bundle = Bundle::collect_with(&store, &report(&game), Limits::default(), "20261026-101010");
+    let got = names(&bundle.zip().unwrap());
+    assert!(got.iter().any(|n| n == "game/netplay.json"), "{got:?}");
+    assert!(got.iter().any(|n| n == "game/net-trace.log"), "{got:?}");
+    std::fs::remove_dir_all(&root).ok();
+}

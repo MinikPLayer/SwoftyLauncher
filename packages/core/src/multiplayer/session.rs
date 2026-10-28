@@ -57,6 +57,9 @@ static ACTIVE: Mutex<Option<std::sync::Weak<Inner>>> = Mutex::new(None);
 
 /// The game's netplay command channel, as the session uses it.
 pub trait GameControl: Send + Sync {
+    /// The game folder as the game sees it ([`game::view`]), where it writes
+    /// `swofty/netplay.json`; `None` when it can't be reached.
+    fn files_dir(&self) -> Option<PathBuf>;
     fn status(&self) -> Result<GameStatus, game::Error>;
     fn configure(&self, self_member: u8, base: u16) -> Result<GameStatus, game::Error>;
     fn host(&self, category: Category) -> Result<GameStatus, game::Error>;
@@ -67,49 +70,61 @@ pub trait GameControl: Send + Sync {
     fn cancel(&self) -> Result<GameStatus, game::Error>;
 }
 
-/// The running game's file mailbox (`<game>/swofty/netplay`).
+/// The running game's file mailbox (`<game>/swofty/netplay`), reached through
+/// [`game::view`] on every use.
 pub struct Mailbox {
-    dir: PathBuf,
+    data: PathBuf,
+    game: PathBuf,
 }
 
 impl Mailbox {
-    pub fn new(game_dir: &Path) -> Self {
+    pub fn new(data: &Path, game_dir: &Path) -> Self {
         Self {
-            dir: game_dir.to_path_buf(),
+            data: data.to_path_buf(),
+            game: game_dir.to_path_buf(),
         }
+    }
+
+    fn dir(&self) -> Result<PathBuf, game::Error> {
+        game::view(&self.data, &self.game)
     }
 }
 
 impl GameControl for Mailbox {
+    fn files_dir(&self) -> Option<PathBuf> {
+        self.dir().ok()
+    }
+
     fn status(&self) -> Result<GameStatus, game::Error> {
-        match game::last_status(&self.dir) {
+        let dir = self.dir()?;
+        match game::last_status(&dir) {
             Some(status) => Ok(status),
-            None => game::send(&self.dir, &Command::Status, QUICK_TIMEOUT).map(|r| r.status),
+            None => game::send(&dir, &Command::Status, QUICK_TIMEOUT).map(|r| r.status),
         }
     }
 
     fn configure(&self, self_member: u8, base: u16) -> Result<GameStatus, game::Error> {
-        game::configure(&self.dir, self_member, base)
+        game::configure(&self.dir()?, self_member, base)
     }
 
     fn host(&self, category: Category) -> Result<GameStatus, game::Error> {
-        game::host(&self.dir, category)
+        game::host(&self.dir()?, category)
     }
 
     fn join(&self, ip: Ipv4Addr) -> Result<GameStatus, game::Error> {
-        game::join(&self.dir, ip)
+        game::join(&self.dir()?, ip)
     }
 
     fn leave(&self) -> Result<GameStatus, game::Error> {
-        game::send(&self.dir, &Command::Leave, QUICK_TIMEOUT).map(|r| r.status)
+        game::send(&self.dir()?, &Command::Leave, QUICK_TIMEOUT).map(|r| r.status)
     }
 
     fn clear(&self) -> Result<GameStatus, game::Error> {
-        game::send(&self.dir, &Command::Clear, QUICK_TIMEOUT).map(|r| r.status)
+        game::send(&self.dir()?, &Command::Clear, QUICK_TIMEOUT).map(|r| r.status)
     }
 
     fn cancel(&self) -> Result<GameStatus, game::Error> {
-        game::send(&self.dir, &Command::Cancel, QUICK_TIMEOUT).map(|r| r.status)
+        game::send(&self.dir()?, &Command::Cancel, QUICK_TIMEOUT).map(|r| r.status)
     }
 }
 
@@ -234,19 +249,19 @@ pub fn trim_blob(doc: &mut Value, limit: usize) -> Vec<String> {
 /// Everything a session needs.
 pub struct Setup {
     pub api: Api,
-    pub game_dir: PathBuf,
     pub game: Arc<dyn GameControl>,
     pub local: Local,
     pub relay: Relay,
 }
 
 impl Setup {
-    /// A TURN-relayed session driving the game in `game_dir` through its mailbox.
-    pub fn new(api: Api, game_dir: &Path, local: Local) -> Self {
+    /// A TURN-relayed session driving the game in `game_dir` through its
+    /// mailbox; `data` is the data folder, which says where the game runs
+    /// from when it is an OverlayFS session.
+    pub fn new(api: Api, data: &Path, game_dir: &Path, local: Local) -> Self {
         Self {
             api,
-            game_dir: game_dir.to_path_buf(),
-            game: Arc::new(Mailbox::new(game_dir)),
+            game: Arc::new(Mailbox::new(data, game_dir)),
             local,
             relay: Relay::Turn,
         }
@@ -1487,7 +1502,11 @@ impl Worker {
 
     fn housekeeping(&mut self) {
         if let Some(bridge) = &self.bridge {
-            let port = bridge.sync_game_port(&self.setup.game_dir);
+            let port = self
+                .setup
+                .game
+                .files_dir()
+                .and_then(|dir| bridge.sync_game_port(&dir));
             if port.is_some() && port != self.game_port {
                 diag::line(format!(
                     "bridge: game port {} from swofty/netplay.json",
@@ -2127,6 +2146,10 @@ mod tests {
     }
 
     impl GameControl for FakeGame {
+        fn files_dir(&self) -> Option<PathBuf> {
+            Some(self.dir.clone())
+        }
+
         fn status(&self) -> Result<GameStatus, game::Error> {
             Ok(lock(&self.status).clone())
         }
@@ -2218,7 +2241,6 @@ mod tests {
         let categories = BTreeMap::from([("okayama".to_owned(), "tracks".to_owned())]);
         Setup {
             api: Api::with_server(url, token),
-            game_dir: game.dir.clone(),
             game: game.clone(),
             local: Local::new(fingerprint, &categories, Vec::new()),
             relay: Relay::Direct("127.0.0.1:0".parse().unwrap()),
@@ -2837,7 +2859,7 @@ mod tests {
             json!({"v": 1, "status": status}).to_string(),
         )
         .unwrap();
-        let control = Mailbox::new(&dir);
+        let control = Mailbox::new(&dir, &dir);
         assert_eq!(control.status().unwrap().screen, Screen::MainMenu);
 
         let responder = {

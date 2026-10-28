@@ -352,6 +352,7 @@ impl Bundle {
             }
         }
         if let Some(game) = &report.game.dir {
+            let game = &crate::overlayfs::files_root(&store.root, game);
             let status = game.join(crate::multiplayer::bridge::STATUS_FILE);
             if status.is_file() {
                 c.file("game/netplay.json".into(), &status, None);

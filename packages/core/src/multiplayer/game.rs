@@ -161,9 +161,23 @@ pub enum Error {
         why: String,
         status: GameStatus,
     },
+    #[error("{0}")]
+    Unreachable(String),
 }
 
-/// The netplay mailbox folder in a game folder: `<game>/swofty/netplay`.
+/// The game folder as the game sees it, which holds the mailbox and the files
+/// the game writes next to it (`swofty/netplay.json`). That is `game_dir`,
+/// except in an OverlayFS session on Linux, where the game's `swofty/` is in
+/// its mount, not in the real folder: the launcher reaches it through the
+/// mount while the game runs and in the profile's upper dir otherwise. Ask
+/// again for every use: the answer changes between sessions. Every other
+/// function here takes this folder, not the real one.
+pub fn view(data: &Path, game_dir: &Path) -> Result<PathBuf, Error> {
+    crate::overlayfs::host_view(data, game_dir).map_err(|e| Error::Unreachable(e.to_string()))
+}
+
+/// The netplay mailbox folder in a game folder as the game sees it (see
+/// [`view`]): `<game>/swofty/netplay`.
 pub fn mailbox(game_dir: &Path) -> PathBuf {
     game_dir.join("swofty").join("netplay")
 }
@@ -350,6 +364,50 @@ pub fn last_status(game_dir: &Path) -> Option<GameStatus> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn an_overlay_sessions_mailbox_is_never_the_real_game_folder() {
+        use crate::overlayfs::{Anchor, LiveSession};
+        let data = temp_game("overlay-data");
+        let game = temp_game("overlay-game");
+        assert_eq!(view(&data, &game).unwrap(), game);
+        // A session whose anchor is gone: only its upper dir is the game's files now.
+        let upper = data.join("profiles/default/writes");
+        LiveSession {
+            schema: 1,
+            game: game.clone(),
+            profile: "default".into(),
+            target: data.join("state/overlay/game"),
+            upper: upper.clone(),
+            anchor: Anchor {
+                pid: u32::MAX - 1,
+                start_time: 1,
+                mnt_ns: "mnt:[1]".into(),
+            },
+        }
+        .write(&data)
+        .unwrap();
+        let dir = view(&data, &game).unwrap();
+        assert_eq!(dir, upper);
+        let seq = post(&dir, &Command::Status).unwrap();
+        assert!(
+            mailbox(&upper)
+                .join("inbox")
+                .join(format!("{seq}.json"))
+                .is_file()
+        );
+        assert_eq!(std::fs::read_dir(&game).unwrap().count(), 0);
+        std::fs::write(
+            mailbox(&upper).join("status.json"),
+            r#"{"v":1,"status":{"screen":"main_menu","in_session":false,"role":"none"}}"#,
+        )
+        .unwrap();
+        assert_eq!(last_status(&dir).unwrap().screen, Screen::MainMenu);
+        assert_eq!(last_status(&game), None);
+        std::fs::remove_dir_all(&data).ok();
+        std::fs::remove_dir_all(&game).ok();
+    }
 
     fn temp_game(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("swofty-mp-game-{name}-{}", std::process::id()));
