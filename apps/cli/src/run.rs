@@ -158,7 +158,8 @@ pub fn run(store: &Store, profile: &str, args: RunArgs) -> Result<ExitCode> {
     let loader = overlay::log_root(store, &game, profile).join(LOADER_LOG);
     let before = LogMark::read(&loader);
     let asked = now_secs();
-    let mut wrapper = launch(store, &game, args.direct, mode).inspect_err(|e| note_blocked(store, e))?;
+    let mut wrapper = launch(store, &game, args.direct, args.use_overlayfs, mode)
+        .inspect_err(|e| note_blocked(store, e))?;
     let mut silence = Silence::new();
     let mut waiting_on_dialog = false;
     let dir = loop {
@@ -1658,7 +1659,7 @@ fn wrapper_command(proton: Option<&Path>, game: &Path, mode: LaunchMode) -> Vec<
     out
 }
 
-fn launch(store: &Store, game: &Path, direct: bool, mode: LaunchMode) -> Result<Wrapper> {
+fn launch(store: &Store, game: &Path, direct: bool, overlayfs: bool, mode: LaunchMode) -> Result<Wrapper> {
     let install = steam::find_game();
     let wrapped = install
         .as_ref()
@@ -1703,6 +1704,9 @@ fn launch(store: &Store, game: &Path, direct: bool, mode: LaunchMode) -> Result<
             .arg("run")
             .arg("--game")
             .arg(game);
+        if overlayfs {
+            c.arg("--use-overlayfs");
+        }
         if let Some(g) = install.as_ref().filter(|_| !cfg!(windows)) {
             let tool = steam::compat_tool(&g.steam_root).unwrap_or_default();
             let proton = [
