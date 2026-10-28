@@ -154,6 +154,51 @@ impl Roots {
     }
 }
 
+static STEP: std::sync::Mutex<(&'static str, Option<std::time::Instant>)> =
+    std::sync::Mutex::new(("start", None));
+static SHOWN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// One startup step reached, with the time since the process began.
+pub(crate) fn step(name: &'static str) {
+    let since = {
+        let mut last = STEP.lock().unwrap_or_else(|e| e.into_inner());
+        let began = *last.1.get_or_insert_with(std::time::Instant::now);
+        *last = (name, Some(began));
+        began.elapsed().as_millis()
+    };
+    note(&format!("startup: {name} (+{since} ms)"));
+}
+
+fn last_step() -> &'static str {
+    STEP.lock().unwrap_or_else(|e| e.into_inner()).0
+}
+
+/// The window drew its first frame: the startup watchdog stops.
+pub(crate) fn window_shown() {
+    if !SHOWN.swap(true, std::sync::atomic::Ordering::Relaxed) {
+        step("window drawn");
+    }
+}
+
+fn stalled_line(last: &str, secs: u64) -> String {
+    format!("startup: no window after {secs} s, last step was \"{last}\"")
+}
+
+fn watch_window() {
+    std::thread::Builder::new()
+        .name("startup-watch".into())
+        .spawn(|| {
+            for n in 1..=6u64 {
+                std::thread::sleep(std::time::Duration::from_secs(10));
+                if SHOWN.load(std::sync::atomic::Ordering::Relaxed) {
+                    return;
+                }
+                note(&stalled_line(last_step(), n * 10));
+            }
+        })
+        .ok();
+}
+
 /// The start line, then every panic, before the default hook prints it.
 pub(crate) fn start() {
     let path = path();
@@ -168,6 +213,8 @@ pub(crate) fn start() {
         }
     );
     append(&path, &started);
+    step("process start");
+    watch_window();
     let at = path.clone();
     std::thread::spawn(move || {
         let elevated = if swofty_core::compat::elevated() {
@@ -195,6 +242,14 @@ pub(crate) fn start() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn stalled_line_names_the_last_step() {
+        assert_eq!(
+            stalled_line("opening the window", 20),
+            "startup: no window after 20 s, last step was \"opening the window\""
+        );
+    }
 
     #[test]
     fn appends_lines_and_starts_over_when_full() {

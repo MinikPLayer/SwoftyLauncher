@@ -540,7 +540,13 @@ fn start_copy(
     }
     let installed = apply.then(Instant::now);
     let journal = swofty_core::offline::journal_path(&store.root);
-    for note in swofty_core::offline::stage(&g.dir, artifacts, &journal)? {
+    let staged = swofty_core::offline::stage(&g.dir, artifacts, &journal);
+    if let Err(swofty_core::Error::MissingStock { files, version }) = &staged {
+        swofty_core::stock::Report::missing(files.clone(), &g.dir, version.clone())
+            .write(&store.root)
+            .ok();
+    }
+    for note in staged? {
         say("info", &format!("offline play: {note}"));
     }
     say(

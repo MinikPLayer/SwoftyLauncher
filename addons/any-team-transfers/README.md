@@ -14,9 +14,9 @@ A career with **Follow your driver's real career** still signs only for your dri
 
 ## How it works
 
-`native/any_team.dll` wraps `Game_DriverContracts_BuildOffers`, the function that builds a driver's offers before Team Select lists the teams. Team Select lists the teams of the game mode's entrant list and enables a team only when it is in your offers.
+`native/any_team.dll` wraps `Game_DriverContracts_BuildOffers`, the function that builds a driver's offers before Team Select lists the teams. Team Select lists the teams of the career's line-up and enables a team only when it is in your offers.
 
-- After the game builds its offers, the wrap adds every other team of that same entrant list, using the offer list's own allocator.
+- After the game builds its offers, the wrap adds every other team of the line-up, using the offer list's own allocator.
 - Your current team is left out after you start talks with another team, as in the stock game.
 - The wrap runs inside every other addon's wrap of the same function (priority -10).
 - Before its first call, the wrap checks that `Game_DriverContracts_BuildOffers` and `Game_CareerSetup_ResetEntrants` still read and write those fields where the addon expects them. The Steam and EA builds both match. On a build that doesn't, offers stay stock and `swofty/loader.log` says why.

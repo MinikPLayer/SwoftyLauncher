@@ -25,9 +25,11 @@ constexpr uintptr_t kOfferTeamsBegin = 0x10;
 constexpr uintptr_t kOfferTeamsEnd = 0x18;
 constexpr uintptr_t kOfferTeamsCap = 0x20;
 
-// Game mode +0xe18: the entrant list the Team Select lists its teams from (FUN_141873a30 through
-// func_0x142457610: unique team keys of its 0x88-byte rows at +0x08..+0x10, hi 0x3fff skipped);
-// Game_CareerSetup_ResetEntrants stores it there.
+// The teams the Team Select lists (FUN_141873a30): in a career, the unique team keys of the game
+// mode's entrants, which Game_CareerSetup_ResetEntrants copies into the line-up at +0x2e0..+0x2e8
+// (CareerEntity entrants, 0x88-byte rows, team at +0x58); without a CareerSetupComponent, those of
+// the entrant list at +0xe18 (func_0x142457610 over its rows at +0x08..+0x10), which
+// ResetEntrants stores there. A loaded career leaves +0xe18 unset.
 constexpr uintptr_t kEntrantList = 0xe18;
 constexpr uintptr_t kEntrantRowsBegin = 0x08;
 constexpr uintptr_t kEntrantRowsEnd = 0x10;
@@ -89,8 +91,10 @@ inline constexpr Pattern kBuildOffersPatterns[] = {
     {"offer allocator free", {0x49, 0x8b, 0x4d, 0x08, 0x48, 0x8b, 0x01, 0xff, 0x50, 0x38}, 10},
 };
 
-// Game_CareerSetup_ResetEntrants: mov [rax+0xe18],rdx, the entrant list store.
+// Game_CareerSetup_ResetEntrants: the line-up clear (mov rax,[rbx+0x2e0]; mov [rbx+0x2e8],rax) and
+// mov [rax+0xe18],rdx, the entrant list store.
 inline constexpr Pattern kResetEntrantsPatterns[] = {
+    {"line-up", {0x48, 0x8b, 0x83, 0xe0, 0x02, 0x00, 0x00, 0x48, 0x89, 0x83, 0xe8, 0x02, 0x00, 0x00}, 14},
     {"entrant list", {0x48, 0x89, 0x90, 0x18, 0x0e, 0x00, 0x00}, 7},
 };
 

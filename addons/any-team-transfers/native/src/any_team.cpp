@@ -4,15 +4,16 @@
 // player an offer, so the negotiation's Team Select lets him sign for any of them.
 //
 // The Team Select team list builder (0x141873a30) lists the unique teams of the game mode's
-// entrant list (+0xe18, 0x88-byte rows, team at +0x58), calls Game_DriverContracts_BuildOffers for
-// the driver, then sets each team tile's is_enabled (tile +0x110, made in 0x1418734b0) true when
-// the team is in his offers (DriverCareerContractsManagerComponent +0x3c8..+0x3d0, 0x48-byte records
-// keyed by driver, team keys at +0x10..+0x18) and false when it is not. Stock BuildOffers ranks his
-// team and picks two or three teams at random from a window ranked near it, plus his own team when
-// it renews him. After the stock call the wrap appends every other team of that same entrant list
-// to his offers, through the record's own allocator as the stock append does (0x140d810d2), so
-// every tile the Team Select shows is enabled. His own team stays out after he started talks with
-// another team (contract removedReason 10), as in the stock offers. With no offer record (he is not
+// entrants (in a career its line-up at +0x2e0, 0x88-byte rows, team at +0x58), calls
+// Game_DriverContracts_BuildOffers for the driver, then sets each team tile's is_enabled (tile
+// +0x110, made in 0x1418734b0) true when the team is in his offers (DriverCareerContractsManagerComponent
+// +0x3c8..+0x3d0, 0x48-byte records keyed by driver, team keys at +0x10..+0x18) and false when it
+// is not. Stock BuildOffers ranks his team and picks two or three teams at random from a window
+// ranked near it, plus his own team when it renews him. After the stock call the wrap appends every
+// other team of the line-up (and of the +0xe18 entrant list, when one is set) to his offers, through
+// the record's own allocator as the stock append does (0x140d810d2), so every tile the Team Select
+// shows is enabled. His own team stays out after he started talks with another team (contract
+// removedReason 10), as in the stock offers. With no offer record (he is not
 // negotiating) nothing changes. The wrap runs at priority -10, inside every other BuildOffers wrap:
 // Progressive Career's follow_driver lock (progressive_cards.dll, priority 0) cuts the offers to
 // the driver's real team after this has run, so a follow career still signs only there. Teams the
@@ -110,18 +111,26 @@ uintptr_t contract_record(uintptr_t c, uint32_t driver)
     return 0;
 }
 
-bool listed_teams(uintptr_t c, std::vector<uint32_t> &out)
+bool rows_teams(uintptr_t b, uintptr_t e, std::vector<uint32_t> &out)
 {
-    uintptr_t entity = rdv<uintptr_t>(c + offsetof(DriverCareerContractsManagerComponent, entity));
-    uintptr_t list = entity ? rdv<uintptr_t>(entity + kEntrantList) : 0;
-    uintptr_t b = list ? rdv<uintptr_t>(list + kEntrantRowsBegin) : 0;
-    uintptr_t e = list ? rdv<uintptr_t>(list + kEntrantRowsEnd) : 0;
     if (!b || e <= b || (e - b) % sizeof(EntrantRecord) || (e - b) / sizeof(EntrantRecord) > kMaxRows ||
         !swofty::mem::readable(b, e - b))
         return false;
     for (uintptr_t p = b; p < e; p += sizeof(EntrantRecord))
         out.push_back(rdv<uint32_t>(p + offsetof(EntrantRecord, team_stat_id)));
     return true;
+}
+
+const char *listed_teams(uintptr_t c, std::vector<uint32_t> &out)
+{
+    uintptr_t entity = rdv<uintptr_t>(c + offsetof(DriverCareerContractsManagerComponent, entity));
+    if (!entity)
+        return nullptr;
+    bool lineup = rows_teams(rdv<uintptr_t>(entity + offsetof(CareerEntity, entrants_begin)),
+                             rdv<uintptr_t>(entity + offsetof(CareerEntity, entrants_end)), out);
+    uintptr_t list = rdv<uintptr_t>(entity + kEntrantList);
+    bool setup = list && rows_teams(rdv<uintptr_t>(list + kEntrantRowsBegin), rdv<uintptr_t>(list + kEntrantRowsEnd), out);
+    return lineup && setup ? "line-up and entrant list" : lineup ? "line-up" : setup ? "entrant list" : nullptr;
 }
 
 bool push_team(uintptr_t rec, uint32_t team)
@@ -182,9 +191,11 @@ SWOFTY_WRAP_PRIORITY(-10, Game_DriverContracts_BuildOffers, void, void *contract
         return;
     }
     std::vector<uint32_t> listed;
-    if (!listed_teams(c, listed)) {
+    const char *from = listed_teams(c, listed);
+    if (!from) {
         if (note())
-            swofty::log("[any-team] driver %u: no entrant list on the game mode; offers stay stock", driver >> 16);
+            swofty::log("[any-team] driver %u: no line-up or entrant list on the game mode; offers stay stock",
+                        driver >> 16);
         return;
     }
     uintptr_t contract = contract_record(c, driver);
@@ -199,8 +210,9 @@ SWOFTY_WRAP_PRIORITY(-10, Game_DriverContracts_BuildOffers, void, void *contract
         if (push_team(rec, t))
             ++added;
     if (note())
-        swofty::log("[any-team] driver %u: stock offers %s; added %zu of %zu team(s); offers now %s (own team %u%s)",
-                    driver >> 16, stock.c_str(), added, add.size(), offered(rec).c_str(), own >> 16,
+        swofty::log("[any-team] driver %u: stock offers %s; added %zu of %zu team(s) from the %s; offers now %s (own "
+                    "team %u%s)",
+                    driver >> 16, stock.c_str(), added, add.size(), from, offered(rec).c_str(), own >> 16,
                     talks ? ", left out: talks with another team" : "");
 }
 

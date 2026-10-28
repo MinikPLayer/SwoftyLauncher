@@ -10,6 +10,45 @@ const TABLE: &str = "entrants.entrant_lists";
 const ROW: &str = "entrant_list";
 const SCOPES: [&str; 3] = [TABLE, "entrants.entrant_setup_modes", "content_sets"];
 const MAX_ROWS: usize = 256;
+const ENTRANT_FIELDS: [&str; 10] = [
+    "_metadata_",
+    "badge_customisation",
+    "car_number",
+    "driver",
+    "driver_customisation",
+    "entrant_reference",
+    "team",
+    "team_position",
+    "vehicle",
+    "vehicle_customisation",
+];
+const OVERRIDE_FIELDS: [&str; 3] = ["_metadata_", "override_vehicle_package", "target_vehicle_package"];
+const MAX_ENTRANTS: usize = 64;
+const MAX_OVERRIDES: usize = 8;
+
+fn row_paths(row: &str) -> Vec<String> {
+    let mut paths = vec![
+        format!("{row}._entrant_instancecount_"),
+        format!("{row}._vehicle_package_override_instancecount_"),
+    ];
+    for k in 0..MAX_ENTRANTS {
+        paths.extend(ENTRANT_FIELDS.iter().map(|f| format!("{row}.entrant_{k}.{f}")));
+    }
+    for k in 0..MAX_OVERRIDES {
+        paths.extend(
+            OVERRIDE_FIELDS
+                .iter()
+                .map(|f| format!("{row}.vehicle_package_override_{k}.{f}")),
+        );
+    }
+    paths
+}
+
+fn clear_row(db: &mut Gvdb, at: &mut HashMap<u64, usize>, row: &str) {
+    let stale: HashSet<u64> = row_paths(row).iter().map(fnv1a64).collect();
+    db.records.retain(|r| !stale.contains(&r.key));
+    *at = index(db);
+}
 
 struct List {
     name: String,
@@ -170,10 +209,21 @@ impl StockLists {
         let shown: HashSet<String> = (0..had).filter_map(|i| name(db, &at, i)).collect();
         let mut n = had.max(before.count);
         let mut names: HashSet<String> = (0..n).filter_map(|i| name(db, &at, i)).collect();
+        for slot in had..before.count {
+            let Some(list) = name(db, &at, slot).and_then(|l| self.lists.iter().find(|s| s.name == l)) else {
+                continue;
+            };
+            let row = format!("{TABLE}.{ROW}_{slot}");
+            clear_row(db, &mut at, &row);
+            for (rel, tag, value) in &list.keys {
+                put(db, &mut at, fnv1a64(format!("{row}.{rel}")), *tag, value.clone());
+            }
+        }
         for list in &self.lists {
             if !before.names.contains(&list.name) || names.contains(&list.name) {
                 continue;
             }
+            clear_row(db, &mut at, &format!("{TABLE}.{ROW}_{n}"));
             for (rel, tag, value) in &list.keys {
                 put(
                     db,
@@ -347,5 +397,56 @@ mod tests {
         let want = db.clone();
         assert!(lists.keep(&mut db, &before).is_empty());
         assert_eq!(db.to_bytes(), want.to_bytes());
+    }
+
+    #[test]
+    fn clears_stale_rows_under_the_slot_a_kept_list_takes() {
+        let stock = stock();
+        let lists = StockLists::new(&stock);
+        let mut db = stock.clone();
+        let before = lists.before(&db);
+        db.set(
+            "entrants.entrant_lists.entrant_list_1._metadata_",
+            "f2_2025_pack",
+            None,
+        )
+        .unwrap();
+        let row = "entrants.entrant_lists.entrant_list_3";
+        for (path, v) in [
+            ("_entrant_instancecount_", "1"),
+            ("entrant_0._metadata_", "ghost"),
+            ("entrant_0.entrant_reference", "gone"),
+            ("vehicle_package_override_0._metadata_", "ghost"),
+            ("_vehicle_package_override_instancecount_", "1"),
+        ] {
+            db.records.push(rec(&format!("{row}.{path}"), 4, v));
+        }
+        lists.keep(&mut db, &before);
+        assert_eq!(get(&db, &format!("{row}._metadata_")).as_deref(), Some("f2_2026"));
+        for path in [
+            "_entrant_instancecount_",
+            "entrant_0._metadata_",
+            "entrant_0.entrant_reference",
+            "vehicle_package_override_0._metadata_",
+            "_vehicle_package_override_instancecount_",
+        ] {
+            assert_eq!(get(&db, &format!("{row}.{path}")), None, "{path}");
+        }
+    }
+
+    #[test]
+    fn rewrites_a_hidden_stock_slot_the_count_brings_back() {
+        let stock = stock();
+        let lists = StockLists::new(&stock);
+        let mut db = stock.clone();
+        let before = lists.before(&db);
+        db.set("entrants.entrant_lists._entrant_list_instancecount_", "2", None)
+            .unwrap();
+        let row = "entrants.entrant_lists.entrant_list_2";
+        db.records
+            .push(rec(&format!("{row}.entrant_0.entrant_reference"), 4, "gone"));
+        lists.keep(&mut db, &before);
+        assert_eq!(get(&db, &format!("{row}._metadata_")).as_deref(), Some("f2_2025"));
+        assert_eq!(get(&db, &format!("{row}.entrant_0.entrant_reference")), None);
     }
 }

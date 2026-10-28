@@ -35,6 +35,8 @@ pub const STEAM_VERIFY_URL: &str = "steam://validate/3059520";
 /// rewrites the launcher exe and its dll on a normal start, so their sizes
 /// drift from Steam's. Modded sessions never use them, so a drifted one is
 /// logged and never blocks; offline play parks and restores the exe itself.
+pub const EAC_LAUNCHER: &str = "EAAntiCheat.GameServiceLauncher.exe";
+
 fn is_eac(rel: &str) -> bool {
     !rel.contains('/') && rel.to_ascii_lowercase().starts_with("eaanticheat.")
 }
@@ -292,6 +294,7 @@ pub struct Checked {
     pub foreign: Vec<String>,
     pub detail: Vec<Foreign>,
     pub eac: Vec<EacDrift>,
+    pub missing: Vec<String>,
     pub proven: usize,
     pub rerecorded: Vec<String>,
     pub swept: Option<usize>,
@@ -307,6 +310,13 @@ pub struct Checked {
 /// it. The game folder is only read.
 pub fn check(data: &Path, game: &Game, depots: &Depots) -> Result<Checked> {
     let mut out = Checked::default();
+    let launcher = game.dir.join(EAC_LAUNCHER);
+    if depots.get(EAC_LAUNCHER).is_some()
+        && std::fs::symlink_metadata(&launcher).is_err()
+        && std::fs::symlink_metadata(game.dir.join(format!("{EAC_LAUNCHER}.bak"))).is_err()
+    {
+        out.missing.push(EAC_LAUNCHER.to_owned());
+    }
     let loaded = Baseline::load_or_new(data, &game.identity)?;
     let mut baseline = loaded.clone();
     let objects = Objects {

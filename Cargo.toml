@@ -4,7 +4,7 @@ members = ["addons/builtins", "apps/cli", "apps/launcher", "installer", "package
 default-members = ["addons/builtins", "apps/cli", "packages/addon-api", "packages/core", "packages/formats", "packages/sdk", "templates/launcher-addon"]
 
 [workspace.package]
-version = "1.5.30"
+version = "1.5.32"
 edition = "2024"
 rust-version = "1.95"
 license = "AGPL-3.0-or-later"

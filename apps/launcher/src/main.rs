@@ -43,11 +43,16 @@ fn main() {
         overlayfs_dialog::run(kind, reason, data);
     }
     app_log::start();
+    app_log::step("starting the app runtime");
     let app = gpui_kit::application().with_assets(gpui_kit::assets::AllAssets);
     let prepared = app.background_executor().spawn(async { shell::Prepared::load() });
+    app_log::step("app runtime ready, entering the event loop");
     app.run(move |cx| {
+        app_log::step("event loop running");
         gpui_kit::init(cx);
+        app_log::step("ui kit ready");
         theme::init(cx);
+        app_log::step("theme ready, opening the window");
         let options = WindowOptions {
             window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
                 None,
@@ -66,6 +71,7 @@ fn main() {
             cx.new(|cx| Launcher::new(prepared, window, cx))
         })
         .expect("failed to open window");
+        app_log::step("window opened");
         cx.on_window_closed(move |cx, id| {
             if id == main.window_id() {
                 cx.quit();
@@ -84,6 +90,7 @@ impl Launcher {
     fn new(prepared: Task<shell::Prepared>, window: &mut Window, cx: &mut Context<Self>) -> Self {
         cx.spawn_in(window, async move |this, cx| {
             let prepared = prepared.await;
+            app_log::step("store and library loaded");
             this.update_in(cx, |this, window, cx| {
                 let shell = cx.new(|cx| shell::Shell::new(prepared, window, cx));
                 shell.update(cx, |s, cx| {
@@ -91,6 +98,7 @@ impl Launcher {
                     s.run_startup(window, cx);
                 });
                 this.shell = Some(shell);
+                app_log::step("launcher shell built");
                 cx.notify();
             })
             .ok();
@@ -102,6 +110,7 @@ impl Launcher {
 
 impl Render for Launcher {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        app_log::window_shown();
         if let Some(shell) = &self.shell {
             return shell.clone().into_any_element();
         }

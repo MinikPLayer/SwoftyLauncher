@@ -431,6 +431,17 @@ fn check_stock(store: &Store, g: &Game, out: &dyn Fn(&str)) -> Result<Option<Dep
     };
     heal_launcher(store, &g.dir, Some(&depots as &dyn DepotHashes), out)?;
     let checked = stock::check(&store.root, g, &depots)?;
+    if !checked.missing.is_empty() {
+        let version = swofty_core::exe_version::read(&g.dir.join(swofty_core::GAME_EXE));
+        stock::Report::missing(checked.missing.clone(), &g.dir, version.clone())
+            .write(&store.root)
+            .ok();
+        return Err(swofty_core::Error::MissingStock {
+            files: checked.missing,
+            version,
+        }
+        .into());
+    }
     if checked.proven > 0 {
         out(&format!(
             "[stock] {} original(s) on record match Steam's copy",

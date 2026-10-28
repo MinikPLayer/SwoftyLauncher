@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "swofty.career-editor",
   "name": "Career Mode Editor",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "author": "Swofty",
   "description": "Edit a running career from the launcher: cash, resource points, R&D, driver ratings, the calendar and the weather, in My Team and Driver Career, with backups and undo.",
   "license": "AGPL-3.0-or-later",

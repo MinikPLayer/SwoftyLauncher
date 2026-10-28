@@ -399,3 +399,24 @@ fn missing_files_are_told_to_update_an_older_game_and_verify_a_current_one() {
     assert_eq!(back, r);
     assert_eq!(back.fix(), stock::Fix::Update);
 }
+
+#[test]
+fn a_missing_anti_cheat_launcher_with_no_backup_is_reported() {
+    let f = Fixture::new("eac-missing");
+    f.write(UI, b"stock ui");
+    let d = depots(&[(EAC, b"stock exe"), (UI, b"stock ui")]);
+    let c = stock::check(&f.data, &f.game, &d).unwrap();
+    assert_eq!(c.missing, vec![EAC.to_owned()]);
+    assert!(c.foreign.is_empty(), "{:?}", c.foreign);
+}
+
+#[test]
+fn a_parked_or_present_anti_cheat_launcher_is_not_missing() {
+    let f = Fixture::new("eac-not-missing");
+    let d = depots(&[(EAC, b"stock exe")]);
+    f.write(EAC, b"ea rewrote it");
+    assert!(stock::check(&f.data, &f.game, &d).unwrap().missing.is_empty());
+    std::fs::remove_file(f.game.dir.join(EAC)).unwrap();
+    f.write(&format!("{EAC}.bak"), b"stock exe");
+    assert!(stock::check(&f.data, &f.game, &d).unwrap().missing.is_empty());
+}

@@ -197,8 +197,10 @@ pub(crate) struct Prepared {
 
 impl Prepared {
     pub(crate) fn load() -> Self {
+        crate::app_log::step("opening the store");
         let store = Store::open_default().with_builtins(swofty_builtins::all());
         let migrated = store.migrate();
+        crate::app_log::step("store migrated");
         swofty_core::multiplayer::diag::open(&store.root);
         swofty_core::usage::launcher_heartbeats(store.root.clone());
         let recovered_seen = Notice::read(&store.root).map_or(0.0, |n| n.at);
@@ -207,13 +209,16 @@ impl Prepared {
         let blocked_seen = game::blocked_at(&store.root).unwrap_or(0.0);
         let launch_failed_seen = launch::Failure::read(&store.root).map_or(0.0, |f| f.at);
         let overlay_fallback_seen = swofty_core::overlayfs::Fallback::read(&store.root).map_or(0.0, |f| f.at);
+        crate::app_log::step("loading the library");
         let mut library = Library::load(&store);
+        crate::app_log::step("library loaded");
         match migrated {
             Ok(notes) => notes.iter().for_each(|n| eprintln!("swofty-launcher: {n}")),
             Err(e) => library.error = Some(e.to_string()),
         }
         let config = store.config();
         let news = crate::news::News::load(&store.root);
+        crate::app_log::step("settings and news read");
         Self {
             store,
             library,

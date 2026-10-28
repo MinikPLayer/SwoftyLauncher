@@ -1714,18 +1714,29 @@ fn move_card(app: &App, live: &Live, cal: &Value) -> Value {
 fn count_note(stops: Option<i64>, rounds: usize) -> String {
     match stops {
         Some(n) if n == rounds as i64 => format!(
-            "The game keeps {n} race weekends in this season, so it keeps {n} rounds. To change the calendar, replace or move a round."
+            "The game keeps {n} race weekends in this season, so it keeps {n} rounds. Rounds can't be removed or added: the game rebuilds them from its own race list when a career loads. To change the calendar, replace a round's track or move a round."
         ),
         Some(n) => format!(
             "The game keeps {n} race weekends in this season but the calendar has {rounds} rounds. Repair the round count before you race on."
         ),
-        None => "Rounds can't be added or removed until the game's race dates for this season are readable. Replace or move a round instead.".into(),
+        None => "Rounds can't be added or removed until the game's race dates for this season are readable. Replace a round's track or move a round instead.".into(),
     }
 }
 
 fn calendar_count_card(live: &Live, cal: &Value) -> Option<Value> {
     let rounds = cal["rounds"].as_array().map_or(0, Vec::len);
-    let stops = int(&cal["race_weekends"])?;
+    let Some(stops) = int(&cal["race_weekends"]) else {
+        return Some(card_full(
+            "Round count",
+            Some("The game's race dates for this season aren't readable yet"),
+            vec![],
+            vec![],
+            vec![text(
+                "Repair the round count is unavailable until the game has loaded this season's race dates. Advance a day in the game, then open this page again. If it stays unavailable, load the career again.",
+                "warn",
+            )],
+        ));
+    };
     if stops == rounds as i64 {
         return None;
     }
@@ -4141,7 +4152,10 @@ mod calendar_count_tests {
     #[test]
     fn a_matching_round_count_needs_no_repair_and_locks_add_and_remove() {
         assert!(calendar_count_card(&live(), &cal(24, json!(24))).is_none());
-        assert!(calendar_count_card(&live(), &cal(24, Value::Null)).is_none());
+        let unread =
+            serde_json::to_string(&calendar_count_card(&live(), &cal(24, Value::Null)).unwrap()).unwrap();
+        assert!(unread.contains("aren't readable yet") && !unread.contains("repair_calendar"));
+        assert!(count_note(Some(24), 24).contains("Rounds can't be removed"));
         assert!(count_note(Some(24), 24).contains("keeps 24 rounds"));
         assert!(count_note(None, 24).contains("can't be added or removed"));
     }

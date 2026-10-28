@@ -801,6 +801,19 @@ fn heal_launcher(game: &Path, depot: Option<&dyn DepotHashes>) -> Result<Vec<Str
     Ok(notes)
 }
 
+/// Refuse a session when the game folder has no anti-cheat launcher to park:
+/// the stub would sit in an empty slot with no backup behind it, and the
+/// game would start without the launcher it expects.
+fn require_launcher(game: &Path) -> Result<()> {
+    if game.join(EAC_EXE).exists() || game.join(EAC_BAK).exists() {
+        return Ok(());
+    }
+    Err(Error::MissingStock {
+        files: vec![EAC_EXE.to_owned()],
+        version: crate::exe_version::read(&game.join(crate::GAME_EXE)),
+    })
+}
+
 /// Stage the session: park the anti-cheat launcher, drop the stub, and place
 /// the hook where the loader picks it up. Everything goes in the journal.
 /// Repairs leftovers from interrupted sessions first; returns what it did.
@@ -810,6 +823,7 @@ pub fn stage(game: &Path, a: &Artifacts, journal: &Path) -> Result<Vec<String>> 
         std::fs::create_dir_all(parent).map_err(|e| io_err(parent.to_path_buf())(e))?;
     }
     let mut notes = heal_stale_backup(game, journal)?;
+    require_launcher(game)?;
     let hook_dest = game.join("swofty/mods/core/f1op_hook.dll");
     let out = command(&a.prelaunch)?
         .arg("stage")
@@ -1993,6 +2007,27 @@ mod tests {
         assert!(!launcher.exists());
         assert!(!parked.exists());
         assert_eq!(recovered(&d.join("game")), vec![b"stub".to_vec()]);
+        std::fs::remove_dir_all(&d).ok();
+    }
+
+    #[test]
+    fn staging_refuses_a_game_folder_with_no_anti_cheat_launcher() {
+        let d = temp("no-launcher");
+        let game = d.join("game");
+        std::fs::create_dir_all(&game).unwrap();
+        let a = stub_artifacts(&d);
+        let journal = d.join("state/offline/journal.jsonl");
+        let err = stage(&game, &a, &journal).unwrap_err();
+        assert!(
+            matches!(&err, Error::MissingStock { files, .. } if files == &[EAC_EXE.to_owned()]),
+            "{err}"
+        );
+        assert!(
+            err.to_string().contains("verify the game files in Steam"),
+            "{err}"
+        );
+        assert!(!game.join(EAC_EXE).exists());
+        assert!(!journal.exists());
         std::fs::remove_dir_all(&d).ok();
     }
 

@@ -16,7 +16,7 @@ std::string count_change(int rounds, int after, int race_weekends)
         return {};
     return "round_count: this season has " + std::to_string(race_weekends) +
            " race weekends on the game's calendar, so it keeps " + std::to_string(race_weekends) +
-           " rounds; replace or move a round instead";
+           " rounds; rounds can't be removed or added, so replace a round's track or move a round instead";
 }
 
 Repair repair(const std::vector<RoundState> &rounds, uint32_t current, int race_weekends,

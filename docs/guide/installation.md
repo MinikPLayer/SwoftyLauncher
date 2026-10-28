@@ -98,6 +98,20 @@ When these docs refer to `$DATA`, they mean the folder below for your platform:
 
 Your addons, mods, profiles, backups and session logs live here, apart from the install folder. It holds your backups, so keep this folder until you've [restored the game to stock](/using/profiles-and-restoring).
 
+### Moving the data folder
+
+Setting the `SWOFTY_DATA_DIR` environment variable to a folder makes the launcher and the `swofty` command use that folder as `$DATA`. The `--data-dir` option of `swofty` does the same for one command.
+
+```powershell
+setx SWOFTY_DATA_DIR "D:\SwoftyData"
+```
+
+```sh
+export SWOFTY_DATA_DIR=/mnt/games/swofty
+```
+
+Close the launcher and F1 25, copy the contents of the old data folder into the new one, then start the launcher again.
+
 ## Updating
 
 The launcher updates itself. See [Updating](/using/updating).

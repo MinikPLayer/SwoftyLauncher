@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "swofty.any-team-transfers",
   "name": "Any Team Transfers",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Swofty",
   "description": "In Driver Career contract negotiations every team makes you an offer, so you can sign for any team on the grid, not just the few the game thinks your rating fits.",
   "license": "AGPL-3.0-or-later",

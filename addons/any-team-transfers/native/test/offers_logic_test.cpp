@@ -55,8 +55,12 @@ void test_patterns()
     EXPECT(!missing_pattern(nullptr, 0, kBuildOffersPatterns).empty());
 
     std::vector<uint8_t> reset(0x200, 0xcc);
-    std::memcpy(reset.data() + 158, kResetEntrantsPatterns[0].bytes, kResetEntrantsPatterns[0].n);
+    std::memcpy(reset.data() + 75, kResetEntrantsPatterns[0].bytes, kResetEntrantsPatterns[0].n);
+    std::memcpy(reset.data() + 158, kResetEntrantsPatterns[1].bytes, kResetEntrantsPatterns[1].n);
     EXPECT(missing_pattern(reset.data(), reset.size(), kResetEntrantsPatterns).empty());
+    auto moved_lineup = reset;
+    moved_lineup[75 + 3] = 0xf0;
+    EXPECT(missing_pattern(moved_lineup.data(), moved_lineup.size(), kResetEntrantsPatterns) == "line-up");
     reset[158 + 3] = 0x20;
     EXPECT(missing_pattern(reset.data(), reset.size(), kResetEntrantsPatterns) == "entrant list");
 }
