@@ -42,6 +42,36 @@ If you see **F1 25 not found** next to the cover art, select **Locate game**, ch
 
 To play the EA app copy, add its folder with **Add another folder…** in the game switcher and set `ea_launch_command`; see [The EA app copy on Linux](/using/game-copies#the-ea-app-copy-on-linux).
 
+## Optional: run the game from an OverlayFS mount
+
+By default, each session copies the profile's files into the game folder and puts them back when the game exits. On Linux you can skip the copying: add `--use-overlayfs` to the launch option, after `run`:
+
+```text
+<install folder>/bin/swofty run --use-overlayfs -- %command%
+```
+
+The game then runs from a mount that lays Swofty's files over the game folder, so nothing is copied into it, backed up or restored. Your game folder is never touched, and a crash or `kill -9` leaves nothing to clean up. The first launch builds the layers, which takes about as long as a normal install; later launches start in under a second and exit without a rollback.
+
+The mount is made without root, in a private mount namespace that only the game's processes see, so it needs:
+
+- **Unprivileged user namespaces and OverlayFS** (Linux 5.11 or newer). `swofty doctor` shows whether a test mount works on your system.
+- **Steam from your distribution or Valve's own client**, not Flatpak Steam: the Flatpak sandbox blocks user namespaces.
+- **A Steam copy of the game.** The EA app copy isn't supported.
+- **No `swofty apply` install in the game folder.** Run `swofty restore` first.
+
+The files the game writes while it runs (its logs, the Career Editor's data and caches) go to `$DATA/profiles/<profile>/writes/` instead of the game folder. Swofty copies the logs to `$DATA/logs/` and the session's `game-logs/` folder when the game exits.
+
+### If OverlayFS can't be used
+
+When a launch can't use OverlayFS, Swofty asks before it does anything. A dialog explains why and offers two choices:
+
+- **Continue** launches this session the usual way, by copying files into the game folder.
+- **Exit** cancels the launch. Nothing is changed, and the launcher says why the game didn't start.
+
+Tick **Don't show again** and select **Continue** to skip the dialog next time and go straight to copying. **Exit** never saves the box. The two kinds of dialog have their own box: one for a mount that fails (no user namespaces, Flatpak Steam, a kernel without OverlayFS), the other for a launch OverlayFS doesn't support (an EA app copy, an installed `swofty apply` profile). The launcher also shows a note whenever the last launch fell back.
+
+A game controller that relies on membership of the `input` group may not be seen inside the mount, because the mount's namespace maps only your own user and group. Controllers that work through the system's device ACLs, which covers most wheels and pads, work as usual. If one doesn't, remove `--use-overlayfs`.
+
 ## Steam Deck
 
 Install the launcher and set the launch option in Desktop Mode. Once that's set, you can use **Play** in the Deck's library to start the modded game in Game Mode too.

@@ -25,8 +25,11 @@ To stop following the logs while keeping the game running, press **Ctrl-C**. Whe
 | `--winedebug <channels>` | Choose Wine log channels |
 | `--exe <file>` | Use a copy of `F1_25.exe` to identify crash locations |
 | `--apply` | Install the profile (database, tracks, in-game loader) before the game starts and roll it back when it exits. The launcher always passes this flag |
+| `--use-overlayfs` | Linux only. Run the game from an OverlayFS mount instead of copying files into the game folder. Falls back to copying when the mount isn't possible; see [OverlayFS sessions](/reference/launch#overlayfs-sessions) |
 
-On Linux, the [Steam launch option](/guide/linux) uses `swofty run -- %command%`.
+On Linux, the [Steam launch option](/guide/linux) uses `swofty run -- %command%`, or `swofty run --use-overlayfs -- %command%` for [OverlayFS sessions](/reference/launch#overlayfs-sessions).
+
+`swofty overlay-exec` is internal: `swofty run` starts it to make the mount and run Proton inside it. It doesn't appear in `swofty --help`, and its arguments aren't stable.
 
 For a direct launch, you'll find the wrapper's output in `$DATA/state/wrapper-run.log`, and `swofty run` prints what the wrapper reports after the game exits. If the wrapper exits before the game starts or while it runs, `swofty run` prints the wrapper's last lines and its error, rolls back anything the wrapper left, then exits with an error itself. It stops waiting once the wrapper has written nothing for 10 minutes, or after 2 minutes when Steam launches the game. An install that takes longer than 10 seconds writes `[info] installing: <copied> of <total> file(s) copied` every 10 seconds.
 

@@ -9,6 +9,8 @@ When you play a modded session, F1 25 runs in single-player, offline. Multiplaye
 
 The loader and addons need the game to run without EA AntiCheat, so the launcher disables it for each modded session. It undoes that change every time the game exits.
 
+In an [OverlayFS session](/reference/launch#overlayfs-sessions) on Linux, the offline play stub is served from the common layer of the mount, and the real `EAAntiCheat.GameServiceLauncher.exe` is never moved or replaced. Nothing is copied into the game folder, so there is nothing to undo when the game exits.
+
 ## The one-time step
 
 The first time you press **Play**, you'll see the **Modded play runs offline** dialog. It explains what you're accepting: modded sessions run offline, without EA AntiCheat, and EA's terms of service do not cover playing without EA AntiCheat even offline.

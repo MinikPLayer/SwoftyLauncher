@@ -14,6 +14,8 @@ Every session puts the game folder back to vanilla when the game exits, whether 
 | The game updated and its files need repair | [After a game update](#after-a-game-update) |
 | You're about to uninstall | [Restore](#restore), then [Uninstalling](/guide/uninstall) |
 
+Sessions started with `--use-overlayfs` on Linux never change the game folder, so there is nothing to put back after them. If OverlayFS can't be used, the launch asks whether to copy files instead, and a copied session follows the rules on this page. See [OverlayFS sessions](/reference/launch#overlayfs-sessions).
+
 ## Restore
 
 1. Close F1 25.

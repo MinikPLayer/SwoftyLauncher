@@ -4,6 +4,8 @@ Owner: bridge (`native/src/bridge.cpp`, `state.cpp`, `plugin.cpp`, `launcher/`).
 
 All files live in the addon's storage folder, `<game>/swofty/addons/swofty.career-editor/` (the `addon_game_dir` host call). The game side writes them with the storage library (atomic temp + rename). The launcher writes inbox files atomically as well: `inbox/<seq>.json.tmp`, then rename to `inbox/<seq>.json`. Names that don't match `<digits>.json` are ignored.
 
+In an OverlayFS session (`swofty run --use-overlayfs`, Linux) the game folder isn't changed and `addon_game_dir` answers differently: while the game runs, it is a path through the game's mount namespace (`/proc/<pid>/root/…/swofty/addons/swofty.career-editor/`), so the launcher's writes, renames and deletes reach the game and the game's reach the launcher exactly as in the game folder. When the game isn't running it is the profile's upper dir, `<data>/profiles/<profile>/writes/swofty/addons/swofty.career-editor/`: the last snapshot shows there, and a batch queued while the game is closed runs in the next session. The launcher asks again every tick. A batch written in the few milliseconds between the mount and the session's record goes into the upper dir, where the game finds it too. The launcher reads the loader's binding sets (`bindings*.json`) from `addon_game_dir/../core`, falling back to `game_dir/swofty/addons/core`, because the real game folder has no `swofty/` folder in an OverlayFS session.
+
 | file | writer | reader |
 |---|---|---|
 | `inbox/<seq>.json` | launcher | game (deleted once acked) |

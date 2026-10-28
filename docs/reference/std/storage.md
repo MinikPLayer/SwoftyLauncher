@@ -16,6 +16,8 @@ Use storage to read and write your addon's own files under `swofty/addons/<id>/`
 | API version | 5 |
 | Thread | Caller thread (any thread) |
 
+In an [OverlayFS session](/reference/launch#overlayfs-sessions) on Linux, the folder is part of the game's mount, so what an addon stores persists in `$DATA/profiles/<profile>/writes/swofty/addons/<id>/`, separately for each profile, and stays after the game exits.
+
 Check the `swofty::storage::Result` each call returns: `ok`, `late`, `unavailable` or `invalid`. The [result codes](./#result-codes) explain what each means. To keep writes atomic, the core writes a temp file, then renames it.
 
 ## Calls

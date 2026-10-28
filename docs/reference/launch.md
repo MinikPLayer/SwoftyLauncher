@@ -100,11 +100,48 @@ swofty: common.erp, ferrari.erp, force_india.erp and 49 more files are not the c
 
 ## Linux: the Steam wrapper
 
-Set Steam's launch option to `swofty run -- %command%` so its Play button starts Swofty Launcher for F1 25. The launcher uses your configured Proton version and records session logs.
+Set Steam's launch option to `swofty run -- %command%` so its Play button starts Swofty Launcher for F1 25. Add `--use-overlayfs` after `run` to [run the game from an OverlayFS mount](#overlayfs-sessions) instead of copying files. The launcher uses your configured Proton version and records session logs.
 
 To go back to Steam's normal launch, clear the option.
 
 Without the wrapper in the launch option, the launcher's **Play** and `swofty run --direct` start Proton themselves. Proton reads wheels and controllers through SDL2. When the system has no 64-bit SDL2, as under NixOS `steam-run`, the launcher links the copy from Steam's runtime into `$DATA/state/runtime-libs` and adds it to the game's library path. `swofty run` then prints `controllers: this system has no SDL2`.
+
+## OverlayFS sessions
+
+On Linux, `swofty run --use-overlayfs -- %command%` runs the game from an OverlayFS mount instead of copying the profile into the game folder. Everything else about a launch is the same: Steam's **Play**, the launcher's **Play**, `--vr`, **Apply & restart** and `swofty run` from a terminal all work.
+
+The wrapper chooses OverlayFS when the launch asks for it, Proton is in the Steam command, the game is a Steam copy, the launch applies the profile, and the game folder holds no `swofty apply` install. Otherwise it [falls back](#falling-back-to-copying).
+
+**Layers.** The mount stacks three layers, highest first:
+
+| Layer | Folder | Contents |
+|---|---|---|
+| Common | `$DATA/overlay/common/` | The offline play stub (as `EAAntiCheat.GameServiceLauncher.exe`), its hook, `version.dll` and the bundled `swofty/` loader folder. Shared by every profile. A profile that plays without addons uses `$DATA/overlay/common-stub/` |
+| Profile | `$DATA/profiles/<profile>/overlay/` | The profile's replaced and added game files, its addons' native DLLs, assets, UI and `swofty/settings.json`. |
+| Game folder | the Steam folder | Read-only: the original files |
+
+Each layer is a plain copy of the files from the profile build (the `cache/overlay/<profile>/<hash>` folder is built as before). A stamp beside it (`overlay.stamp`, `common.stamp`) records what it was built from, so a launch with nothing changed copies nothing. A changed build replaces the whole layer by renaming a new one into place, so a crash leaves at most a `.new` or `.old` folder that the next launch removes. A launch that doesn't have the room for a layer falls back.
+
+**Mount.** `swofty run` starts `swofty overlay-exec`, which makes a user and mount namespace that maps your own user and group to themselves, mounts the layers over `$DATA/state/overlay/game/` (never over the real game folder) and runs Proton there. The upper dir is `$DATA/profiles/<profile>/writes/` and the work dir `$DATA/profiles/<profile>/workdir/`. Both stay between sessions and aren't cleaned. The game starts from `$DATA/state/game-link-overlay`, a space-free link to the mount. The mount exists only for the processes of that namespace, so it ends with them: nothing needs recovering, and the host never sees it.
+
+A session skips the stock check, the baseline backups, the install, the offline staging and the rollback, because the real folder isn't changed.
+
+**What the game writes.** Its writes land in the upper dir: `swofty/loader.log`, `swofty/perf.log`, crash reports, caches and each addon's storage. When the game exits, `swofty run` copies the logs to `$DATA/logs/` and the session's `game-logs/` folder. A file the game rewrites that Swofty placed is copied up into the upper dir and then shadows later builds of it; the wrapper warns when it finds one, and you can delete it.
+
+**The launcher during a session.** `$DATA/state/overlay/session.json` records the session's game folder, profile, mount and the process that keeps the mount namespace alive. The launcher recognises a game that runs from the mount as the game of that folder. For an addon's folder, the `addon_game_dir` call goes through `/proc/<pid>/root` of that process, so the launcher reads and writes exactly what the game sees; see [the launcher API](/reference/addons/launcher-api).
+
+### Falling back to copying
+
+A launch that can't use OverlayFS records why in `$DATA/state/overlayfs-fallback.json`, which the launcher shows as a note, and asks before copying. The wrapper opens `swofty-launcher --overlayfs-fallback-dialog` and waits for it:
+
+| Reason | Kind | `news_seen` key |
+|---|---|---|
+| Not Proton, not a Steam copy, the launch doesn't apply the profile, or a `swofty apply` install is in the folder | `unsupported` | `overlayfs-unsupported` |
+| The layers can't be built (including too little space), the user namespace or the mount fails, or the mount doesn't report in 30 seconds | `mount-failed` | `overlayfs-fallback` |
+
+**Continue** (exit code 0) copies the files as in a launch without the flag. If **Don't show again** is ticked, the key of that kind is saved in `news_seen` in `config.json`, and later launches of that kind skip the dialog. **Exit** (exit code 1), or closing the window, cancels: the wrapper exits with code 75 and records the cancelled launch for the launcher, and nothing is copied or changed. **Exit** never saves the box. While the dialog is open, `$DATA/state/overlayfs-dialog.pending` exists and the wrapper logs every 30 seconds, so neither `swofty run` nor the launcher reports a stuck wrapper. A launch with no display, or without the launcher program beside `swofty`, copies without asking.
+
+To try the fallback, set `SWOFTY_OVERLAYFS_FAIL=1` in the launch environment: `overlay-exec` then fails its mount on purpose.
 
 ## Windows
 

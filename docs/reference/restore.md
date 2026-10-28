@@ -24,6 +24,12 @@ The **baseline** records original game files. The **journal** records changes so
 | `$DATA/state/setup.json` | The one-time setup: its version, the player's answer about other mods, when the game folder was put back, when the setup finished, and whether the first-launch notice was shown |
 | `$DATA/baseline-retired/` | The baselines the setup moved aside, until the setup finishes |
 
+## OverlayFS sessions
+
+A session started with `--use-overlayfs` (see [OverlayFS sessions](/reference/launch#overlayfs-sessions)) writes nothing to the game folder, so it takes no baseline backups, writes no journal and `placed.json`, and has nothing to roll back or recover. The only state it keeps is in `$DATA/overlay/`, `$DATA/profiles/<profile>/` and `$DATA/state/overlay/`. When OverlayFS can't be used, the session falls back to copy mode, which follows every rule on this page. A launch with a `swofty apply` install in the folder, or leftovers of an earlier copy session, runs the usual recovery first and falls back if the folder isn't vanilla.
+
+Deleting or renaming a profile removes or renames its `profiles/<profile>/` folder with the layer and the upper dir.
+
 ## Checking against Steam
 
 Steam keeps a manifest for each installed depot in `<steam>/depotcache/<depot>_<manifest>.manifest`, listing every file's size and SHA-1. The installed depots and their manifest ids are in the library's `appmanifest_3059520.acf`. Before a session builds anything, `swofty run` and `swofty apply` check the game against them:
