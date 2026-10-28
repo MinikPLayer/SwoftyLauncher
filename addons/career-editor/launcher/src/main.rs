@@ -32,6 +32,7 @@ pub struct App {
     logged_state: Option<String>,
     logged_disagree: bool,
     logged_error: Option<String>,
+    logged_locate: Option<String>,
     game_build: Option<(String, GameBuild)>,
 }
 
@@ -56,6 +57,7 @@ impl App {
             logged_state: None,
             logged_disagree: false,
             logged_error: None,
+            logged_locate: None,
             game_build: None,
         }
     }
@@ -63,10 +65,21 @@ impl App {
     /// The launcher names the game copy that is running, or the one Play
     /// uses, so the mailbox follows a switch between copies.
     fn locate(&mut self, host: &mut Host) {
-        if let Ok(v) = host.call("addon_game_dir", Value::Null)
-            && let Some(p) = v.as_str()
-        {
-            self.store.set_mailbox(PathBuf::from(p));
+        match host.call("addon_game_dir", Value::Null) {
+            Ok(v) => {
+                if let Some(p) = v.as_str() {
+                    self.store.set_mailbox(PathBuf::from(p));
+                }
+            }
+            // The game runs in a session the launcher can't reach: leave its
+            // folders alone rather than write somewhere the game never looks.
+            Err(e) => {
+                self.store.clear_mailbox();
+                if self.logged_locate.as_deref() != Some(e.as_str()) {
+                    log(format_args!("addon folder: {e}"));
+                    self.logged_locate = Some(e);
+                }
+            }
         }
     }
 
@@ -153,9 +166,19 @@ impl App {
         };
         let key = text("game_build_key");
         let version = text("game_exe_version");
-        let sets = text("game_dir").map_or_else(Vec::new, |d| {
-            live::binding_builds(&PathBuf::from(d).join("swofty/addons/core"))
+        // The loader's folder as the game sees it: next to this addon's folder
+        // (in an OverlayFS session the real game folder has no loader), else
+        // in the game folder.
+        let mut sets = text("addon_game_dir").map_or_else(Vec::new, |d| {
+            PathBuf::from(d)
+                .parent()
+                .map_or_else(Vec::new, |addons| live::binding_builds(&addons.join("core")))
         });
+        if sets.is_empty() {
+            sets = text("game_dir").map_or_else(Vec::new, |d| {
+                live::binding_builds(&PathBuf::from(d).join("swofty/addons/core"))
+            });
+        }
         let unsupported = live::unsupported_build(key.as_deref(), &sets);
         log(format_args!(
             "game build {key:?} version {version:?}: {} binding set(s), unsupported {unsupported}",

@@ -132,6 +132,16 @@ pub trait GameFiles: Send + Sync {
         None
     }
 
+    /// The folder of addon `addon` in the game, as the game sees it. That is
+    /// `dir()/swofty/addons/<addon>` unless the game runs from a mount (an
+    /// OverlayFS session on Linux), where the folder is in the mount's view
+    /// while the game runs and in the profile's own data otherwise, and an
+    /// error says why a live one can't be reached. Ask again for every use:
+    /// the answer changes between sessions.
+    fn addon_dir(&self, addon: &str) -> Result<Option<PathBuf>> {
+        Ok(self.dir().map(|d| d.join("swofty").join("addons").join(addon)))
+    }
+
     fn status(&self) -> GameStatus {
         GameStatus::default()
     }

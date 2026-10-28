@@ -256,6 +256,19 @@ impl Store {
         self.viewer_at = 0;
     }
 
+    /// Forget the mailbox, when the launcher can't name one: a stale folder
+    /// must not be written to.
+    pub fn clear_mailbox(&mut self) {
+        if self.mailbox.is_some() {
+            self.mailbox = None;
+            self.snap = Value::Null;
+            self.snap_key = None;
+            self.snap_error = None;
+            self.outbox_key = None;
+            self.viewer_at = 0;
+        }
+    }
+
     pub fn touch_viewer(&mut self) {
         let Some(dir) = &self.mailbox else { return };
         let now = now_ms();

@@ -301,6 +301,13 @@ impl GameFiles for Host {
         host_path(self.call(HostCall::GameDir)).ok()
     }
 
+    fn addon_dir(&self, _addon: &str) -> Result<Option<PathBuf>> {
+        match self.call(HostCall::AddonGameDir).map_err(Error::Other)? {
+            Value::Null => Ok(None),
+            v => host_path(Ok(v)).map(Some),
+        }
+    }
+
     fn status(&self) -> GameStatus {
         self.call(HostCall::GameStatus)
             .ok()

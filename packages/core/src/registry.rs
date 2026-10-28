@@ -316,6 +316,31 @@ impl GameFiles for GameDir {
         Some(self.game.dir.clone())
     }
 
+    fn addon_dir(&self, addon: &str) -> swofty_addon::Result<Option<PathBuf>> {
+        let own = || {
+            self.game
+                .dir
+                .join(crate::install::LOADER_DIR)
+                .join(crate::build::ADDONS_DIR)
+                .join(addon)
+        };
+        if !cfg!(target_os = "linux") {
+            return Ok(Some(own()));
+        }
+        let profile = crate::store::Store::new(self.data.clone()).active_profile();
+        match crate::overlayfs::addon_dir(
+            &self.data,
+            &self.game.dir,
+            &profile,
+            addon,
+            &crate::overlayfs::HostProc,
+        ) {
+            Ok(Some(dir)) => Ok(Some(dir)),
+            Ok(None) => Ok(Some(own())),
+            Err(e) => Err(swofty_addon::Error::Other(e.to_string())),
+        }
+    }
+
     fn status(&self) -> GameStatus {
         crate::process::game_status(Some(&self.data))
     }
@@ -391,6 +416,54 @@ mod tests {
     use swofty_addon::launcher::{Builtin, CommandSpec};
 
     use super::*;
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn game_dir_stays_the_real_folder_and_addon_dir_follows_the_session() {
+        use crate::overlayfs::{Anchor, LiveSession};
+        let root = std::env::temp_dir().join(format!("swofty-gamedir-{}", std::process::id()));
+        std::fs::remove_dir_all(&root).ok();
+        let game_dir = root.join("game");
+        std::fs::create_dir_all(&game_dir).unwrap();
+        let game = GameDir {
+            data: root.join("data"),
+            game: Game {
+                dir: game_dir.clone(),
+                user_reg: None,
+                identity: crate::baseline::Identity {
+                    build_id: "1".into(),
+                    exe_sha256: String::new(),
+                },
+            },
+            objects: Objects {
+                root: root.join("data/baseline/objects"),
+            },
+            files: BTreeMap::new(),
+        };
+        let own = game_dir.join("swofty/addons/x.y");
+        assert_eq!(game.addon_dir("x.y").unwrap(), Some(own));
+        // A live session of this process stands in for the overlay's anchor.
+        let me = std::process::id();
+        let proc = crate::overlayfs::HostProc;
+        let anchor = Anchor::of(me, &proc).unwrap();
+        let target = root.join("data/state/overlay/game");
+        LiveSession {
+            schema: 1,
+            game: game_dir.clone(),
+            profile: "default".into(),
+            target: target.clone(),
+            upper: root.join("data/profiles/default/writes"),
+            anchor,
+        }
+        .write(&root.join("data"))
+        .unwrap();
+        // The mount isn't visible from this process's root, so the session is
+        // treated as gone and the profile's upper dir answers.
+        let upper = root.join("data/profiles/default/writes/swofty/addons/x.y");
+        assert_eq!(game.addon_dir("x.y").unwrap(), Some(upper));
+        assert_eq!(game.dir(), Some(game_dir));
+        std::fs::remove_dir_all(&root).ok();
+    }
 
     struct Fake {
         manifest: AddonManifest,
