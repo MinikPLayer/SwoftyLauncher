@@ -322,6 +322,7 @@ impl Bundle {
         let mut loader = Vec::new();
         let mut live_perf = None;
         if let Some(game) = &report.game.dir {
+            let game = &crate::overlayfs::files_root(&store.root, game);
             for (name, rel) in [("loader.log", LOADER_LOG), ("perf.log", PERF_LOG)] {
                 let live = game.join(rel);
                 if !live.is_file()
@@ -352,7 +353,11 @@ impl Bundle {
         for (id, log) in addon_logs(store) {
             c.file(format!("addons/{id}/logs/{}", file_name(&log)), &log, None);
         }
-        if let Some(snapshot) = report.game.dir.as_ref().map(|d| d.join(SNAPSHOT))
+        if let Some(snapshot) = report
+            .game
+            .dir
+            .as_ref()
+            .map(|d| crate::overlayfs::files_root(&store.root, d).join(SNAPSHOT))
             && snapshot.is_file()
         {
             c.file("game/career-editor/snapshot.json".into(), &snapshot, None);
@@ -490,7 +495,10 @@ impl Bundle {
         if let Some(game) = &report.game.dir
             && self.entries.iter().any(|e| e.path == "game/loader.log")
         {
-            logs.push(("game/loader.log".to_owned(), game.join(LOADER_LOG)));
+            logs.push((
+                "game/loader.log".to_owned(),
+                crate::overlayfs::files_root(&store.root, game).join(LOADER_LOG),
+            ));
         }
         for dir in newest_sessions(store, SESSIONS) {
             logs.push((format!("sessions/{}", file_name(&dir)), dir.join("loader.log")));
@@ -763,12 +771,16 @@ pub fn newest_crash(store: &Store, game: Option<&Path>, sessions: &[PathBuf]) ->
     let mut dirs: Vec<PathBuf> = Vec::new();
     if let Some(game) = game {
         dirs.push(game.join(LOADER_DIR));
+        let root = crate::overlayfs::files_root(&store.root, game);
+        if root != game {
+            dirs.push(root.join(LOADER_DIR));
+            dirs.push(store.logs_dir());
+        }
     }
     for s in sessions {
         dirs.push(s.clone());
         dirs.push(s.join("game-logs"));
     }
-    let _ = store;
     let mut reports: Vec<PathBuf> = dirs
         .iter()
         .flat_map(|d| std::fs::read_dir(d).into_iter().flatten().flatten())

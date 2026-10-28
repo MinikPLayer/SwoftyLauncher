@@ -489,6 +489,17 @@ pub fn forget_last(data: &Path) {
     std::fs::remove_file(LastSession::path(data)).ok();
 }
 
+/// Where the game's own files (its logs, crash reports and the Career
+/// Editor's snapshot) are on the host: the upper dir of the last OverlayFS
+/// session for `game`, else the game folder.
+pub fn files_root(data: &Path, game: &Path) -> PathBuf {
+    LiveSession::read(data)
+        .map(|s| (s.game, s.upper))
+        .or_else(|| LastSession::read(data).map(|s| (s.game, s.upper)))
+        .filter(|(g, _)| crate::copies::same_dir(g, game))
+        .map_or_else(|| game.to_owned(), |(_, upper)| upper)
+}
+
 /// The mount target when `session.json` names `game`, else none. The game
 /// runs from there, so it counts as the same folder.
 pub fn target_of(data: &Path, game: &Path) -> Option<PathBuf> {
@@ -1057,6 +1068,64 @@ mod tests {
         file(&upper.join("swofty/settings.json"), "{}");
         file(&lower.join("swofty/settings.json"), "{}");
         assert_eq!(shadowing(&upper, &[lower]), ["swofty/settings.json"]);
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn the_game_files_are_in_the_upper_dir_after_an_overlay_session() {
+        let data = temp("files-root");
+        let game = data.join("game");
+        std::fs::create_dir_all(&game).unwrap();
+        assert_eq!(files_root(&data, &game), game);
+        let s = live(&data, &game);
+        assert_eq!(files_root(&data, &game), s.upper);
+        LiveSession::clear(&data);
+        assert_eq!(files_root(&data, &game), s.upper);
+        forget_last(&data);
+        assert_eq!(files_root(&data, &game), game);
+        std::fs::remove_dir_all(&data).ok();
+    }
+
+    /// Hashes and times of every file under `dir`.
+    fn tree(dir: &Path) -> Vec<(PathBuf, u64, Option<std::time::SystemTime>)> {
+        let mut out = Vec::new();
+        for e in std::fs::read_dir(dir).unwrap().flatten() {
+            let (path, meta) = (e.path(), e.metadata().unwrap());
+            if meta.is_dir() {
+                out.extend(tree(&path));
+            } else {
+                out.push((path, meta.len(), meta.modified().ok()));
+            }
+        }
+        out.sort();
+        out
+    }
+
+    #[test]
+    fn preparing_the_layers_leaves_the_game_folder_as_it_was() {
+        let root = temp("untouched");
+        let (plan, loader) = plan(&root);
+        let game = root.join("game");
+        file(&game.join("2025_asset_groups/a.erp"), "stock");
+        file(&game.join("EAAntiCheat.GameServiceLauncher.exe"), "eac");
+        let stub = file(&root.join("ext/stub.exe"), "stub");
+        let hook = file(&root.join("ext/hook.dll"), "hook");
+        let before = tree(&game);
+        let store = crate::store::Store::new(root.join("data"));
+        let layers = split(&plan, Some(&loader), &stub, &hook);
+        let first = prepare(&store, "p", "hash", layers.clone(), &plenty).unwrap();
+        assert_eq!(first.rebuilt.len(), 2);
+        let again = prepare(&store, "p", "hash", layers, &plenty).unwrap();
+        assert!(again.rebuilt.is_empty(), "a warm launch writes nothing");
+        assert_eq!(tree(&game), before);
+        // The stub is served from the common layer; the real launcher stays.
+        assert_eq!(
+            std::fs::read_to_string(first.common.join(STUB_REL)).unwrap(),
+            "stub"
+        );
+        assert_eq!(std::fs::read_to_string(game.join(STUB_REL)).unwrap(), "eac");
+        assert_eq!(first.common, store.overlay_common_dir(true));
+        assert_eq!(first.profile, store.profile_layer_dir("p"));
         std::fs::remove_dir_all(&root).ok();
     }
 
