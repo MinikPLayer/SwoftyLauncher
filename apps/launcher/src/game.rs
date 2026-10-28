@@ -79,6 +79,7 @@ pub struct Probe {
     pub blocked: Option<Blocked>,
     pub blocked_at: Option<f64>,
     pub launch_failed: Option<launch::Failure>,
+    pub overlay_fallback: Option<swofty_core::overlayfs::Fallback>,
 }
 
 pub fn probe(store: &Store, rediscover: bool, seen: Option<SystemTime>) -> Probe {
@@ -96,6 +97,7 @@ pub fn probe(store: &Store, rediscover: bool, seen: Option<SystemTime>) -> Probe
         blocked: Blocked::read(&store.root),
         blocked_at: blocked_at(&store.root),
         launch_failed: launch::Failure::read(&store.root),
+        overlay_fallback: swofty_core::overlayfs::Fallback::read(&store.root),
         launch_stage: std::fs::read_to_string(store.root.join(steam_client::STAGE_FILE))
             .ok()
             .map(|s| s.trim().to_owned())

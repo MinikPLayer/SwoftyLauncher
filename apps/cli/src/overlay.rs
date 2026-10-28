@@ -335,7 +335,11 @@ pub fn fall_back(store: &Store, kind: Kind, reason: &str) -> Choice {
         return Choice::Copy;
     }
     match ask(store, kind, reason) {
-        Some(false) => {
+        Answer::Stopped => {
+            say("info", "overlayfs: stopped while waiting in the fallback dialog");
+            Choice::Cancelled
+        }
+        Answer::Exit => {
             say("info", "overlayfs: launch cancelled in the fallback dialog");
             let failure = launch::Failure::new(launch::Cause::OverlayCancelled {
                 fallback: kind,
@@ -346,35 +350,46 @@ pub fn fall_back(store: &Store, kind: Kind, reason: &str) -> Choice {
             }
             Choice::Cancelled
         }
-        _ => Choice::Copy,
+        Answer::Continue | Answer::Unasked => Choice::Copy,
     }
 }
 
-/// The dialog's answer: continue (true), exit (false), or none when it
-/// couldn't be shown.
-fn ask(store: &Store, kind: Kind, reason: &str) -> Option<bool> {
+/// What the player said in the dialog.
+enum Answer {
+    Continue,
+    Exit,
+    /// The wrapper was asked to stop (Steam's Stop button) while it waited.
+    Stopped,
+    /// The dialog couldn't be shown or failed; the launch goes on as before.
+    Unasked,
+}
+
+/// Show the dialog and wait for its answer.
+fn ask(store: &Store, kind: Kind, reason: &str) -> Answer {
     if std::env::var_os("DISPLAY").is_none() && std::env::var_os("WAYLAND_DISPLAY").is_none() {
         say(
             "info",
             "overlayfs: no display for the fallback dialog; continuing",
         );
-        return None;
+        return Answer::Unasked;
     }
-    let launcher = [
-        std::env::current_exe().ok()?.with_file_name("swofty-launcher"),
-        store.bin_dir().join("swofty-launcher"),
-    ]
-    .into_iter()
-    .find(|p| p.is_file());
+    let launcher = std::env::current_exe()
+        .ok()
+        .map(|exe| exe.with_file_name("swofty-launcher"))
+        .into_iter()
+        .chain([store.bin_dir().join("swofty-launcher")])
+        .find(|p| p.is_file());
     let Some(launcher) = launcher else {
         say(
             "info",
             "overlayfs: the launcher program isn't here to show the dialog; continuing",
         );
-        return None;
+        return Answer::Unasked;
     };
     let pending = overlayfs::dialog_pending_path(&store.root);
-    std::fs::create_dir_all(pending.parent()?).ok();
+    if let Some(dir) = pending.parent() {
+        std::fs::create_dir_all(dir).ok();
+    }
     std::fs::write(&pending, format!("{}\n", std::process::id())).ok();
     let _clear = Clear(pending);
     let mut child = match Command::new(&launcher)
@@ -392,7 +407,7 @@ fn ask(store: &Store, kind: Kind, reason: &str) -> Option<bool> {
                 "info",
                 &format!("overlayfs: could not show the fallback dialog ({e}); continuing"),
             );
-            return None;
+            return Answer::Unasked;
         }
     };
     say(
@@ -404,19 +419,25 @@ fn ask(store: &Store, kind: Kind, reason: &str) -> Option<bool> {
         match child.try_wait() {
             Ok(Some(status)) => {
                 return match status.code() {
-                    Some(0) => Some(true),
-                    Some(1) => Some(false),
+                    Some(0) => Answer::Continue,
+                    Some(1) => Answer::Exit,
+                    _ if crate::run::ending() => Answer::Stopped,
                     _ => {
                         say(
                             "info",
                             &format!("overlayfs: the fallback dialog failed ({status}); continuing"),
                         );
-                        None
+                        Answer::Unasked
                     }
                 };
             }
             Ok(None) => {}
-            Err(_) => return None,
+            Err(_) => return Answer::Unasked,
+        }
+        if crate::run::ending() {
+            child.kill().ok();
+            child.wait().ok();
+            return Answer::Stopped;
         }
         if logged.elapsed() >= DIALOG_LOG_EVERY {
             logged = Instant::now();

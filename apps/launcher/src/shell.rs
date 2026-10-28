@@ -115,6 +115,7 @@ pub struct Shell {
     pub(crate) not_stock_seen: f64,
     pub(crate) blocked_seen: f64,
     pub(crate) launch_failed_seen: f64,
+    overlay_fallback_seen: f64,
     pub(crate) restoring: bool,
     pub(crate) sliders: HashMap<String, SliderSlot>,
     pub(crate) requests: Option<SystemTime>,
@@ -173,6 +174,7 @@ pub(crate) struct Prepared {
     not_stock_seen: f64,
     blocked_seen: f64,
     launch_failed_seen: f64,
+    overlay_fallback_seen: f64,
 }
 
 impl Prepared {
@@ -185,6 +187,7 @@ impl Prepared {
         let not_stock_seen = stock::Report::read(&store.root).map_or(0.0, |r| r.at);
         let blocked_seen = game::blocked_at(&store.root).unwrap_or(0.0);
         let launch_failed_seen = launch::Failure::read(&store.root).map_or(0.0, |f| f.at);
+        let overlay_fallback_seen = swofty_core::overlayfs::Fallback::read(&store.root).map_or(0.0, |f| f.at);
         let mut library = Library::load(&store);
         match migrated {
             Ok(notes) => notes.iter().for_each(|n| eprintln!("swofty-launcher: {n}")),
@@ -202,6 +205,7 @@ impl Prepared {
             not_stock_seen,
             blocked_seen,
             launch_failed_seen,
+            overlay_fallback_seen,
         }
     }
 }
@@ -328,6 +332,7 @@ impl Shell {
             not_stock_seen,
             blocked_seen,
             launch_failed_seen,
+            overlay_fallback_seen,
         } = prepared;
         let vr_profiles = config.vr_profiles;
         let start_store = config.launch.start_store;
@@ -409,6 +414,7 @@ impl Shell {
             not_stock_seen,
             blocked_seen,
             launch_failed_seen,
+            overlay_fallback_seen,
             restoring: false,
             sliders: HashMap::new(),
             requests: None,
@@ -526,6 +532,15 @@ impl Shell {
                 ));
             }
             window.push_notification(Notification::info(text.join("\n")).title(recovery::HEADLINE), cx);
+        }
+        if let Some(f) = probe
+            .overlay_fallback
+            .as_ref()
+            .filter(|f| f.at > self.overlay_fallback_seen)
+        {
+            self.overlay_fallback_seen = f.at;
+            self.notice = Some(f.note());
+            window.push_notification(Notification::warning(f.note()).title("OverlayFS wasn't used"), cx);
         }
         if let Some(r) = probe
             .mods_blocked
