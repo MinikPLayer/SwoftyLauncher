@@ -26,6 +26,7 @@ pub mod managed;
 pub mod map;
 pub mod offline;
 pub mod overlay_guard;
+pub mod overlayfs;
 pub mod owned;
 pub mod package;
 pub mod paths;

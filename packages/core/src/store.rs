@@ -91,6 +91,49 @@ impl Store {
         self.overlays_dir(profile).join(buildhash)
     }
 
+    /// Everything an OverlayFS session keeps for one profile: its mod files
+    /// layer, the upper dir the game writes into, and the work dir.
+    pub fn profile_dir(&self, profile: &str) -> PathBuf {
+        self.profiles_dir().join(profile)
+    }
+
+    pub fn profile_layer_dir(&self, profile: &str) -> PathBuf {
+        self.profile_dir(profile).join("overlay")
+    }
+
+    pub fn overlay_upper_dir(&self, profile: &str) -> PathBuf {
+        self.profile_dir(profile).join("writes")
+    }
+
+    pub fn overlay_work_dir(&self, profile: &str) -> PathBuf {
+        self.profile_dir(profile).join("workdir")
+    }
+
+    /// The layer every profile shares: the offline stub and hook, and with
+    /// the loader, `version.dll` and the loader folder. A session without
+    /// the loader has a layer of its own, so switching to a profile that
+    /// plays without addons doesn't rebuild the other.
+    pub fn overlay_common_dir(&self, loader: bool) -> PathBuf {
+        self.root
+            .join("overlay")
+            .join(if loader { "common" } else { "common-stub" })
+    }
+
+    pub fn overlay_state_dir(&self) -> PathBuf {
+        self.root.join("state/overlay")
+    }
+
+    /// Where the OverlayFS session mounts the game: an empty folder on the
+    /// host, never the game folder, and free of spaces like `state/game-link`.
+    pub fn overlay_target(&self) -> PathBuf {
+        self.overlay_state_dir().join("game")
+    }
+
+    /// The game's logs, collected from the upper dir after an OverlayFS session.
+    pub fn logs_dir(&self) -> PathBuf {
+        self.root.join("logs")
+    }
+
     pub fn saves_dir(&self, profile: &str) -> PathBuf {
         self.root.join("saves").join(profile)
     }
@@ -465,6 +508,10 @@ impl Store {
         if saves.is_dir() {
             std::fs::rename(&saves, self.saves_dir(to)).map_err(io_err(&saves))?;
         }
+        let overlay = self.profile_dir(from);
+        if overlay.is_dir() {
+            std::fs::rename(&overlay, self.profile_dir(to)).map_err(io_err(&overlay))?;
+        }
         if self.config().active_profile.as_deref().unwrap_or(DEFAULT_PROFILE) == from {
             self.set_active_profile(to)?;
         }
@@ -516,6 +563,7 @@ impl Store {
         let has_saves = std::fs::read_dir(&saves).is_ok_and(|mut rd| rd.next().is_some());
         let paths = [
             self.overlays_dir(name),
+            self.profile_dir(name),
             self.requests_path(name),
             saves,
             self.profiles_dir().join(format!("{name}.json")),
@@ -543,6 +591,7 @@ impl Store {
             self.save_config(&config)?;
         }
         for path in &plan.paths {
+            crate::overlayfs::unlock(path);
             let removed = if path.is_dir() && !path.is_symlink() {
                 std::fs::remove_dir_all(path)
             } else {

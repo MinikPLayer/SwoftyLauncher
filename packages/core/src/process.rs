@@ -18,14 +18,29 @@ impl GameProcess {
     /// Whether this is the game in `dir`. A process that tells nothing about
     /// where it was started from belongs to no copy.
     pub fn is_in(&self, dir: &Path) -> bool {
-        self.origin.folders().iter().any(|f| same_folder(f, dir))
+        in_folder(&self.origin.folders(), dir, overlay_target(dir).as_deref())
     }
 
     /// Whether this is the game of a folder other than `dir`.
     pub fn elsewhere(&self, dir: &Path) -> bool {
         let folders = self.origin.folders();
-        !folders.is_empty() && !folders.iter().any(|f| same_folder(f, dir))
+        !folders.is_empty() && !in_folder(&folders, dir, overlay_target(dir).as_deref())
     }
+}
+
+/// Whether one of the `folders` a game was started from is `dir`, or `alias`,
+/// the OverlayFS mount that stands in for `dir` while a session runs from it.
+fn in_folder(folders: &[PathBuf], dir: &Path, alias: Option<&Path>) -> bool {
+    folders
+        .iter()
+        .any(|f| same_folder(f, dir) || alias.is_some_and(|a| same_folder(f, a)))
+}
+
+/// The mount a live OverlayFS session runs the game of `dir` from.
+fn overlay_target(dir: &Path) -> Option<PathBuf> {
+    cfg!(unix)
+        .then(|| crate::overlayfs::target_of(&crate::paths::data_dir(), dir))
+        .flatten()
 }
 
 /// What a running F1_25.exe tells about which copy of the game it is: the
@@ -663,6 +678,20 @@ mod origin_tests {
         std::os::unix::fs::symlink(&steam, f.0.join("data/state/game-link")).unwrap();
         let g = seen(None, Some(&f.windows(r"data\state\game-link\F1_25.exe")), None);
         assert!(g.is_in(&steam) && g.elsewhere(&ea));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_overlay_target_stands_in_for_the_game_folder() {
+        let f = Fixture::new("overlay-target");
+        let steam = f.game("steamapps/common/F1 25");
+        let ea = f.game("EAApp/Games/F1 25");
+        let target = f.game("data/state/overlay/game");
+        let g = seen(None, Some(&f.windows(r"data\state\overlay\game\F1_25.exe")), None);
+        let folders = g.origin.folders();
+        assert!(!in_folder(&folders, &steam, None) && !folders.is_empty());
+        assert!(in_folder(&folders, &steam, Some(&target)));
+        assert!(!in_folder(&folders, &ea, Some(&target.join("..").join("other"))));
     }
 }
 
