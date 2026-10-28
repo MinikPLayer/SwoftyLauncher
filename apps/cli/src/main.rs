@@ -3,6 +3,7 @@ mod db;
 mod doctor;
 mod ea;
 mod offline;
+mod overlay_exec;
 mod postfx;
 mod recover;
 mod run;
@@ -50,6 +51,14 @@ const GAME_HELP: &str = "Game folder (default: the active copy, see swofty game 
 enum Command {
     #[command(about = "Launch F1 25 modded and offline, streaming logs; use as the Steam launch option")]
     Run(run::RunArgs),
+    #[command(
+        hide = true,
+        about = "Internal: mount the game's OverlayFS and run a command in it"
+    )]
+    OverlayExec {
+        #[arg(num_args = 0.., trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<OsString>,
+    },
     #[command(about = "Resolve the profile and build its overlay")]
     Build {
         #[arg(long, help = GAME_HELP)]
@@ -241,6 +250,10 @@ enum SettingsCommand {
 
 fn main() -> ExitCode {
     let args: Vec<OsString> = std::env::args_os().collect();
+    // Before anything that could start a thread: it makes a user namespace.
+    if args.get(1).is_some_and(|a| a == "overlay-exec") {
+        return overlay_exec::main(&args[2..]);
+    }
     let store = data_dir_arg(&args)
         .map(Store::new)
         .unwrap_or_else(Store::open_default)
@@ -440,6 +453,7 @@ fn dispatch(store: &Store, cli: Cli) -> Result<ExitCode> {
     let profile = cli.profile.unwrap_or_else(|| store.active_profile());
     match cli.command {
         Command::Run(args) => run::run(&store, &profile, args),
+        Command::OverlayExec { args } => Ok(overlay_exec::main(&args)),
         Command::Build { game, side_data } => build::build(&store, &profile, game, side_data),
         Command::Conflicts { check, game } => build::conflicts(&store, &profile, check, game),
         Command::Apply { game } => build::apply(&store, &profile, game),
