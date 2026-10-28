@@ -1041,6 +1041,12 @@ impl Shell {
         let Some(version) = addon.offered(&current_version()).cloned() else {
             return;
         };
+        if self.build.as_ref().is_some_and(|b| b.holds(id)) {
+            self.browser
+                .toasts
+                .push(Notification::warning(crate::update::BUILDING));
+            return;
+        }
         let updating = self.installed_version(id).is_some();
         self.browser.failed.remove(id);
         self.browser.refused.remove(id);
@@ -1130,6 +1136,7 @@ impl Shell {
                     Err(e) => {
                         let refused = matches!(e, swofty_core::Error::Requires(_));
                         let error = e.to_string();
+                        crate::app_log::action(verb).addon(&addon.id).failed(&error);
                         s.record(
                             Op::Install,
                             false,
@@ -1214,12 +1221,16 @@ impl Shell {
             window.push_notification(Notification::error("Close F1 25 before updating addons."), cx);
             return;
         }
-        let ids: Vec<String> = self
+        let building = self.build.clone();
+        let (held, ids): (Vec<String>, Vec<String>) = self
             .addon_updates()
             .into_iter()
             .map(|u| u.id.clone())
             .filter(|id| !self.browser.working.contains_key(id))
-            .collect();
+            .partition(|id| building.as_ref().is_some_and(|b| b.holds(id)));
+        if !held.is_empty() {
+            window.push_notification(Notification::warning(crate::update::BUILDING), cx);
+        }
         if ids.is_empty() || self.updating_addons() {
             return;
         }

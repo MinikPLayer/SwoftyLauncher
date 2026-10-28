@@ -113,7 +113,9 @@ fn language_files_come_out_of_the_exe() {
     assert!(langs.len() >= 11, "{} language files", langs.len());
     for entry in langs {
         let bytes = archive.read(entry, &mut data).unwrap();
-        let lng = Lng::parse(&bytes).unwrap_or_else(|e| panic!("{}: {e}", entry.path));
+        let (lng, warnings) =
+            Lng::parse_with_warnings(&bytes).unwrap_or_else(|e| panic!("{}: {e}", entry.path));
+        assert!(warnings.is_empty(), "{}: {warnings:?}", entry.path);
         assert!(lng.entries.len() > 50_000, "{}", entry.path);
         assert_eq!(Lng::parse(&lng.to_bytes()).unwrap(), lng, "{}", entry.path);
     }

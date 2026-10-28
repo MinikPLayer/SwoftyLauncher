@@ -158,18 +158,45 @@ pub fn routes(
     changed: &[&str],
     registered: &BTreeMap<String, String>,
 ) -> crate::Result<Vec<String>> {
+    route_files(&[routes], flows_ui, changed, registered, &BTreeSet::new())
+}
+
+/// The flow whose asset group is the archive `erp` (`flow_frontend`), as flows.ui lists it.
+pub fn flow_loading(flows_ui: &[u8], erp: &str) -> crate::Result<Option<String>> {
+    Ok(flows(flows_ui)?
+        .into_iter()
+        .find(|(_, f)| f.erp.as_deref() == Some(erp))
+        .map(|(name, _)| name))
+}
+
+/// [`routes`] over several route files, which the game reads as one set of route groups. `stock` names game
+/// screens that routes may open without a flow entry, as the game's own routes open them.
+pub fn route_files(
+    routes: &[&[u8]],
+    flows_ui: &[u8],
+    changed: &[&str],
+    registered: &BTreeMap<String, String>,
+    stock: &BTreeSet<String>,
+) -> crate::Result<Vec<String>> {
     let fl = flows(flows_ui)?;
-    let p = Pkg::parse(routes)?;
+    let parsed = routes
+        .iter()
+        .map(|r| Pkg::parse(r))
+        .collect::<std::result::Result<Vec<_>, _>>()?;
     let mut groups: BTreeMap<String, BTreeMap<String, &Node>> = BTreeMap::new();
-    for g in p.root.o()?.at("RouteGroupings")?.a()? {
-        let go = g.o()?;
-        let gid = str_of(go, "Id").unwrap_or_default().to_owned();
-        for r in go.at("Routes")?.a()? {
-            let rid = r.o().ok().and_then(|o| str_of(o, "Id")).unwrap_or_default();
-            groups.entry(gid.clone()).or_default().insert(rid.to_owned(), r);
+    for p in &parsed {
+        for g in p.root.o()?.at("RouteGroupings")?.a()? {
+            let go = g.o()?;
+            let gid = str_of(go, "Id").unwrap_or_default().to_owned();
+            for r in go.at("Routes")?.a()? {
+                let rid = r.o().ok().and_then(|o| str_of(o, "Id")).unwrap_or_default();
+                groups.entry(gid.clone()).or_default().insert(rid.to_owned(), r);
+            }
         }
     }
-    let known = |t: &str| registered.contains_key(t) || fl.values().any(|f| f.screens.contains(t));
+    let known = |t: &str| {
+        registered.contains_key(t) || stock.contains(t) || fl.values().any(|f| f.screens.contains(t))
+    };
     let mut out = Vec::new();
     for (name, flow) in registered {
         let ok = fl

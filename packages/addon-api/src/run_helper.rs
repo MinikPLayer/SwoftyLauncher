@@ -17,8 +17,8 @@ use crate::helper::{
     ADDON_CALLS, API_VERSION, Built, Call, HostCall, Invalidate, MOVE_ADDON, Reply, Request, TASKS, Welcome,
 };
 use crate::launcher::{
-    Addon, AddonInfo, AddonStore, BuildCx, Claim, Cx, GameFiles, GameStatus, ProfileInfo, ProfileTracks,
-    Progress, StateStore, TaskList, Tasks,
+    Addon, AddonInfo, AddonStore, BuildCx, Claim, Cx, GameFiles, GameStatus, ProfileHeads, ProfileInfo,
+    ProfileTracks, Progress, StateStore, TaskList, Tasks,
 };
 use crate::{Error, Result};
 
@@ -325,6 +325,15 @@ impl GameFiles for Host {
             v => serde_json::from_value(v)
                 .map(Some)
                 .map_err(|e| Error::Other(format!("the host sent bad tracks: {e}"))),
+        }
+    }
+
+    fn profile_heads(&self, _profile: &str) -> Result<Option<ProfileHeads>> {
+        match self.call(HostCall::ProfileHeads).map_err(Error::Other)? {
+            Value::Null => Ok(None),
+            v => serde_json::from_value(v)
+                .map(Some)
+                .map_err(|e| Error::Other(format!("the host sent bad heads: {e}"))),
         }
     }
 }

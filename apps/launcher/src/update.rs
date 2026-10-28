@@ -22,6 +22,8 @@ use crate::theme::Palette;
 
 const TICK: Duration = Duration::from_secs(5);
 const RESTART_DELAY: Duration = Duration::from_millis(1500);
+pub(crate) const BUILDING: &str =
+    "Swofty is still building your mods. Update when it finishes, or cancel the build.";
 pub const BUTTON_WIDTH: f32 = 204.;
 
 pub struct Updates {
@@ -265,11 +267,16 @@ impl Shell {
                 | PlayState::Restoring
                 | PlayState::Detecting
                 | PlayState::Checking
+                | PlayState::Building
         );
         updater::gate(&self.updates.phase, !self.updates.plan().is_empty(), busy)
     }
 
     fn start_updates(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if matches!(self.play_state(), PlayState::Building) {
+            window.push_notification(Notification::error(BUILDING), cx);
+            return;
+        }
         if matches!(
             self.play_state(),
             PlayState::Running | PlayState::Elsewhere(_) | PlayState::Launching
@@ -286,6 +293,7 @@ impl Shell {
             let ran = task.await;
             this.update_in(cx, |s, window, cx| {
                 if let Some(e) = s.finish_updates(ran, cx) {
+                    crate::app_log::action("update").failed(&e);
                     window.push_notification(Notification::error(e).title("Update failed"), cx);
                 }
             })
@@ -610,7 +618,7 @@ impl Shell {
     }
 
     pub(crate) fn update_bar(&self, p: Palette) -> Option<impl IntoElement> {
-        if !self.store.config().updates.check {
+        if !self.update_check {
             return None;
         }
         let bar = h_flex()

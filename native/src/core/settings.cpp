@@ -9,6 +9,9 @@
 #include "json.hpp"
 #include "swofty_api.h"
 
+bool ui_vm_set_path(const std::string &path, int type, const void *value);
+bool settings_command(uint32_t hash);
+
 namespace {
 
 enum { SET = 1, ENABLE, RESTART };
@@ -45,6 +48,10 @@ struct Command {
     size_t addon, option, state;
 };
 
+struct MfdRow {
+    size_t addon, option;
+};
+
 struct Owner {
     int addon;
     std::string dll;
@@ -59,6 +66,7 @@ unsigned long long seq;
 std::string profile;
 std::wstring requests;
 std::vector<AddonSettings> addons;
+std::vector<MfdRow> mfd_rows;
 std::unordered_map<uint32_t, Command> commands;
 std::unordered_map<HMODULE, Owner> owners;
 std::set<std::string> warned;
@@ -297,6 +305,11 @@ void settings_attach(SwoftyApi *a, const std::wstring &dir)
             else
                 m.options.push_back(std::move(o)), count++;
         }
+        bool on = jm["enabled"].type == json::Value::Bool ? jm["enabled"].b : true;
+        for (auto &r : jm["mfd"]["rows"].a)
+            for (size_t j = 0; on && j < m.options.size(); j++)
+                if (m.options[j].id == r.str() && mfd_rows.size() < 8)
+                    mfd_rows.push_back({addons.size(), j});
         addons.push_back(std::move(m));
     }
     for (size_t i = 0; i < addons.size(); i++) {
@@ -310,6 +323,23 @@ void settings_attach(SwoftyApi *a, const std::wstring &dir)
     loaded = true;
     api->log("[settings] %ls: profile '%s', %zu addon(s), %zu option(s), %zu command(s); requests file %ls", path.c_str(),
              profile.c_str(), addons.size(), count, commands.size(), requests.c_str());
+}
+
+size_t settings_mfd_rows()
+{
+    return mfd_rows.size();
+}
+
+bool settings_mfd_step(size_t row, int dir)
+{
+    if (row >= mfd_rows.size())
+        return false;
+    AcquireSRWLockExclusive(&lock);
+    const Option &o = addons[mfd_rows[row].addon].options[mfd_rows[row].option];
+    size_t n = o.states.size(), at = o.current < n ? o.current : 0;
+    std::string command = n ? o.states[(at + n + (dir < 0 ? n - 1 : 1)) % n].command : std::string();
+    ReleaseSRWLockExclusive(&lock);
+    return !command.empty() && settings_command(djb2(command));
 }
 
 std::string settings_addon(const void *from, std::string &dll)
@@ -359,6 +389,40 @@ int settings_watch(const char *id, SwoftySettingFn fn, void *user)
     return o != nullptr;
 }
 
+// Core-internal access for the hub tab (ui_vm.cpp): an option's current state index and its states'
+// texts and commands, and a pick of a state by its value; the pick runs the state's command, the
+// path ADDON SETTINGS takes, so the profile, the watchers and the requests file follow.
+bool settings_state(const std::string &addon, const std::string &option, size_t &current,
+                    std::vector<std::string> *texts, std::vector<std::string> *commands, std::vector<std::string> *values)
+{
+    AcquireSRWLockShared(&lock);
+    bool found = false;
+    for (auto &m : addons) {
+        if (m.id != addon)
+            continue;
+        for (auto &o : m.options) {
+            if (o.id != option)
+                continue;
+            current = o.current;
+            for (auto &st : o.states) {
+                if (texts)
+                    texts->push_back(st.text);
+                if (commands)
+                    commands->push_back(st.command);
+                if (values)
+                    values->push_back(st.value.type == json::Value::Str    ? st.value.s
+                                      : st.value.type == json::Value::Bool ? (st.value.b ? "true" : "false")
+                                                                           : std::to_string(st.value.n));
+            }
+            found = true;
+        }
+    }
+    ReleaseSRWLockShared(&lock);
+    return found;
+}
+
+void hub_option_changed(const std::string &addon, const std::string &option);
+
 bool settings_command(uint32_t hash)
 {
     auto it = commands.find(hash);
@@ -390,12 +454,17 @@ bool settings_command(uint32_t hash)
         api->log("[settings] %s: %s from the next launch", m->id.c_str(), c.state ? "enabled" : "disabled");
     else
         api->log("[settings] restart requested: relaunch = true");
+    for (size_t k = 0; o && k < mfd_rows.size(); k++)
+        if (mfd_rows[k].addon == c.addon && mfd_rows[k].option == c.option)
+            ui_vm_set_path("ui_menu_data.swofty.m" + std::to_string(k), 0, o->states[c.state].text.c_str());
     DWORD err = write_requests(text);
     ReleaseSRWLockExclusive(&io);
     if (err)
         api->log("[settings] writing requests file %ls (seq %llu) failed, error %lu", requests.c_str(), n, err);
     for (auto &w : call)
         w.fn(o->id.c_str(), &v, w.user);
+    if (o)
+        hub_option_changed(m->id, o->id);
     if (c.kind == RESTART) {
         int closed = 0;
         EnumWindows(close_main, reinterpret_cast<LPARAM>(&closed));

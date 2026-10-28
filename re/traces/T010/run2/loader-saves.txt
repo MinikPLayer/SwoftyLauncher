@@ -1,0 +1,25 @@
+# Excerpt of loader-t010-run2.log (full log: /mnt/work/.progressive/r3/loader-t010-run2.log, 11000951 bytes, sha256 6374d25435fdd7a2). Each line keeps its line number in the full log.
+210:2026-10-27 03:27:33.222 [  384] [core] bind Game_SaveData_DeserialiseContainer -> 0x14364f3a0 (base+0x364f3a0), func experimental via pattern at the KB address
+211:2026-10-27 03:27:33.222 [  384] [core] bind Game_SaveData_SerialiseContainer -> 0x14364e000 (base+0x364e000), func experimental via pattern at the KB address
+212:2026-10-27 03:27:33.222 [  384] [core] bind Game_SaveData_WriteBag -> 0x1439340c0 (base+0x39340c0), func experimental via pattern at the KB address
+228:2026-10-27 03:27:33.222 [  384] [core] bind Ne_StringTable_Lookup -> 0x14392a8b0 (base+0x392a8b0), func experimental via pattern at the KB address
+256:2026-10-27 03:27:33.223 [  384] [core] bind g_Ne_StringTable -> 0x146129740 (base+0x6129740), data experimental via pattern at the KB address
+295:2026-10-27 03:27:33.223 [  384] [core] bind k_Ne_BagCodecVtbl -> 0x14568e060 (base+0x568e060), vtable experimental via pattern at the KB address
+296:2026-10-27 03:27:33.223 [  384] [core] bind k_Ne_CountingStreamVtbl -> 0x1458561b0 (base+0x58561b0), vtable experimental via pattern at the KB address
+297:2026-10-27 03:27:33.223 [  384] [core] bind k_Ne_MemWriteStreamVtbl -> 0x145bf0f20 (base+0x5bf0f20), vtable experimental via pattern at the KB address
+298:2026-10-27 03:27:33.223 [  384] [core] bind k_Ne_PropertyType_Bag -> 0x146129de0 (base+0x6129de0), data experimental via pattern at the KB address
+456:2026-10-27 03:27:33.224 [  384] [core] bind site_Game_SaveData_ContainersChildren -> 0x143651be4 (base+0x3651be4), site experimental via pattern at the KB address
+457:2026-10-27 03:27:33.224 [  384] [core] bind site_Game_SaveData_ContainersCount -> 0x143651bbf (base+0x3651bbf), site experimental via pattern at the KB address
+458:2026-10-27 03:27:33.224 [  384] [core] bind site_Game_SaveData_ContainersDone -> 0x143651cbc (base+0x3651cbc), site experimental via pattern at the KB address
+459:2026-10-27 03:27:33.224 [  384] [core] bind site_Game_SaveData_UnclaimedChild -> 0x14364fef0 (base+0x364fef0), site experimental via pattern at the KB address
+513:2026-10-27 03:27:33.224 [  384] [core] bind vt_Game_SaveDataRootContainer -> 0x145855f80 (base+0x5855f80), vtable experimental via pattern at the KB address
+912:2026-10-27 03:27:33.226 [  384] [core] core mixin set 'swofty_core.dll (save splice)': 4 mixin(s), installed or dropped on its own
+915:2026-10-27 03:27:33.226 [  384] [core] wrap Game_SaveData_DeserialiseContainer at 0x14364f3a0 (base+0x364f3a0) installed: swofty_core.dll (save splice)(100)
+920:2026-10-27 03:27:33.226 [  384] [core] site site_Game_SaveData_UnclaimedChild at 0x14364fef0 (base+0x364fef0) installed: swofty_core.dll (save splice)(100)
+921:2026-10-27 03:27:33.226 [  384] [core] site site_Game_SaveData_ContainersCount at 0x143651bbf (base+0x3651bbf) installed: swofty_core.dll (save splice)(100)
+922:2026-10-27 03:27:33.226 [  384] [core] site site_Game_SaveData_ContainersChildren at 0x143651be4 (base+0x3651be4) installed: swofty_core.dll (save splice)(100)
+929:2026-10-27 03:27:33.226 [  384] [saves] save splice armed: save containers no loaded game mode claims are kept through each profile load and save
+86288:2026-10-27 03:28:05.414 [  560] [saves] profile load 1: kept gm_driver_career_progressive (3537511 bytes), which no loaded game mode claims
+86313:2026-10-27 03:28:05.638 [  560] [saves] profile load 1: kept driver_career_progressive_SaveSlotGameModeComponent (6526 bytes), which no loaded game mode claims
+86315:2026-10-27 03:28:05.646 [  560] [saves] profile load 1: kept 2 save container(s) no loaded game mode claims (3544037 bytes); the next profile save writes them back
+86526:2026-10-27 03:29:43.810 [  564] [saves] profile save: wrote back 2 save container(s) no loaded game mode claims: gm_driver_career_progressive, driver_career_progressive_SaveSlotGameModeComponent

@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -73,66 +74,52 @@ jobs:
             native/dist/
             native/bundled/
 
-  # The Linux and Windows builds do not need the native loader, so they run alongside it, and a
-  # packaging job per system joins the two once both are done.
-  linux-build:
-    name: Linux build
-    # The oldest supported runner gives the oldest glibc baseline, for SteamOS.
-    runs-on: ubuntu-22.04
+  # The binaries come from main's CI run for the tagged commit (release-binaries.yml, called by ci.yml), which
+  # the maintainer waits for before tagging: this job waits for that run while it is still going and takes its
+  # binaries when it passed. Without such a run it leaves the run id empty, and the binaries job builds them.
+  ci-binaries:
+    name: Main CI binaries
+    runs-on: ubuntu-latest
+    outputs:
+      run-id: ${{ steps.find.outputs.run-id }}
     steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ env.TAG }}
-
-      - uses: actions-rust-lang/setup-rust-toolchain@v2
-        with:
-          cache: false
-
-      # Only a run on main saves (a dry run dispatched from main warms the next tag); tag caches stay unread.
-      - uses: Swatinem/rust-cache@v2
-        with:
-          add-rust-environment-hash-key: false
-          shared-key: release
-          save-if: ${{ github.ref == 'refs/heads/main' }}
-
-      - name: GPUI system libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config libfontconfig-dev libfreetype-dev libwayland-dev \
-            libxkbcommon-dev libxkbcommon-x11-dev libx11-xcb-dev libxcb1-dev libvulkan-dev
-
-      # The log server "Send Logs to Developers" uploads to; without it the button is disabled.
-      # The usage address is where anonymised usage reports go; builds without it send none.
-      - name: Build
-        run: cargo build --release --workspace
+      - id: find
         env:
-          SWOFTY_LOGS_URL: https://api.f1.swofty.net/v1/logs
-          SWOFTY_USAGE_URL: https://api.f1.swofty.net
-
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.14'
-
-      - name: Build Swofty UI
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: |
-          python -m pip install pyinstaller==6.22.3
-          python tools/swofty-ui/build.py
-          dist/swofty-ui/swofty-ui --self-test
+          sha=$(gh api "repos/$REPO/commits/$TAG" --jq .sha) || exit 0
+          for _ in $(seq 40); do
+            run=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$sha&event=push&branch=main&per_page=1" \
+              --jq '.workflow_runs[0] // empty | "\(.id) \(.status) \(.conclusion)"') || exit 0
+            read -r id status conclusion <<< "$run"
+            if [ -z "$id" ]; then echo "no CI run on main for $sha; building"; exit 0; fi
+            if [ "$status" = completed ]; then break; fi
+            echo "CI run $id for $sha is $status; waiting"
+            sleep 30
+          done
+          if [ "$status" != completed ] || [ "$conclusion" != success ]; then
+            echo "CI run $id for $sha is $status ($conclusion); building"; exit 0
+          fi
+          have=$(gh api "repos/$REPO/actions/runs/$id/artifacts?per_page=100" --jq \
+            '[.artifacts[] | select(.expired | not) | .name] | (index("linux-binaries") != null and index("windows-binaries") != null)') || exit 0
+          if [ "$have" != true ]; then echo "CI run $id has no release binaries; building"; exit 0; fi
+          echo "taking the binaries from CI run $id"
+          echo "run-id=$id" >> "$GITHUB_OUTPUT"
 
-      # Artefacts drop the executable bit, so the binaries travel in a tar.
-      - name: Bundle the binaries
-        run: tar cf linux-binaries.tar target/release/swofty target/release/swofty-launcher dist/swofty-ui/swofty-ui
+  binaries:
+    name: Release binaries
+    needs: ci-binaries
+    if: needs.ci-binaries.outputs.run-id == ''
+    uses: ./.github/workflows/release-binaries.yml
+    with:
+      ref: ${{ inputs.tag || github.ref_name }}
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: linux-binaries
-          path: linux-binaries.tar
-          if-no-files-found: error
-          retention-days: 1
-
+  # The packaging job per system joins the native loader and that system's binaries.
   linux:
     name: Linux
-    needs: [native, linux-build]
+    needs: [native, ci-binaries, binaries]
+    if: ${{ !cancelled() && needs.native.result == 'success' && (needs.ci-binaries.outputs.run-id != '' || needs.binaries.result == 'success') }}
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v7
@@ -142,6 +129,8 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: linux-binaries
+          run-id: ${{ needs.ci-binaries.outputs.run-id || github.run_id }}
+          github-token: ${{ github.token }}
 
       - name: Unbundle the binaries
         run: tar xf linux-binaries.tar && rm linux-binaries.tar
@@ -177,60 +166,10 @@ jobs:
           name: linux
           path: swofty-launcher-*.tar.gz
 
-  windows-build:
-    name: Windows build
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ env.TAG }}
-
-      - uses: actions-rust-lang/setup-rust-toolchain@v2
-        with:
-          cache: false
-
-      # Only a run on main saves (a dry run dispatched from main warms the next tag); tag caches stay unread.
-      - uses: Swatinem/rust-cache@v2
-        with:
-          add-rust-environment-hash-key: false
-          shared-key: release
-          save-if: ${{ github.ref == 'refs/heads/main' }}
-
-      # The log server "Send Logs to Developers" uploads to; without it the button is disabled.
-      # The usage address is where anonymised usage reports go; builds without it send none.
-      - name: Build
-        run: cargo build --release --workspace
-        env:
-          SWOFTY_LOGS_URL: https://api.f1.swofty.net/v1/logs
-          SWOFTY_USAGE_URL: https://api.f1.swofty.net
-
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.14'
-
-      - name: Install PyInstaller
-        run: python -m pip install pyinstaller==6.22.3
-
-      - name: Build Swofty UI
-        run: python tools/swofty-ui/build.py
-
-      - name: Self-test Swofty UI
-        run: dist/swofty-ui/swofty-ui.exe --self-test
-
-      # The artefact keeps the paths below the checkout, target/release/ and dist/swofty-ui/.
-      - uses: actions/upload-artifact@v7
-        with:
-          name: windows-binaries
-          path: |
-            target/release/swofty.exe
-            target/release/swofty-launcher.exe
-            dist/swofty-ui/swofty-ui.exe
-          if-no-files-found: error
-          retention-days: 1
-
   windows:
     name: Windows
-    needs: [native, windows-build]
+    needs: [native, ci-binaries, binaries]
+    if: ${{ !cancelled() && needs.native.result == 'success' && (needs.ci-binaries.outputs.run-id != '' || needs.binaries.result == 'success') }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
@@ -240,6 +179,8 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: windows-binaries
+          run-id: ${{ needs.ci-binaries.outputs.run-id || github.run_id }}
+          github-token: ${{ github.token }}
 
       - uses: actions/download-artifact@v8
         with:
@@ -271,7 +212,7 @@ jobs:
   publish:
     name: Publish the release
     needs: [linux, windows]
-    if: ${{ !inputs.dry-run }}
+    if: ${{ !cancelled() && !inputs.dry-run && needs.linux.result == 'success' && needs.windows.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v8

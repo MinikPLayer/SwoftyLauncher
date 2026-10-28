@@ -26,13 +26,23 @@ pub fn resolve(profile: &Profile, installed: &BTreeMap<String, AddonManifest>) -
             warnings,
         });
     }
-    let enabled: Vec<&str> = profile.enabled().collect();
+    let enabled: Vec<&str> = profile
+        .enabled()
+        .filter(|id| {
+            let there = installed.contains_key(*id);
+            if !there {
+                warnings.push(format!(
+                    "{id} is on in profile {} but isn't installed, so it is left out; install it in the Addon \
+                     Browser or turn it off on the Addons page",
+                    profile.name
+                ));
+            }
+            there
+        })
+        .collect();
     let mut addons = BTreeMap::new();
     for id in &enabled {
-        let m = installed
-            .get(*id)
-            .ok_or_else(|| Error::Resolve(format!("{id} is enabled but not installed")))?;
-        addons.insert(*id, m);
+        addons.insert(*id, &installed[*id]);
     }
     if !addons.contains_key(CORE_ID) {
         return Err(Error::Resolve(format!("{CORE_ID} is missing")));
@@ -40,20 +50,26 @@ pub fn resolve(profile: &Profile, installed: &BTreeMap<String, AddonManifest>) -
     check_launcher(addons.values().copied(), &crate::update::current_version())?;
     for m in addons.values() {
         for r in &m.requires {
-            match addons.get(r.id.as_str()) {
-                None => {
+            match (addons.get(r.id.as_str()), installed.get(&r.id)) {
+                (None, Some(dep)) => {
                     return Err(Error::Resolve(format!(
-                        "{} requires {}, which is not enabled",
-                        m.id, r.id
+                        "{} needs {}, which is off in profile {}. Turn {} on on the Addons page, or turn {} off",
+                        m.name, dep.name, profile.name, dep.name, m.name
                     )));
                 }
-                Some(dep) if !r.version.matches(&dep.version) => {
+                (None, None) => {
                     return Err(Error::Resolve(format!(
-                        "{} requires {} {}, found {}",
-                        m.id, r.id, r.version, dep.version
+                        "{} needs {}, which isn't installed. Install it in the Addon Browser, or turn {} off",
+                        m.name, r.id, m.name
                     )));
                 }
-                Some(_) => {}
+                (Some(dep), _) if !r.version.matches(&dep.version) => {
+                    return Err(Error::Resolve(format!(
+                        "{} needs {} {}, and {} is installed. Update {} in the Addon Browser, or turn {} off",
+                        m.name, dep.name, r.version, dep.version, dep.name, m.name
+                    )));
+                }
+                (Some(_), _) => {}
             }
         }
         for c in m.conflicts.iter().filter(|c| c.touches.is_none()) {
@@ -97,6 +113,54 @@ pub fn resolve(profile: &Profile, installed: &BTreeMap<String, AddonManifest>) -
         order.push(id.to_owned());
     }
     Ok(Plan { order, warnings })
+}
+
+/// The addons on in `profile` that two or more catalog addons build on, with
+/// none of those on: the shared part of a family such as Classic Seasons,
+/// which adds nothing to pick on its own. When the base has a catalog
+/// category, its family is the addons of that category that need it, so a
+/// career addon that needs Classic Seasons doesn't count as a season. Each
+/// comes as its name and the names of its family.
+pub fn lonely_bases(
+    profile: &Profile,
+    installed: &BTreeMap<String, AddonManifest>,
+    catalog: &[crate::catalog::Addon],
+) -> Vec<(String, Vec<String>)> {
+    let enabled: Vec<&str> = profile.enabled().collect();
+    let mut out = Vec::new();
+    for id in enabled.iter().filter(|id| **id != CORE_ID) {
+        let Some(base) = installed.get(*id) else {
+            continue;
+        };
+        let category = catalog
+            .iter()
+            .find(|a| a.id == *id)
+            .and_then(|a| a.category.as_deref());
+        let needs = |a: &&crate::catalog::Addon| {
+            a.id != *id
+                && a.newest()
+                    .and_then(|v| v.requires.as_ref())
+                    .is_some_and(|rs| rs.iter().any(|r| r.id == *id))
+        };
+        let family: Vec<&crate::catalog::Addon> = catalog
+            .iter()
+            .filter(needs)
+            .filter(|a| category.is_none() || a.category.as_deref() == category)
+            .collect();
+        if family.len() < 2 {
+            continue;
+        }
+        let used = enabled.iter().filter_map(|e| installed.get(*e)).any(|m| {
+            m.requires.iter().any(|r| r.id == *id)
+                && (family.iter().any(|a| a.id == m.id) || !catalog.iter().any(|a| a.id == m.id))
+        });
+        if !used {
+            let mut names: Vec<String> = family.iter().map(|a| a.name.clone()).collect();
+            names.sort();
+            out.push((base.name.clone(), names));
+        }
+    }
+    out
 }
 
 pub fn launcher_refusal(m: &AddonManifest, launcher: &semver::Version) -> Option<String> {
@@ -174,6 +238,110 @@ mod tests {
         ]);
         assert!(resolve(&profile(&["a.x"]), &installed).is_err());
         assert!(resolve(&profile(&["a.x", "a.y"]), &installed).is_ok());
+    }
+
+    #[test]
+    fn requirement_errors_name_the_addons_and_the_fix() {
+        let (_, mut x) = m("a.x", r#","requires":[{"id":"a.y"}]"#);
+        x.name = "Season 2019".into();
+        let (_, mut y) = m("a.y", "");
+        y.name = "Classic Seasons".into();
+        let installed = BTreeMap::from([m(CORE_ID, ""), ("a.x".into(), x.clone()), ("a.y".into(), y)]);
+        let off = resolve(&profile(&["a.x"]), &installed).unwrap_err().to_string();
+        assert!(
+            off.contains(
+                "Season 2019 needs Classic Seasons, which is off in profile t. Turn Classic Seasons on"
+            ),
+            "{off}"
+        );
+        let installed = BTreeMap::from([m(CORE_ID, ""), ("a.x".into(), x)]);
+        let missing = resolve(&profile(&["a.x"]), &installed).unwrap_err().to_string();
+        assert!(
+            missing.contains("Season 2019 needs a.y, which isn't installed"),
+            "{missing}"
+        );
+    }
+
+    #[test]
+    fn an_addon_on_but_not_installed_is_left_out() {
+        let installed = BTreeMap::from([m(CORE_ID, ""), m("a.x", "")]);
+        let plan = resolve(&profile(&["a.x", "a.gone"]), &installed).unwrap();
+        assert_eq!(plan.order, [CORE_ID, "a.x"]);
+        assert!(
+            plan.warnings
+                .iter()
+                .any(|w| w.starts_with("a.gone is on in profile t but isn't installed"))
+        );
+    }
+
+    #[test]
+    fn a_base_with_none_of_its_family_on_is_lonely() {
+        let catalog: Vec<crate::catalog::Addon> = serde_json::from_value(serde_json::json!([
+            {"id": "cs.2016", "name": "F1 2016", "author": "s",
+             "versions": [{"version": "1.0.0", "size": 1, "sha256": "x", "url": "u", "requires": [{"id": "cs.base"}]}]},
+            {"id": "cs.2017", "name": "F1 2017", "author": "s",
+             "versions": [{"version": "1.0.0", "size": 1, "sha256": "x", "url": "u", "requires": [{"id": "cs.base"}]}]},
+            {"id": "a.other", "name": "Other", "author": "s",
+             "versions": [{"version": "1.0.0", "size": 1, "sha256": "x", "url": "u"}]}
+        ]))
+        .unwrap();
+        let (_, mut base) = m("cs.base", "");
+        base.name = "Classic Seasons".into();
+        let installed = BTreeMap::from([
+            m(CORE_ID, ""),
+            ("cs.base".into(), base),
+            m("cs.2016", r#","requires":[{"id":"cs.base"}]"#),
+            m("a.other", ""),
+        ]);
+        assert_eq!(
+            lonely_bases(&profile(&["cs.base", "a.other"]), &installed, &catalog),
+            [(
+                "Classic Seasons".to_owned(),
+                vec!["F1 2016".to_owned(), "F1 2017".to_owned()]
+            )]
+        );
+        assert!(lonely_bases(&profile(&["cs.base", "cs.2016"]), &installed, &catalog).is_empty());
+        assert!(lonely_bases(&profile(&["a.other"]), &installed, &catalog).is_empty());
+    }
+
+    #[test]
+    fn a_career_addon_on_the_base_is_not_one_of_its_seasons() {
+        let catalog: Vec<crate::catalog::Addon> = serde_json::from_value(serde_json::json!([
+            {"id": "cs.base", "name": "Classic Seasons", "author": "s", "category": "seasons",
+             "versions": [{"version": "1.0.0", "size": 1, "sha256": "x", "url": "u"}]},
+            {"id": "cs.2016", "name": "F1 2016", "author": "s", "category": "seasons",
+             "versions": [{"version": "1.0.0", "size": 1, "sha256": "x", "url": "u", "requires": [{"id": "cs.base"}]}]},
+            {"id": "cs.2017", "name": "F1 2017", "author": "s", "category": "seasons",
+             "versions": [{"version": "1.0.0", "size": 1, "sha256": "x", "url": "u", "requires": [{"id": "cs.base"}]}]},
+            {"id": "c.career", "name": "Classic Career", "author": "c", "category": "career",
+             "versions": [{"version": "1.0.0", "size": 1, "sha256": "x", "url": "u", "requires": [{"id": "cs.base"}]}]}
+        ]))
+        .unwrap();
+        let (_, mut base) = m("cs.base", "");
+        base.name = "Classic Seasons".into();
+        let installed = BTreeMap::from([
+            m(CORE_ID, ""),
+            ("cs.base".into(), base),
+            m("cs.2016", r#","requires":[{"id":"cs.base"}]"#),
+            m("c.career", r#","requires":[{"id":"cs.base"}]"#),
+            m("a.local", r#","requires":[{"id":"cs.base"}]"#),
+        ]);
+        assert_eq!(
+            lonely_bases(&profile(&["c.career", "cs.base"]), &installed, &catalog),
+            [(
+                "Classic Seasons".to_owned(),
+                vec!["F1 2016".to_owned(), "F1 2017".to_owned()]
+            )]
+        );
+        assert!(
+            lonely_bases(
+                &profile(&["c.career", "cs.base", "cs.2016"]),
+                &installed,
+                &catalog
+            )
+            .is_empty()
+        );
+        assert!(lonely_bases(&profile(&["cs.base", "a.local"]), &installed, &catalog).is_empty());
     }
 
     #[test]

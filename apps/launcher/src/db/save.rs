@@ -228,6 +228,7 @@ impl Shell {
         let pkg = match guarded(|| draft.save_as_addon(&store, &catalog, details).map_err(text)) {
             Ok(p) => p,
             Err(e) => {
+                crate::app_log::action("db editor: save the addon").failed(&e);
                 window.push_notification(Notification::error(e).title("Could not save the addon"), cx);
                 return false;
             }
@@ -252,6 +253,7 @@ impl Shell {
             return false;
         };
         if let Some(e) = self.db.addon_error.clone() {
+            crate::app_log::action("db editor: save").failed(&e);
             window.push_notification(Notification::error(e).title("Could not save"), cx);
             return false;
         }
@@ -265,6 +267,7 @@ impl Shell {
                 true
             }
             Err(e) => {
+                crate::app_log::action("db editor: save").failed(&e);
                 window.push_notification(Notification::error(e).title(format!("Could not save {name}")), cx);
                 false
             }
@@ -392,6 +395,7 @@ impl Shell {
         let pkg = match guarded(|| Package::open(&self.store, &id).map_err(text)) {
             Ok(p) => p,
             Err(e) => {
+                crate::app_log::action("db editor: read the addon").failed(&e);
                 window.push_notification(Notification::error(e).title("Could not read the addon"), cx);
                 return;
             }
@@ -459,6 +463,7 @@ impl Shell {
                             true
                         }
                         Err(e) => {
+                            crate::app_log::action("db editor: save the details").failed(&e);
                             window.push_notification(
                                 Notification::error(e).title("Could not save the details"),
                                 cx,
@@ -535,7 +540,10 @@ impl Shell {
                                 cx,
                             );
                         }
-                        Err(e) => window.push_notification(Notification::error(e).title("Export failed"), cx),
+                        Err(e) => {
+                            crate::app_log::action("db editor: export").failed(&e);
+                            window.push_notification(Notification::error(e).title("Export failed"), cx)
+                        }
                     })
                     .ok();
                 })
@@ -778,7 +786,10 @@ impl Shell {
                         };
                         window.push_notification(note.title("Exported game files"), cx);
                     }
-                    Err(e) => window.push_notification(Notification::error(e).title("Export failed"), cx),
+                    Err(e) => {
+                        crate::app_log::action("db editor: export").failed(&e);
+                        window.push_notification(Notification::error(e).title("Export failed"), cx)
+                    }
                 })
                 .ok();
             })

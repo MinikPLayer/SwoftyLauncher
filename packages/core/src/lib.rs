@@ -1,10 +1,12 @@
 pub use swofty_addon::{GAME_ID, asset, builder, launcher, manifest, ops, view};
 
 pub mod activation;
+pub mod addon_storage;
 pub mod app_control;
 pub mod baseline;
 pub mod build;
 pub mod builtin;
+pub mod busy;
 pub mod cache;
 pub mod catalog;
 pub mod compat;
@@ -14,16 +16,22 @@ pub mod crash;
 pub mod dbedit;
 pub mod disk;
 pub mod ea_app;
+pub mod entrant_lists;
 pub mod erpbuild;
 pub mod exe_version;
+pub mod folders;
+pub mod heads;
 pub mod helper;
 pub mod import;
 pub mod install;
 pub mod journal;
+pub mod known_problems;
 pub mod launch;
 pub mod loader_check;
 pub mod managed;
 pub mod map;
+pub mod mpauth;
+pub mod multiplayer;
 pub mod offline;
 pub mod overlay_guard;
 pub mod overlayfs;
@@ -42,6 +50,7 @@ pub mod registry;
 pub mod resolver;
 pub mod rowkeys;
 pub mod runtime;
+pub mod save_backup;
 pub mod saves;
 pub mod send_logs;
 pub mod session;
@@ -95,12 +104,19 @@ pub enum Error {
         stock::STEAM_VERIFY_URL
     )]
     NotStock(Vec<String>),
+    #[error("{}", stock::missing_text(files, version.as_deref()))]
+    MissingStock {
+        files: Vec<String>,
+        version: Option<String>,
+    },
     #[error("{}", .0.text())]
     Blocked(app_control::Block),
     #[error("{0}")]
     Requires(catalog::requires::Refusal),
     #[error("{}", no_space(drive, *need, *free))]
     NoSpace { drive: String, need: u64, free: u64 },
+    #[error("{}", busy::CANCELLED)]
+    Cancelled,
     #[error("{0}")]
     Other(String),
 }
@@ -128,9 +144,45 @@ fn leftovers(found: &[install::Conflict]) -> String {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+static WORK: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// A count that grows as a build or install hashes files and the formats
+/// crate compresses and writes archives; a caller can tell long work that is
+/// moving from work that is stuck.
+pub fn work() -> u64 {
+    WORK.load(std::sync::atomic::Ordering::Relaxed) + swofty_formats::erp::work()
+}
+
+pub(crate) fn worked() {
+    WORK.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+}
+
+static DOING: std::sync::Mutex<String> = std::sync::Mutex::new(String::new());
+
+/// The step a build or install is on, for its progress lines.
+pub fn doing() -> String {
+    DOING.lock().unwrap_or_else(|e| e.into_inner()).clone()
+}
+
+pub(crate) fn now_doing(step: impl Into<String>) {
+    *DOING.lock().unwrap_or_else(|e| e.into_inner()) = step.into();
+}
+
 pub(crate) fn io_err(path: impl Into<std::path::PathBuf>) -> impl FnOnce(std::io::Error) -> Error {
     let path = path.into();
     move |source| Error::Io { path, source }
+}
+
+/// A formats error from reading `path`, with a read error that doesn't name
+/// its file named with it.
+pub(crate) fn formats_at(path: &std::path::Path) -> impl FnOnce(swofty_formats::Error) -> Error + '_ {
+    move |e| match e {
+        swofty_formats::Error::Io(source) => Error::Formats(swofty_formats::Error::IoAt {
+            path: path.to_path_buf(),
+            source,
+        }),
+        e => Error::Formats(e),
+    }
 }
 
 /// A filesystem error worth retrying: a freshly unloaded DLL stays briefly
@@ -139,6 +191,46 @@ pub(crate) fn io_err(path: impl Into<std::path::PathBuf>) -> impl FnOnce(std::io
 /// with Access Denied (os error 5) or a sharing violation (os error 32).
 pub(crate) fn is_locked_file_error(e: &std::io::Error) -> bool {
     e.kind() == std::io::ErrorKind::PermissionDenied || e.raw_os_error() == Some(32)
+}
+
+/// Clears a read-only attribute on a file the launcher put in the game
+/// folder, so it can be deleted or replaced: a copy carries the attribute
+/// over from its source, and Windows then refuses both with Access Denied.
+/// True when it was set and is now cleared. Elsewhere a file's own mode
+/// doesn't stop either, so nothing is changed.
+pub(crate) fn clear_readonly(path: &std::path::Path) -> bool {
+    #[cfg(windows)]
+    {
+        let Ok(meta) = std::fs::metadata(path) else {
+            return false;
+        };
+        let mut perms = meta.permissions();
+        if !perms.readonly() {
+            return false;
+        }
+        #[allow(
+            clippy::permissions_set_readonly_false,
+            reason = "Windows only: clears the attribute"
+        )]
+        perms.set_readonly(false);
+        std::fs::set_permissions(path, perms).is_ok()
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = path;
+        false
+    }
+}
+
+/// Delete a file the launcher placed, clearing a read-only attribute that
+/// refuses it.
+pub(crate) fn remove_placed(path: &std::path::Path) -> std::io::Result<()> {
+    match std::fs::remove_file(path) {
+        Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied && clear_readonly(path) => {
+            std::fs::remove_file(path)
+        }
+        r => r,
+    }
 }
 
 /// Run a filesystem mutation, retrying a locked-file error with growing backoff

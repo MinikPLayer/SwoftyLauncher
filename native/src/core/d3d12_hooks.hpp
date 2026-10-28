@@ -36,6 +36,15 @@ void on_setname(SetNameFn fn);
 bool arm_swapchain();
 bool arm_device();
 
+// While one is alive, arm_device and arm_swapchain share one throwaway probe
+// device: creating a D3D12 device takes about half a second on the main thread.
+struct ProbeScope {
+    ProbeScope();
+    ~ProbeScope();
+    ProbeScope(const ProbeScope &) = delete;
+    ProbeScope &operator=(const ProbeScope &) = delete;
+};
+
 void exec_original(ID3D12CommandQueue *q, UINT n, ID3D12CommandList *const *lists);
 void barrier_original(ID3D12GraphicsCommandList *list, UINT n, const D3D12_RESOURCE_BARRIER *barriers);
 

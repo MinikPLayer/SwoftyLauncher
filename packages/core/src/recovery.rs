@@ -83,6 +83,8 @@ pub struct Recovered {
     pub cleared: Vec<String>,
     pub problems: Vec<String>,
     pub logs: usize,
+    /// The build the last session was running when its process ended.
+    pub interrupted: Option<crate::busy::Busy>,
 }
 
 impl Recovered {
@@ -110,10 +112,22 @@ impl Recovered {
                 j.id, j.changes, j.profile
             ));
             out.extend(j.drift.iter().map(ToString::to_string));
+            if !j.kept.is_empty() {
+                out.push(format!(
+                    "kept {} file(s) addons wrote, for the next session with them",
+                    j.kept.len()
+                ));
+            }
         }
         out.extend(self.swept.iter().cloned());
         out.extend(self.cleared.iter().cloned());
         out.extend(self.problems.iter().cloned());
+        if let Some(b) = &self.interrupted {
+            out.push(format!(
+                "the last Play stopped while {}; Play starts the build again",
+                b.progress()
+            ));
+        }
         out
     }
 }
@@ -133,6 +147,9 @@ pub fn recover(lock: &SessionLock, data: &Path, game: &Game, scope: Scope) -> Re
     r.journals = inst.roll_back(scope == Scope::Sessions)?;
     r.swept = inst.sweep()?;
     r.logs = inst.tidy(&data.join("sessions/orphaned-logs"))?;
+    r.interrupted = crate::busy::Busy::read(data);
+    crate::busy::Busy::clear(data);
+    crate::busy::clear_cancel(data);
     if r.recovered() {
         Notice::record(data, &r.lines())?;
     }

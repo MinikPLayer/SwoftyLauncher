@@ -185,6 +185,39 @@ pub fn install_release(
     installed
 }
 
+fn program(store: &Store) -> Option<PathBuf> {
+    let m = store.addons().ok()?.remove(ID)?;
+    let rel = m.launcher.as_ref()?.program()?.to_owned();
+    Some(store.addons_dir().join(ID).join(rel))
+}
+
+pub fn broken(store: &Store) -> Option<Version> {
+    program(store)
+        .filter(|p| !p.is_file())
+        .and_then(|_| installed(store))
+}
+
+pub fn release_of(version: &Version, timeout: Duration) -> std::result::Result<Release, Failure> {
+    fetch_releases(timeout)?
+        .into_iter()
+        .find(|r| r.version().as_ref() == Some(version) && ready(r))
+        .ok_or_else(|| Failure::Failed(format!("{NAME} {version} is not among its recent releases")))
+}
+
+pub fn repair(store: &Store, release: &Release) -> Result<Version> {
+    let launcher = Version::parse(env!("CARGO_PKG_VERSION")).expect("the workspace version");
+    let version = install_release(store, release, &launcher, &Quiet)?;
+    match program(store).filter(|p| !p.is_file()) {
+        Some(p) => Err(Error::Other(format!(
+            "{} is still missing after installing {NAME} {version}; an antivirus most likely removes it. \
+             Allow {} in your antivirus, then press Play again",
+            p.display(),
+            store.addons_dir().join(ID).display()
+        ))),
+        None => Ok(version),
+    }
+}
+
 // Checked before installing, because a launcher only checks an addon's
 // launcher requirement when it loads it: installing first would replace a
 // working copy with one the launcher then refuses to load.
@@ -203,25 +236,54 @@ fn compatible(package: &Path, release: &Release, launcher: &Version) -> Result<(
 pub(crate) mod testing {
     use super::*;
 
+    pub const PROGRAM: &str = "bin/helper";
+
     pub fn package(path: &Path, version: &str, launcher: &str) {
+        package_with(path, version, launcher, Helper::None);
+    }
+
+    #[derive(Clone, Copy, PartialEq)]
+    pub enum Helper {
+        None,
+        Declared,
+        Shipped,
+    }
+
+    pub fn package_with(path: &Path, version: &str, launcher: &str, program: Helper) {
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        let helper = match program != Helper::None {
+            true => format!(
+                r#","launcher":{{"program":{{"{}":"{PROGRAM}"}},"build":true}}"#,
+                std::env::consts::OS
+            ),
+            false => String::new(),
+        };
         let manifest = format!(
-            r#"{{"schema_version":1,"id":"{ID}","name":"{NAME}","version":"{version}","author":"t","compat":{{"game":"f1_25","launcher":"{launcher}"}}}}"#
+            r#"{{"schema_version":1,"id":"{ID}","name":"{NAME}","version":"{version}","author":"t","compat":{{"game":"f1_25","launcher":"{launcher}"}}{helper}}}"#
         );
         let mut z = zip::ZipWriter::new(std::fs::File::create(path).unwrap());
         z.start_file(MANIFEST_FILE, zip::write::SimpleFileOptions::default())
             .unwrap();
         std::io::Write::write_all(&mut z, manifest.as_bytes()).unwrap();
+        if program == Helper::Shipped {
+            z.start_file(PROGRAM, zip::write::SimpleFileOptions::default())
+                .unwrap();
+            std::io::Write::write_all(&mut z, b"helper").unwrap();
+        }
         z.finish().unwrap();
     }
 
     pub fn seed(store: &Store, version: &str, launcher: &str) -> Release {
+        seed_with(store, version, launcher, Helper::None)
+    }
+
+    pub fn seed_with(store: &Store, version: &str, launcher: &str, program: Helper) -> Release {
         let mut release = Release {
             tag_name: format!("v{version}"),
             ..Default::default()
         };
         let file = cached(store, &release);
-        package(&file, version, launcher);
+        package_with(&file, version, launcher, program);
         let (size, sha) = hash_file(&file).unwrap();
         release.assets.push(Asset {
             name: ASSET.into(),
@@ -245,6 +307,7 @@ mod tests {
 
     use super::*;
     use crate::update::SUMS_FILE;
+    use testing::Helper;
 
     fn v(s: &str) -> Version {
         Version::parse(s).unwrap()
@@ -379,6 +442,36 @@ mod tests {
             requirement(&store, &release).is_err(),
             "a cached package that fails its SHA-256 is fetched again"
         );
+        std::fs::remove_dir_all(&store.root).ok();
+    }
+
+    #[test]
+    fn installs_again_a_copy_that_lost_its_program() {
+        let store = testing::store("repair");
+        assert_eq!(broken(&store), None);
+        let release = testing::seed_with(&store, "0.7.0", ">=1.3.0", Helper::Shipped);
+        assert_eq!(repair(&store, &release).unwrap(), v("0.7.0"));
+        let program = store.addons_dir().join(ID).join(testing::PROGRAM);
+        assert!(program.is_file());
+        assert_eq!(broken(&store), None);
+        std::fs::remove_file(&program).unwrap();
+        assert_eq!(broken(&store), Some(v("0.7.0")));
+        let release = testing::seed_with(&store, "0.7.0", ">=1.3.0", Helper::Shipped);
+        assert_eq!(repair(&store, &release).unwrap(), v("0.7.0"));
+        assert!(program.is_file());
+        assert_eq!(broken(&store), None);
+        let without = testing::seed_with(&store, "0.7.1", ">=1.3.0", Helper::None);
+        install_release(&store, &without, &v(env!("CARGO_PKG_VERSION")), &Quiet).unwrap();
+        assert_eq!(broken(&store), None, "a copy with no program is not broken");
+        std::fs::remove_dir_all(&store.root).ok();
+    }
+
+    #[test]
+    fn says_when_the_program_is_still_missing() {
+        let store = testing::store("still");
+        let release = testing::seed_with(&store, "0.7.0", ">=1.3.0", Helper::Declared);
+        let err = repair(&store, &release).unwrap_err().to_string();
+        assert!(err.contains("an antivirus most likely removes it"), "{err}");
         std::fs::remove_dir_all(&store.root).ok();
     }
 

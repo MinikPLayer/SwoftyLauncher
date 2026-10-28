@@ -21,6 +21,10 @@ std::string settings_addon(const void *, std::string &dll)
     return "bench";
 }
 
+namespace blackbox {
+void note(const char *, const char *, const char *) {}
+}
+
 namespace runtime {
 const std::wstring &swofty_root()
 {

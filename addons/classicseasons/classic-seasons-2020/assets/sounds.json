@@ -1,0 +1,25 @@
+{
+ "schema_version": 1,
+ "ops": [
+  {
+   "op": "file.put",
+   "source": "sounds/cs20_ferrari.bdl",
+   "target": "audio/2025/bundles/cs20_ferrari.bdl"
+  },
+  {
+   "op": "file.put",
+   "source": "sounds/cs20_honda.bdl",
+   "target": "audio/2025/bundles/cs20_honda.bdl"
+  },
+  {
+   "op": "file.put",
+   "source": "sounds/cs20_mercedes.bdl",
+   "target": "audio/2025/bundles/cs20_mercedes.bdl"
+  },
+  {
+   "op": "file.put",
+   "source": "sounds/cs20_renault.bdl",
+   "target": "audio/2025/bundles/cs20_renault.bdl"
+  }
+ ]
+}

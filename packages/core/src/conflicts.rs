@@ -28,6 +28,9 @@ pub struct Report {
     /// Per addon id, the removals of stock database records the build skipped.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub stock_removals: BTreeMap<String, usize>,
+    /// Per addon id, the game's entrant lists it renamed or removed that the build kept.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub kept_lists: BTreeMap<String, Vec<String>>,
 }
 
 impl Report {
@@ -188,6 +191,7 @@ pub(crate) fn summarise(
         pairs: pairs.into_values().collect(),
         order: Vec::new(),
         stock_removals: BTreeMap::new(),
+        kept_lists: BTreeMap::new(),
     };
     (report, within)
 }

@@ -12,23 +12,23 @@
     "haas":        { "team": "haas",       "vehicle": "haas_2025" }
   },
   "new_drivers": {
-    "felipe_nasr":       { "first": "Felipe",    "last": "Nasr",       "initials": "NAS", "nationality": "brazil",      "head": "male_ls487" },
-    "esteban_gutierrez": { "first": "Esteban",   "last": "Gutiérrez",  "initials": "GUT", "nationality": "mexico",      "head": "male_ls212" },
-    "stoffel_vandoorne": { "first": "Stoffel",   "last": "Vandoorne",  "initials": "VAN", "nationality": "belgium",     "head": "male_ls343" },
-    "brendon_hartley":   { "first": "Brendon",   "last": "Hartley",    "initials": "HAR", "nationality": "new_zealand", "head": "male_ls265" },
-    "sergey_sirotkin":   { "first": "Sergey",    "last": "Sirotkin",   "initials": "SIR", "nationality": "default",     "head": "male_ls790" },
-    "rio_haryanto":      { "first": "Rio",       "last": "Haryanto",   "initials": "HAR", "nationality": "indonesia",   "head": "male_ls161" }
+    "felipe_nasr":       { "first": "Felipe",    "last": "Nasr",       "initials": "NAS", "nationality": "brazil",      "head": "felipe_nasr" },
+    "esteban_gutierrez": { "first": "Esteban",   "last": "Gutiérrez",  "initials": "GUT", "nationality": "mexico",      "head": "esteban_gutierrez" },
+    "stoffel_vandoorne": { "first": "Stoffel",   "last": "Vandoorne",  "initials": "VAN", "nationality": "belgium",     "head": "stoffel_vandoorne" },
+    "brendon_hartley":   { "first": "Brendon",   "last": "Hartley",    "initials": "HAR", "nationality": "new_zealand", "head": "brendon_hartley" },
+    "sergey_sirotkin":   { "first": "Sergey",    "last": "Sirotkin",   "initials": "SIR", "nationality": "default",     "head": "sergey_sirotkin" },
+    "rio_haryanto":      { "first": "Rio",       "last": "Haryanto",   "initials": "HAR", "nationality": "indonesia",   "head": "rio_haryanto" }
   },
   "holders_for": ["antonio_giovinazzi", "daniil_kvyat", "jolyon_palmer", "marcus_ericsson", "mick_schumacher", "nicholas_latifi", "nico_rosberg", "nikita_mazepin", "pascal_wehrlein", "robert_kubica", "romain_grosjean"],
   "head_overrides": {
-    "nico_rosberg":       "male_ls265",
+    "nico_rosberg":       "nico_rosberg",
     "sebastian_vettel":   "sebastian_vettel",
     "kimi_raikkonen":     "kimi_raikkonen",
     "daniil_kvyat":       "daniil_kvyat",
     "romain_grosjean":    "romain_grosjean",
-    "marcus_ericsson":    "male_ls192",
-    "jolyon_palmer":      "male_ls204",
-    "pascal_wehrlein":    "male_ls487",
+    "marcus_ericsson":    "marcus_ericsson",
+    "jolyon_palmer":      "jolyon_palmer",
+    "pascal_wehrlein":    "pascal_wehrlein",
     "antonio_giovinazzi": "antonio_giovinazzi",
     "robert_kubica":      "robert_kubica",
     "nicholas_latifi":    "nicholas_latifi",
@@ -43,138 +43,138 @@
       "halo": false,
       "cockpit_camera": { "up": 0.04, "forward": 0.06 },
       "teams": [
-        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "drivers": [["lewis_hamilton", 44], ["nico_rosberg", 6]], "team_wear": ["#c0c6c9", "#111111", "#00d2be"] },
-        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e41ff", "drivers": [["daniel_ricciardo", 3], ["max_verstappen", 33]] },
-        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0000", "drivers": [["sebastian_vettel", 5], ["kimi_raikkonen", 7]] },
-        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#ffffff", "drivers": [["felipe_massa", 19], ["valtteri_bottas", 77]] },
-        { "folder": "force_india", "name": "Force India",     "code": "FIN", "colour": "#c0c0c0", "drivers": [["sergio_perez", 11], ["nico_hulkenberg", 27]] },
-        { "folder": "lotus",       "name": "Renault",         "code": "REN", "colour": "#fff500", "drivers": [["kevin_magnussen", 20], ["jolyon_palmer", 30]] },
-        { "folder": "toro_rosso",  "name": "Toro Rosso",      "code": "STR", "colour": "#469bff", "drivers": [["carlos_sainz-jr", 55], ["daniil_kvyat", 26]], "team_wear": ["#1a2a6c", "#d0202a", "#c0c0c0"] },
-        { "folder": "sauber",      "name": "Sauber",          "code": "SAU", "colour": "#006eff", "drivers": [["marcus_ericsson", 9], ["felipe_nasr", 12]], "team_wear": ["#1e3c96", "#f5d000", "#ffffff"] },
-        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8000", "drivers": [["fernando_alonso", 14], ["jenson_button", 22]] },
-        { "folder": "sauber",      "name": "Manor",           "code": "MRT", "colour": "#f85828", "drivers": [["pascal_wehrlein", 94], ["rio_haryanto", 88]], "key": "manor", "car": "sauber.erp" },
-        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#828282", "drivers": [["romain_grosjean", 8], ["esteban_gutierrez", 21]] }
+        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "engine": "mercedes", "drivers": [["lewis_hamilton", 44], ["nico_rosberg", 6]], "team_wear": ["#c0c6c9", "#111111", "#00d2be"] },
+        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e41ff", "engine": "renault", "drivers": [["daniel_ricciardo", 3], ["max_verstappen", 33]] },
+        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0000", "engine": "ferrari", "drivers": [["sebastian_vettel", 5], ["kimi_raikkonen", 7]] },
+        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#ffffff", "engine": "mercedes", "drivers": [["felipe_massa", 19], ["valtteri_bottas", 77]] },
+        { "folder": "force_india", "name": "Force India",     "code": "FIN", "colour": "#c0c0c0", "engine": "mercedes", "drivers": [["sergio_perez", 11], ["nico_hulkenberg", 27]] },
+        { "folder": "lotus",       "name": "Renault",         "code": "REN", "colour": "#fff500", "engine": "renault", "drivers": [["kevin_magnussen", 20], ["jolyon_palmer", 30]] },
+        { "folder": "toro_rosso",  "name": "Toro Rosso",      "code": "STR", "colour": "#469bff", "engine": "ferrari", "drivers": [["carlos_sainz-jr", 55], ["daniil_kvyat", 26]], "team_wear": ["#1a2a6c", "#d0202a", "#c0c0c0"] },
+        { "folder": "sauber",      "name": "Sauber",          "code": "SAU", "colour": "#006eff", "engine": "ferrari", "drivers": [["marcus_ericsson", 9], ["felipe_nasr", 12]], "team_wear": ["#1e3c96", "#f5d000", "#ffffff"] },
+        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8000", "engine": "honda", "drivers": [["fernando_alonso", 14], ["jenson_button", 22]] },
+        { "folder": "sauber",      "name": "Manor",           "code": "MRT", "colour": "#f85828", "engine": "mercedes", "drivers": [["pascal_wehrlein", 94], ["rio_haryanto", 88]], "key": "manor", "car": "sauber.erp" },
+        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#828282", "engine": "ferrari", "drivers": [["romain_grosjean", 8], ["esteban_gutierrez", 21]] }
       ]
     },
     {
       "year": 2017,
       "halo": false,
       "teams": [
-        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "drivers": [["lewis_hamilton", 44], ["valtteri_bottas", 77]] },
-        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e41ff", "drivers": [["daniel_ricciardo", 3], ["max_verstappen", 33]] },
-        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0000", "drivers": [["sebastian_vettel", 5], ["kimi_raikkonen", 7]], "team_wear": ["#e8000b", "#ffffff", "#111111"] },
-        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#ffffff", "drivers": [["felipe_massa", 19], ["lance_stroll", 18]], "team_wear": ["#ffffff", "#0b2240", "#d4202a"] },
-        { "folder": "force_india", "name": "Force India",     "code": "FIN", "colour": "#f596c8", "drivers": [["sergio_perez", 11], ["esteban_ocon", 31]] },
-        { "folder": "lotus",       "name": "Renault",         "code": "REN", "colour": "#fff500", "drivers": [["nico_hulkenberg", 27], ["jolyon_palmer", 30]] },
-        { "folder": "toro_rosso",  "name": "Toro Rosso",      "code": "STR", "colour": "#469bff", "drivers": [["carlos_sainz-jr", 55], ["daniil_kvyat", 26]] },
-        { "folder": "sauber",      "name": "Sauber",          "code": "SAU", "colour": "#006eff", "drivers": [["marcus_ericsson", 9], ["pascal_wehrlein", 94]] },
-        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8000", "drivers": [["fernando_alonso", 14], ["stoffel_vandoorne", 2]], "team_wear": ["#ff7a00", "#1a1a1a", "#ffffff"] },
-        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#828282", "drivers": [["romain_grosjean", 8], ["kevin_magnussen", 20]], "team_wear": ["#8a8d8f", "#1a1a1a", "#c8102e"] }
+        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "engine": "mercedes", "drivers": [["lewis_hamilton", 44], ["valtteri_bottas", 77]] },
+        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e41ff", "engine": "renault", "drivers": [["daniel_ricciardo", 3], ["max_verstappen", 33]] },
+        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0000", "engine": "ferrari", "drivers": [["sebastian_vettel", 5], ["kimi_raikkonen", 7]], "team_wear": ["#e8000b", "#ffffff", "#111111"] },
+        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#ffffff", "engine": "mercedes", "drivers": [["felipe_massa", 19], ["lance_stroll", 18]], "team_wear": ["#ffffff", "#0b2240", "#d4202a"] },
+        { "folder": "force_india", "name": "Force India",     "code": "FIN", "colour": "#f596c8", "engine": "mercedes", "drivers": [["sergio_perez", 11], ["esteban_ocon", 31]] },
+        { "folder": "lotus",       "name": "Renault",         "code": "REN", "colour": "#fff500", "engine": "renault", "drivers": [["nico_hulkenberg", 27], ["jolyon_palmer", 30]] },
+        { "folder": "toro_rosso",  "name": "Toro Rosso",      "code": "STR", "colour": "#469bff", "engine": "renault", "drivers": [["carlos_sainz-jr", 55], ["daniil_kvyat", 26]] },
+        { "folder": "sauber",      "name": "Sauber",          "code": "SAU", "colour": "#006eff", "engine": "ferrari", "drivers": [["marcus_ericsson", 9], ["pascal_wehrlein", 94]] },
+        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8000", "engine": "honda", "drivers": [["fernando_alonso", 14], ["stoffel_vandoorne", 2]], "team_wear": ["#ff7a00", "#1a1a1a", "#ffffff"] },
+        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#828282", "engine": "ferrari", "drivers": [["romain_grosjean", 8], ["kevin_magnussen", 20]], "team_wear": ["#8a8d8f", "#1a1a1a", "#c8102e"] }
       ]
     },
     {
       "year": 2018,
       "teams": [
-        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "drivers": [["lewis_hamilton", 44], ["valtteri_bottas", 77]] },
-        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0000", "drivers": [["sebastian_vettel", 5], ["kimi_raikkonen", 7]] },
-        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e41ff", "drivers": [["daniel_ricciardo", 3], ["max_verstappen", 33]] },
-        { "folder": "lotus",       "name": "Renault",         "code": "REN", "colour": "#fff500", "drivers": [["nico_hulkenberg", 27], ["carlos_sainz-jr", 55]] },
-        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#828282", "drivers": [["romain_grosjean", 8], ["kevin_magnussen", 20]] },
-        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8000", "drivers": [["fernando_alonso", 14], ["stoffel_vandoorne", 2]], "team_wear": ["#ff8000", "#1a3a78", "#111111"] },
-        { "folder": "force_india", "name": "Force India",     "code": "FIN", "colour": "#f596c8", "drivers": [["sergio_perez", 11], ["esteban_ocon", 31]] },
-        { "folder": "sauber",      "name": "Sauber",          "code": "SAU", "colour": "#9b0000", "drivers": [["marcus_ericsson", 9], ["charles_leclerc", 16]] },
-        { "folder": "toro_rosso",  "name": "Toro Rosso",      "code": "STR", "colour": "#469bff", "drivers": [["pierre_gasly", 10], ["brendon_hartley", 28]] },
-        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#ffffff", "drivers": [["lance_stroll", 18], ["sergey_sirotkin", 35]] }
+        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "engine": "mercedes", "drivers": [["lewis_hamilton", 44], ["valtteri_bottas", 77]] },
+        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0000", "engine": "ferrari", "drivers": [["sebastian_vettel", 5], ["kimi_raikkonen", 7]] },
+        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e41ff", "engine": "renault", "drivers": [["daniel_ricciardo", 3], ["max_verstappen", 33]] },
+        { "folder": "lotus",       "name": "Renault",         "code": "REN", "colour": "#fff500", "engine": "renault", "drivers": [["nico_hulkenberg", 27], ["carlos_sainz-jr", 55]] },
+        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#828282", "engine": "ferrari", "drivers": [["romain_grosjean", 8], ["kevin_magnussen", 20]] },
+        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8000", "engine": "renault", "drivers": [["fernando_alonso", 14], ["stoffel_vandoorne", 2]], "team_wear": ["#ff8000", "#1a3a78", "#111111"] },
+        { "folder": "force_india", "name": "Force India",     "code": "FIN", "colour": "#f596c8", "engine": "mercedes", "drivers": [["sergio_perez", 11], ["esteban_ocon", 31]] },
+        { "folder": "sauber",      "name": "Sauber",          "code": "SAU", "colour": "#9b0000", "engine": "ferrari", "drivers": [["marcus_ericsson", 9], ["charles_leclerc", 16]] },
+        { "folder": "toro_rosso",  "name": "Toro Rosso",      "code": "STR", "colour": "#469bff", "engine": "honda", "drivers": [["pierre_gasly", 10], ["brendon_hartley", 28]] },
+        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#ffffff", "engine": "mercedes", "drivers": [["lance_stroll", 18], ["sergey_sirotkin", 35]] }
       ]
     },
     {
       "year": 2019,
       "teams": [
-        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "drivers": [["lewis_hamilton", 44], ["valtteri_bottas", 77]], "team_wear": ["#c0c6c9", "#111111", "#00d2be"] },
-        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0000", "drivers": [["sebastian_vettel", 5], ["charles_leclerc", 16]] },
-        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e41ff", "drivers": [["max_verstappen", 33], ["pierre_gasly", 10]] },
-        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8700", "drivers": [["carlos_sainz-jr", 55], ["lando_norris", 4]], "team_wear": ["#ff8000", "#0a2858", "#111111"] },
-        { "folder": "lotus",       "name": "Renault",         "code": "REN", "colour": "#fff500", "drivers": [["daniel_ricciardo", 3], ["nico_hulkenberg", 27]] },
-        { "folder": "toro_rosso",  "name": "Toro Rosso",      "code": "STR", "colour": "#469bff", "drivers": [["daniil_kvyat", 26], ["alex_albon", 23]] },
-        { "folder": "force_india", "name": "Racing Point",    "code": "RPT", "colour": "#f596c8", "drivers": [["sergio_perez", 11], ["lance_stroll", 18]] },
-        { "folder": "sauber",      "name": "Alfa Romeo",      "code": "ARR", "colour": "#9b0000", "drivers": [["kimi_raikkonen", 7], ["antonio_giovinazzi", 99]] },
-        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#bd9e57", "drivers": [["romain_grosjean", 8], ["kevin_magnussen", 20]] },
-        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#ffffff", "drivers": [["george_russell", 63], ["robert_kubica", 88]] }
+        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "engine": "mercedes", "drivers": [["lewis_hamilton", 44], ["valtteri_bottas", 77]], "team_wear": ["#c0c6c9", "#111111", "#00d2be"] },
+        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0000", "engine": "ferrari", "drivers": [["sebastian_vettel", 5], ["charles_leclerc", 16]] },
+        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e41ff", "engine": "honda", "drivers": [["max_verstappen", 33], ["pierre_gasly", 10]] },
+        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8700", "engine": "renault", "drivers": [["carlos_sainz-jr", 55], ["lando_norris", 4]], "team_wear": ["#ff8000", "#0a2858", "#111111"] },
+        { "folder": "lotus",       "name": "Renault",         "code": "REN", "colour": "#fff500", "engine": "renault", "drivers": [["daniel_ricciardo", 3], ["nico_hulkenberg", 27]] },
+        { "folder": "toro_rosso",  "name": "Toro Rosso",      "code": "STR", "colour": "#469bff", "engine": "honda", "drivers": [["daniil_kvyat", 26], ["alex_albon", 23]] },
+        { "folder": "force_india", "name": "Racing Point",    "code": "RPT", "colour": "#f596c8", "engine": "mercedes", "drivers": [["sergio_perez", 11], ["lance_stroll", 18]] },
+        { "folder": "sauber",      "name": "Alfa Romeo",      "code": "ARR", "colour": "#9b0000", "engine": "ferrari", "drivers": [["kimi_raikkonen", 7], ["antonio_giovinazzi", 99]] },
+        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#bd9e57", "engine": "ferrari", "drivers": [["romain_grosjean", 8], ["kevin_magnussen", 20]] },
+        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#ffffff", "engine": "mercedes", "drivers": [["george_russell", 63], ["robert_kubica", 88]] }
       ]
     },
     {
       "year": 2020,
       "teams": [
-        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "drivers": [["lewis_hamilton", 44], ["valtteri_bottas", 77]], "team_wear": ["#111111", "#00d2be", "#c0c6c9"] },
-        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e41ff", "drivers": [["max_verstappen", 33], ["alex_albon", 23]] },
-        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8700", "drivers": [["carlos_sainz-jr", 55], ["lando_norris", 4]], "team_wear": ["#ff8000", "#1858a0", "#111111"] },
-        { "folder": "force_india", "name": "Racing Point",    "code": "RPT", "colour": "#f596c8", "drivers": [["sergio_perez", 11], ["lance_stroll", 18]] },
-        { "folder": "lotus",       "name": "Renault",         "code": "REN", "colour": "#fff500", "drivers": [["daniel_ricciardo", 3], ["esteban_ocon", 31]] },
-        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0000", "drivers": [["sebastian_vettel", 5], ["charles_leclerc", 16]] },
-        { "folder": "toro_rosso",  "name": "AlphaTauri",      "code": "AT", "colour": "#ffffff",  "drivers": [["pierre_gasly", 10], ["daniil_kvyat", 26]] },
-        { "folder": "sauber",      "name": "Alfa Romeo",      "code": "ARR", "colour": "#9b0000", "drivers": [["kimi_raikkonen", 7], ["antonio_giovinazzi", 99]] },
-        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#787878", "drivers": [["romain_grosjean", 8], ["kevin_magnussen", 20]] },
-        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#0082fa", "drivers": [["george_russell", 63], ["nicholas_latifi", 6]] }
+        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "engine": "mercedes", "drivers": [["lewis_hamilton", 44], ["valtteri_bottas", 77]], "team_wear": ["#111111", "#00d2be", "#c0c6c9"] },
+        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e41ff", "engine": "honda", "drivers": [["max_verstappen", 33], ["alex_albon", 23]] },
+        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8700", "engine": "renault", "drivers": [["carlos_sainz-jr", 55], ["lando_norris", 4]], "team_wear": ["#ff8000", "#1858a0", "#111111"] },
+        { "folder": "force_india", "name": "Racing Point",    "code": "RPT", "colour": "#f596c8", "engine": "mercedes", "drivers": [["sergio_perez", 11], ["lance_stroll", 18]] },
+        { "folder": "lotus",       "name": "Renault",         "code": "REN", "colour": "#fff500", "engine": "renault", "drivers": [["daniel_ricciardo", 3], ["esteban_ocon", 31]] },
+        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0000", "engine": "ferrari", "drivers": [["sebastian_vettel", 5], ["charles_leclerc", 16]] },
+        { "folder": "toro_rosso",  "name": "AlphaTauri",      "code": "AT", "colour": "#ffffff", "engine": "honda",  "drivers": [["pierre_gasly", 10], ["daniil_kvyat", 26]] },
+        { "folder": "sauber",      "name": "Alfa Romeo",      "code": "ARR", "colour": "#9b0000", "engine": "ferrari", "drivers": [["kimi_raikkonen", 7], ["antonio_giovinazzi", 99]] },
+        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#787878", "engine": "ferrari", "drivers": [["romain_grosjean", 8], ["kevin_magnussen", 20]] },
+        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#0082fa", "engine": "mercedes", "drivers": [["george_russell", 63], ["nicholas_latifi", 6]] }
       ]
     },
     {
       "year": 2021,
       "teams": [
-        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "drivers": [["lewis_hamilton", 44], ["valtteri_bottas", 77]], "team_wear": ["#111111", "#00d2be", "#c0c6c9"] },
-        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#0600ef", "drivers": [["max_verstappen", 33], ["sergio_perez", 11]] },
-        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0004", "drivers": [["charles_leclerc", 16], ["carlos_sainz-jr", 55]] },
-        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff9800", "drivers": [["lando_norris", 4], ["daniel_ricciardo", 3]], "team_wear": ["#ff8000", "#1858a0", "#111111"] },
-        { "folder": "lotus",       "name": "Alpine",          "code": "ALP", "colour": "#0090ff", "drivers": [["fernando_alonso", 14], ["esteban_ocon", 31]] },
-        { "folder": "toro_rosso",  "name": "AlphaTauri",      "code": "AT", "colour": "#2b4562",  "drivers": [["pierre_gasly", 10], ["yuki_tsunoda", 22]] },
-        { "folder": "force_india", "name": "Aston Martin",    "code": "AMR", "colour": "#006f62", "drivers": [["sebastian_vettel", 5], ["lance_stroll", 18]] },
-        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#005aff", "drivers": [["george_russell", 63], ["nicholas_latifi", 6]] },
-        { "folder": "sauber",      "name": "Alfa Romeo",      "code": "ARR", "colour": "#900000", "drivers": [["kimi_raikkonen", 7], ["antonio_giovinazzi", 99]] },
-        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#ffffff", "drivers": [["mick_schumacher", 47], ["nikita_mazepin", 9]] }
+        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#00d2be", "engine": "mercedes", "drivers": [["lewis_hamilton", 44], ["valtteri_bottas", 77]], "team_wear": ["#111111", "#00d2be", "#c0c6c9"] },
+        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#0600ef", "engine": "honda", "drivers": [["max_verstappen", 33], ["sergio_perez", 11]] },
+        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#dc0004", "engine": "ferrari", "drivers": [["charles_leclerc", 16], ["carlos_sainz-jr", 55]] },
+        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff9800", "engine": "mercedes", "drivers": [["lando_norris", 4], ["daniel_ricciardo", 3]], "team_wear": ["#ff8000", "#1858a0", "#111111"] },
+        { "folder": "lotus",       "name": "Alpine",          "code": "ALP", "colour": "#0090ff", "engine": "renault", "drivers": [["fernando_alonso", 14], ["esteban_ocon", 31]] },
+        { "folder": "toro_rosso",  "name": "AlphaTauri",      "code": "AT", "colour": "#2b4562", "engine": "honda",  "drivers": [["pierre_gasly", 10], ["yuki_tsunoda", 22]] },
+        { "folder": "force_india", "name": "Aston Martin",    "code": "AMR", "colour": "#006f62", "engine": "mercedes", "drivers": [["sebastian_vettel", 5], ["lance_stroll", 18]] },
+        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#005aff", "engine": "mercedes", "drivers": [["george_russell", 63], ["nicholas_latifi", 6]] },
+        { "folder": "sauber",      "name": "Alfa Romeo",      "code": "ARR", "colour": "#900000", "engine": "ferrari", "drivers": [["kimi_raikkonen", 7], ["antonio_giovinazzi", 99]] },
+        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#ffffff", "engine": "ferrari", "drivers": [["mick_schumacher", 47], ["nikita_mazepin", 9]] }
       ]
     },
     {
       "year": 2022,
       "teams": [
-        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e5bc6", "drivers": [["max_verstappen", 1], ["sergio_perez", 11]] },
-        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#ed1c24", "drivers": [["charles_leclerc", 16], ["carlos_sainz-jr", 55]] },
-        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#6cd3bf", "drivers": [["lewis_hamilton", 44], ["george_russell", 63]] },
-        { "folder": "lotus",       "name": "Alpine",          "code": "ALP", "colour": "#2293d1", "drivers": [["fernando_alonso", 14], ["esteban_ocon", 31]] },
-        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#f58020", "drivers": [["lando_norris", 4], ["daniel_ricciardo", 3]] },
-        { "folder": "sauber",      "name": "Alfa Romeo",      "code": "ARR", "colour": "#b12039", "drivers": [["valtteri_bottas", 77], ["guanyu_zhou", 24]] },
-        { "folder": "force_india", "name": "Aston Martin",    "code": "AMR", "colour": "#2d826d", "drivers": [["sebastian_vettel", 5], ["lance_stroll", 18]] },
-        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#b6babd", "drivers": [["kevin_magnussen", 20], ["mick_schumacher", 47]] },
-        { "folder": "toro_rosso",  "name": "AlphaTauri",      "code": "AT", "colour": "#4e7c9b",  "drivers": [["pierre_gasly", 10], ["yuki_tsunoda", 22]] },
-        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#37bedd", "drivers": [["alex_albon", 23], ["nicholas_latifi", 6]] }
+        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#1e5bc6", "engine": "honda", "drivers": [["max_verstappen", 1], ["sergio_perez", 11]] },
+        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#ed1c24", "engine": "ferrari", "drivers": [["charles_leclerc", 16], ["carlos_sainz-jr", 55]] },
+        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#6cd3bf", "engine": "mercedes", "drivers": [["lewis_hamilton", 44], ["george_russell", 63]] },
+        { "folder": "lotus",       "name": "Alpine",          "code": "ALP", "colour": "#2293d1", "engine": "renault", "drivers": [["fernando_alonso", 14], ["esteban_ocon", 31]] },
+        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#f58020", "engine": "mercedes", "drivers": [["lando_norris", 4], ["daniel_ricciardo", 3]] },
+        { "folder": "sauber",      "name": "Alfa Romeo",      "code": "ARR", "colour": "#b12039", "engine": "ferrari", "drivers": [["valtteri_bottas", 77], ["guanyu_zhou", 24]] },
+        { "folder": "force_india", "name": "Aston Martin",    "code": "AMR", "colour": "#2d826d", "engine": "mercedes", "drivers": [["sebastian_vettel", 5], ["lance_stroll", 18]] },
+        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#b6babd", "engine": "ferrari", "drivers": [["kevin_magnussen", 20], ["mick_schumacher", 47]] },
+        { "folder": "toro_rosso",  "name": "AlphaTauri",      "code": "AT", "colour": "#4e7c9b", "engine": "honda",  "drivers": [["pierre_gasly", 10], ["yuki_tsunoda", 22]] },
+        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#37bedd", "engine": "mercedes", "drivers": [["alex_albon", 23], ["nicholas_latifi", 6]] }
       ]
     },
     {
       "year": 2023,
       "teams": [
-        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#3671c6", "drivers": [["max_verstappen", 1], ["sergio_perez", 11]] },
-        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#6cd3bf", "drivers": [["lewis_hamilton", 44], ["george_russell", 63]] },
-        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#f91536", "drivers": [["charles_leclerc", 16], ["carlos_sainz-jr", 55]] },
-        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#f58020", "drivers": [["lando_norris", 4], ["oscar_piastri", 81]] },
-        { "folder": "force_india", "name": "Aston Martin",    "code": "AMR", "colour": "#358c75", "drivers": [["fernando_alonso", 14], ["lance_stroll", 18]] },
-        { "folder": "lotus",       "name": "Alpine",          "code": "ALP", "colour": "#2293d1", "drivers": [["pierre_gasly", 10], ["esteban_ocon", 31]] },
-        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#37bedd", "drivers": [["alex_albon", 23], ["logan_sargeant", 2]] },
-        { "folder": "toro_rosso",  "name": "AlphaTauri",      "code": "AT", "colour": "#5e8faa",  "drivers": [["yuki_tsunoda", 22], ["nyck_de-vries", 21]] },
-        { "folder": "sauber",      "name": "Alfa Romeo",      "code": "ARR", "colour": "#c92d4b", "drivers": [["valtteri_bottas", 77], ["guanyu_zhou", 24]] },
-        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#b6babd", "drivers": [["nico_hulkenberg", 27], ["kevin_magnussen", 20]] }
+        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#3671c6", "engine": "honda", "drivers": [["max_verstappen", 1], ["sergio_perez", 11]] },
+        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#6cd3bf", "engine": "mercedes", "drivers": [["lewis_hamilton", 44], ["george_russell", 63]] },
+        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#f91536", "engine": "ferrari", "drivers": [["charles_leclerc", 16], ["carlos_sainz-jr", 55]] },
+        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#f58020", "engine": "mercedes", "drivers": [["lando_norris", 4], ["oscar_piastri", 81]] },
+        { "folder": "force_india", "name": "Aston Martin",    "code": "AMR", "colour": "#358c75", "engine": "mercedes", "drivers": [["fernando_alonso", 14], ["lance_stroll", 18]] },
+        { "folder": "lotus",       "name": "Alpine",          "code": "ALP", "colour": "#2293d1", "engine": "renault", "drivers": [["pierre_gasly", 10], ["esteban_ocon", 31]] },
+        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#37bedd", "engine": "mercedes", "drivers": [["alex_albon", 23], ["logan_sargeant", 2]] },
+        { "folder": "toro_rosso",  "name": "AlphaTauri",      "code": "AT", "colour": "#5e8faa", "engine": "honda",  "drivers": [["yuki_tsunoda", 22], ["nyck_de-vries", 21]] },
+        { "folder": "sauber",      "name": "Alfa Romeo",      "code": "ARR", "colour": "#c92d4b", "engine": "ferrari", "drivers": [["valtteri_bottas", 77], ["guanyu_zhou", 24]] },
+        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#b6babd", "engine": "ferrari", "drivers": [["nico_hulkenberg", 27], ["kevin_magnussen", 20]] }
       ]
     },
     {
       "year": 2024,
       "teams": [
-        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#3671c6", "drivers": [["max_verstappen", 1], ["sergio_perez", 11]] },
-        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8000", "drivers": [["lando_norris", 4], ["oscar_piastri", 81]] },
-        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#e8002d", "drivers": [["charles_leclerc", 16], ["carlos_sainz-jr", 55]] },
-        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#27f4d2", "drivers": [["lewis_hamilton", 44], ["george_russell", 63]] },
-        { "folder": "force_india", "name": "Aston Martin",    "code": "AMR", "colour": "#229971", "drivers": [["fernando_alonso", 14], ["lance_stroll", 18]] },
-        { "folder": "lotus",       "name": "Alpine",          "code": "ALP", "colour": "#0093cc", "drivers": [["pierre_gasly", 10], ["esteban_ocon", 31]] },
-        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#64c4ff", "drivers": [["alex_albon", 23], ["logan_sargeant", 2]] },
-        { "folder": "toro_rosso",  "name": "RB",              "code": "RB", "colour": "#6692ff",  "drivers": [["yuki_tsunoda", 22], ["daniel_ricciardo", 3]] },
-        { "folder": "sauber",      "name": "Kick Sauber",     "code": "SAU", "colour": "#52e252", "drivers": [["valtteri_bottas", 77], ["guanyu_zhou", 24]] },
-        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#b6babd", "drivers": [["nico_hulkenberg", 27], ["kevin_magnussen", 20]] }
+        { "folder": "redbull",     "name": "Red Bull Racing", "code": "RBR", "colour": "#3671c6", "engine": "honda", "drivers": [["max_verstappen", 1], ["sergio_perez", 11]] },
+        { "folder": "mclaren",     "name": "McLaren",         "code": "MCL", "colour": "#ff8000", "engine": "mercedes", "drivers": [["lando_norris", 4], ["oscar_piastri", 81]] },
+        { "folder": "ferrari",     "name": "Ferrari",         "code": "FER", "colour": "#e8002d", "engine": "ferrari", "drivers": [["charles_leclerc", 16], ["carlos_sainz-jr", 55]] },
+        { "folder": "mercedes",    "name": "Mercedes",        "code": "MER", "colour": "#27f4d2", "engine": "mercedes", "drivers": [["lewis_hamilton", 44], ["george_russell", 63]] },
+        { "folder": "force_india", "name": "Aston Martin",    "code": "AMR", "colour": "#229971", "engine": "mercedes", "drivers": [["fernando_alonso", 14], ["lance_stroll", 18]] },
+        { "folder": "lotus",       "name": "Alpine",          "code": "ALP", "colour": "#0093cc", "engine": "renault", "drivers": [["pierre_gasly", 10], ["esteban_ocon", 31]] },
+        { "folder": "williams",    "name": "Williams",        "code": "WIL", "colour": "#64c4ff", "engine": "mercedes", "drivers": [["alex_albon", 23], ["logan_sargeant", 2]] },
+        { "folder": "toro_rosso",  "name": "RB",              "code": "RB", "colour": "#6692ff", "engine": "honda",  "drivers": [["yuki_tsunoda", 22], ["daniel_ricciardo", 3]] },
+        { "folder": "sauber",      "name": "Kick Sauber",     "code": "SAU", "colour": "#52e252", "engine": "ferrari", "drivers": [["valtteri_bottas", 77], ["guanyu_zhou", 24]] },
+        { "folder": "haas",        "name": "Haas",            "code": "HAA", "colour": "#b6babd", "engine": "ferrari", "drivers": [["nico_hulkenberg", 27], ["kevin_magnussen", 20]] }
       ]
     }
   ]

@@ -404,6 +404,7 @@ impl Shell {
                 self.show_addon(shown.id(), cx);
             }
             Err(e) => {
+                crate::app_log::action("addon action").addon(addon).failed(&e);
                 window.push_notification(Notification::error(e), cx);
                 cx.notify();
             }
@@ -1383,7 +1384,10 @@ fn import_all(
                     for result in store.install_addons(&path) {
                         match result {
                             Ok(m) => done.push(format!("Installed {} {}", m.name, m.version)),
-                            Err(e) => failed.push(format!("{}: {e}", file_name(&path))),
+                            Err(e) => {
+                                crate::app_log::action("install addon").file(&path).failed(&e);
+                                failed.push(format!("{}: {e}", file_name(&path)))
+                            }
                         }
                     }
                 }
@@ -1400,7 +1404,13 @@ fn import_all(
                 });
                 match result {
                     Ok(lines) => done.extend(lines),
-                    Err(e) => failed.push(e),
+                    Err(e) => {
+                        crate::app_log::action("import")
+                            .addon(&id)
+                            .files(&paths)
+                            .failed(&e);
+                        failed.push(e)
+                    }
                 }
             }
         }

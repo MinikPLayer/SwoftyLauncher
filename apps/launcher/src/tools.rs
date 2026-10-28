@@ -212,14 +212,17 @@ impl Shell {
                                 Notification::info(format!("{name} opens in your browser")),
                                 cx,
                             ),
-                            Err(e) => window.push_notification(
-                                match Block::of(&path, &e) {
-                                    Some(b) => Notification::error(b.text()).autohide(false),
-                                    None => Notification::error(e.to_string()),
-                                }
-                                .title(format!("Could not start {name}")),
-                                cx,
-                            ),
+                            Err(e) => {
+                                crate::app_log::action("start a tool").file(&path).failed(&e);
+                                window.push_notification(
+                                    match Block::of(&path, &e) {
+                                        Some(b) => Notification::error(b.text()).autohide(false),
+                                        None => Notification::error(e.to_string()),
+                                    }
+                                    .title(format!("Could not start {name}")),
+                                    cx,
+                                )
+                            }
                         }
                     })
             }

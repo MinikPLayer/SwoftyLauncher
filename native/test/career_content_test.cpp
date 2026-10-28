@@ -154,6 +154,43 @@ int main()
         d = desc1990();
         d.car_group = -2;
         expect(!content::check(d, none).empty(), "check: a car group below -1 is refused");
+        d = desc1990();
+        d.careers = content::CAREER_MY_TEAM;
+        expect(content::check(d, none).empty(), "check: a My Team content is accepted");
+        d.careers = content::CAREER_ALL;
+        expect(content::check(d, none).empty(), "check: a content for both careers is accepted");
+        d.careers = 0;
+        expect(!content::check(d, none).empty(), "check: a content for no career is refused");
+        d.careers = 4;
+        expect(!content::check(d, none).empty(), "check: an unknown career bit is refused");
+    }
+    {
+        expect(content::career_of(SWOFTY_CAREER_DRIVER) == content::CAREER_DRIVER, "career: a Driver Career pick is Driver Career");
+        expect(content::career_of(SWOFTY_CAREER_MY_TEAM) == content::CAREER_MY_TEAM, "career: a My Team pick is My Team");
+        expect(content::career_of(0) == content::CAREER_DRIVER, "career: no pick yet is Driver Career");
+        expect(content::stock_command(content::ADDON_SELECT_PRESSED) == content::SELECT_PRESSED,
+               "command: addon_select_pressed runs as select_pressed");
+        expect(content::stock_command(content::ADDON_FOCUS_CHANGED) == content::FOCUS_CHANGED,
+               "command: addon_focus_changed runs as focus_changed");
+        expect(content::stock_command(content::SELECT_PRESSED) == 0, "command: a stock command is left alone");
+    }
+    {
+        const uintptr_t select = 0x145738430, showroom = 0x1457390a0;
+        const char *career[] = {"career_default_content", "career_dlc_content"};
+        const char *cars[] = {"showroom_f1_DLC", "showroom_f1", "showroom_f2_next", "showroom_f2",
+                              "showroom_player_cars_dlc", "showroom_player_cars", nullptr};
+        expect(content::content_select(select, select, career, 2), "select: the content select view model's list");
+        expect(content::content_select(select, select, nullptr, 0),
+               "select: the content select view model's list before its tiles are read");
+        expect(!content::content_select(showroom, select, cars, 7), "select: the showroom's car tiles are left alone");
+        expect(!content::content_select(0, select, cars, 7),
+               "select: car tiles with no view model found are left alone");
+        expect(content::content_select(0, select, career, 2),
+               "select: the stock career tiles with no view model found are the content select");
+        expect(!content::content_select(0, 0, nullptr, 0), "select: no vtable bound and no tiles is left alone");
+        expect(!content::career_tile_id(nullptr) && !content::career_tile_id("career") &&
+                   content::career_tile_id("career_dlc_content"),
+               "select: only the two stock career content ids count");
     }
     {
         Fake f;

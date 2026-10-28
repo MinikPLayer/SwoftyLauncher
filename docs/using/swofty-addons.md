@@ -1,6 +1,6 @@
 ---
 title: Swofty's addons
-description: The addons Swofty publishes in the Addon Browser - F1 25 RE-Optimization, the Career Mode Editor, the Driver Manager and R&D Tyres & Thermal Management - and how to install, update and remove them.
+description: The addons Swofty publishes in the Addon Browser - F1 25 RE-Optimization, the Career Mode Editor, the Driver Manager, R&D Tyres & Thermal Management and Any Team Transfers - and how to install, update and remove them.
 ---
 
 # Swofty's addons
@@ -13,6 +13,7 @@ Swofty publishes these addons in the [Addon Browser](/using/addon-browser), next
 | [Career Mode Editor](/using/career-editor) | `swofty.career-editor` | Swofty |
 | [Driver Manager](/using/driver-manager) | `swofty.driver-manager` | Swofty |
 | R&D: Tyres & Thermal Management | `swofty.rnd-tyres-thermal` | Swofty |
+| [Any Team Transfers](#any-team-transfers) | `swofty.any-team-transfers` | Swofty |
 
 ## Install, update or remove one
 
@@ -108,3 +109,11 @@ With `upscaler` set to `auto`, the addon picks by GPU:
 ### Its log
 
 The addon writes to `swofty/loader.log` in the game folder. Its lines start with `[re-opt]`: the GPU it detected, the upscaler it picked, the settings it lowered and each hook it installed or skipped.
+
+## Any Team Transfers
+
+In a Driver Career contract negotiation, every team makes you an offer, so Team Select lets you sign for any team on the grid, your current team included. Without it, the game offers two or three teams ranked close to yours, plus your current team when it renews you.
+
+- Team Select opens when your contract ends and you start the contract event in Team HQ. The contract terms, the signing and the move at the end of the season are the game's own.
+- A Progressive Career that follows your driver's real career still signs only for his real team.
+- It needs Swofty Launcher 1.5.13 or later, on the Steam or EA build of F1 25. On a game build where the function it hooks has changed, offers stay stock and `swofty/loader.log` says why.

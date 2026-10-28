@@ -5,6 +5,8 @@ use std::time::{Duration, Instant};
 use anyhow::{Result, anyhow, bail};
 use swofty_core::ea_app::{self, Handoff};
 use swofty_core::install::{Game, Source};
+use swofty_core::launch;
+use swofty_core::offline::{self, Slot};
 use swofty_core::process::{GameProcess, game_processes, stop_process};
 use swofty_core::recovery::Scope;
 use swofty_core::steam_client;
@@ -254,6 +256,16 @@ pub fn start(store: &Store, game: &Path, args: &[String], session: &Path, before
             if let Some(mut open) = ea_app::opener(&h) {
                 detach(&mut open).ok();
             }
+            match offline::slot(&offline::journal_path(&store.root)) {
+                Ok(Some(Slot::Staged)) => say("ea app", "offline play's file is in place"),
+                Ok(Some(Slot::Replaced)) => say("ea app", "the EA app put its own file over offline play's"),
+                Ok(Some(Slot::Missing)) => say("ea app", "offline play's file is gone from the game folder"),
+                Ok(Some(Slot::Unknown)) => {
+                    say("ea app", "offline play's file was changed by another program")
+                }
+                Ok(None) => {}
+                Err(e) => say("ea app", &format!("could not check offline play's file: {e}")),
+            }
             say(
                 "ea app",
                 "F1 25 did not start from the launch link; press Play on F1 25 in the EA app",
@@ -268,7 +280,32 @@ pub fn start(store: &Store, game: &Path, args: &[String], session: &Path, before
         }
     };
     say("ea app", &format!("F1 25 started (pid {pid})"));
+    restage(store);
     Ok(Started { pid, handoff })
+}
+
+/// An EA app repair puts EA's anti-cheat launcher over offline play's file,
+/// and the game it then starts has no mods. Put the file back for the next
+/// Play and tell the player.
+fn restage(store: &Store) {
+    let journal = offline::journal_path(&store.root);
+    let done = offline::artifacts(&store.root).and_then(|a| offline::restage(&a, &journal));
+    match done {
+        Ok(Some(Slot::Staged) | None) => {}
+        Ok(Some(Slot::Replaced | Slot::Missing)) => {
+            let failure = launch::Failure::new(launch::Cause::EaRepaired);
+            say("warning", &format!("{}: {}", failure.title(), failure.text()));
+            if let Err(e) = failure.write(&store.root) {
+                say("info", &format!("could not record it for the launcher: {e}"));
+            }
+        }
+        Ok(Some(Slot::Unknown)) => say(
+            "ea app",
+            "EAAntiCheat.GameServiceLauncher.exe changed after staging and is neither offline play's nor EA's; \
+             left as is",
+        ),
+        Err(e) => say("ea app", &format!("could not put offline play's file back: {e}")),
+    }
 }
 
 /// An EA app copy started by the EA app as it is installed, with nothing

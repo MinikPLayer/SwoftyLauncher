@@ -34,6 +34,8 @@ const PID: &str = "attached, pid ";
 const UNHANDLED: &str = "[crash] unhandled ";
 const TOP_LEVEL: &str = "reached the top-level filter";
 const STUB_EXIT: &str = "[stub] [offline] game exited with code ";
+/// The loader's line for F1 25's dialog when a drive it writes to is nearly full.
+pub const LOW_DISK: &str = "dialog shown: Insufficient Storage: ";
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -54,6 +56,9 @@ pub enum Cause {
         fallback: crate::overlayfs::Kind,
         reason: String,
     },
+    /// An EA app repair replaced offline play's file, so the game started
+    /// without mods; the session put the file back.
+    EaRepaired,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -99,6 +104,7 @@ impl Failure {
             Cause::ClosedEarly { .. } => "F1 25 closed as it started",
             Cause::Blocked(b) => b.title(),
             Cause::OverlayCancelled { .. } => "F1 25 was not started",
+            Cause::EaRepaired => "The EA app repaired F1 25",
         }
     }
 
@@ -113,6 +119,9 @@ impl Failure {
             Cause::Blocked(b) => b.headline(),
             Cause::OverlayCancelled { .. } => {
                 "the launch was cancelled in the OverlayFS dialog, so F1 25 was not started".into()
+            }
+            Cause::EaRepaired => {
+                "the EA app's repair replaced offline play's file, so F1 25 started without mods".into()
             }
         }
     }
@@ -147,6 +156,12 @@ impl Failure {
                  again and choose Continue to launch by copying files, or remove --use-overlayfs from the \
                  Steam launch option."
             ),
+            Cause::EaRepaired => {
+                "The EA app's repair replaced offline play's file in the F1 25 folder, so F1 25 \
+                 started without mods. The launcher put the file back. Close F1 25, then press Play in the \
+                 launcher again."
+                    .into()
+            }
         }
     }
 }
@@ -163,6 +178,8 @@ pub struct LoaderSeen {
     pub unhandled: Option<u32>,
     /// The game's exit code as the session launcher read it (its last line).
     pub stub_exit: Option<u32>,
+    /// The game showed its own Insufficient Storage dialog.
+    pub low_disk: bool,
 }
 
 impl LoaderSeen {
@@ -177,6 +194,7 @@ impl LoaderSeen {
             }
             seen.window |= WINDOW.iter().any(|w| line.contains(w));
             seen.second_copy |= line.contains(SECOND_COPY);
+            seen.low_disk |= line.contains(LOW_DISK);
             if seen.unhandled.is_none() && line.contains(UNHANDLED) && line.contains(TOP_LEVEL) {
                 seen.unhandled = line.split_once("(0x").and_then(|(_, rest)| {
                     u32::from_str_radix(rest.split(|c: char| !c.is_ascii_hexdigit()).next()?, 16).ok()
@@ -246,6 +264,7 @@ mod tests {
                 second_copy: false,
                 unhandled: None,
                 stub_exit: None,
+                low_disk: false,
             }
         );
         let window = format!(
@@ -404,6 +423,28 @@ mod tests {
         let text = std::fs::read_to_string(Failure::path(&root)).unwrap();
         assert!(text.contains("\"kind\": \"blocked\""), "{text}");
         assert!(text.contains("\"code\": 4551"), "{text}");
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn an_ea_app_repair_says_what_to_do_and_round_trips() {
+        let root = std::env::temp_dir().join(format!("swofty-launch-ea-repaired-{}", std::process::id()));
+        std::fs::create_dir_all(root.join("state")).unwrap();
+        let f = Failure {
+            at: 1_792_594_036.5,
+            cause: Cause::EaRepaired,
+        };
+        assert_eq!(f.title(), "The EA app repaired F1 25");
+        assert!(f.text().contains("started without mods"), "{}", f.text());
+        assert!(
+            f.text().ends_with("press Play in the launcher again."),
+            "{}",
+            f.text()
+        );
+        f.write(&root).unwrap();
+        assert_eq!(Failure::read(&root), Some(f));
+        let text = std::fs::read_to_string(Failure::path(&root)).unwrap();
+        assert!(text.contains("\"kind\": \"ea_repaired\""), "{text}");
         std::fs::remove_dir_all(&root).ok();
     }
 }

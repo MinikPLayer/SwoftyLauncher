@@ -32,13 +32,13 @@ Bindings are found by signature at load time. The RVAs on each page are for this
 | Subsystem | Header | Functions | Structs | Data | Sites |
 |---|---|---|---|---|---|
 | [car](./car.md) | `<swofty/game/car.hpp>` | 1 | 0 | 0 | 0 |
-| [career](./career.md) | `<swofty/game/career.hpp>` | 40 | 57 | 35 | 155 |
+| [career](./career.md) | `<swofty/game/career.hpp>` | 41 | 59 | 35 | 156 |
 | [core](./core.md) | `<swofty/game/core.hpp>` | 11 | 6 | 4 | 33 |
 | [entrants](./entrants.md) | `<swofty/game/entrants.hpp>` | 0 | 2 | 0 | 0 |
 | [fe_flow](./fe_flow.md) | `<swofty/game/fe_flow.hpp>` | 1 | 1 | 0 | 1 |
 | [fe_home](./fe_home.md) | `<swofty/game/fe_home.hpp>` | 2 | 0 | 0 | 1 |
 | [fe_tiles](./fe_tiles.md) | `<swofty/game/fe_tiles.hpp>` | 9 | 6 | 2 | 2 |
-| [game](./game.md) | `<swofty/game/game.hpp>` | 14 | 4 | 5 | 7 |
+| [game](./game.md) | `<swofty/game/game.hpp>` | 15 | 4 | 5 | 8 |
 | [gamedb](./gamedb.md) | `<swofty/game/gamedb.hpp>` | 1 | 1 | 1 | 1 |
 | [session](./session.md) | `<swofty/game/session.hpp>` | 10 | 9 | 4 | 1 |
 | [vm](./vm.md) | `<swofty/game/vm.hpp>` | 5 | 1 | 1 | 0 |
@@ -49,7 +49,7 @@ Include `<swofty/game.hpp>` for every subsystem.
 
 These types are known by name only. Use them through pointers.
 
-`AiHandlingConfig`, `CarPerfVehicle`, `CarPhysicsRecord`, `CarWheelState`, `DepartmentData`, `EntrantSetupMode`, `EntrantsManager`, `FEHomeViewModel`, `GdbTableCursor`, `NeStr`, `RnDDepartmentConfig`, `UpgradeEffectDef`, `UpgradeRecord`, `VehicleIdentity`, `VehiclePackageRow`
+`AiHandlingConfig`, `CarPerfVehicle`, `CarPhysicsRecord`, `CarWheelState`, `DepartmentData`, `EntrantSetupMode`, `EntrantsManager`, `FEHomeViewModel`, `GdbTableCursor`, `NeStr`, `RnDDepartmentConfig`, `UiLayoutStep`, `UiSignal`, `UiTemplateRecord`, `UpgradeEffectDef`, `UpgradeRecord`, `VehicleIdentity`, `VehiclePackageRow`
 
 ## Regenerating
 

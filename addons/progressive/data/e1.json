@@ -1,0 +1,8 @@
+{
+  "finalise": "auto",
+  "patch_weekend": true,
+  "seats": [
+    { "driver": "george_russell", "vehicle_ref": "cs16_mercedes" },
+    { "driver": "lewis_hamilton", "look": "2016-cs_mercedes_lewis_hamilton" }
+  ]
+}

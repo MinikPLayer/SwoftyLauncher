@@ -7,7 +7,7 @@ use crate::baseline::{
 use crate::journal::{Journal, Op, State};
 use crate::placed::{self, Placed};
 use crate::profile::VANILLA;
-use crate::{Error, Result, io_err, with_retry};
+use crate::{Error, Result, addon_storage, io_err, with_retry};
 
 pub const PROXY: &str = "version.dll";
 pub const LOADER_DIR: &str = "swofty";
@@ -168,6 +168,9 @@ pub struct RolledBack {
     pub session: bool,
     pub changes: usize,
     pub drift: Vec<Drift>,
+    /// The files addons wrote that went to `addon-storage/` in the data
+    /// folder, as game paths.
+    pub kept: Vec<String>,
 }
 
 pub struct Installer<'a> {
@@ -178,6 +181,8 @@ pub struct Installer<'a> {
     pub session: bool,
     /// Where a long install says how far it got.
     pub out: &'a dyn Fn(&str),
+    /// Files copied so far, of how many, after each one.
+    pub progress: &'a dyn Fn(usize, usize),
     pub free_space: fn(&Path) -> Option<u64>,
 }
 
@@ -188,6 +193,8 @@ const PROGRESS_EVERY: std::time::Duration = std::time::Duration::from_secs(10);
 const STATE_PER_FILE: u64 = 2048;
 
 fn quiet(_: &str) {}
+
+fn unwatched(_: usize, _: usize) {}
 
 fn rel_parts(rel: &str) -> Vec<String> {
     let parts: Vec<&str> = rel.split('/').collect();
@@ -302,6 +309,7 @@ impl<'a> Installer<'a> {
             stop_after: None,
             session: false,
             out: &quiet,
+            progress: &unwatched,
             free_space: crate::disk::free_space,
         }
     }
@@ -341,19 +349,22 @@ impl<'a> Installer<'a> {
             }
             let (id, profile, session) = (j.id.clone(), j.profile.clone(), j.session);
             let changes = j.entries.len();
-            let drift = self.rollback(j, hashes)?;
+            let (drift, kept) = self.rollback(j, hashes)?;
             out.push(RolledBack {
                 id,
                 profile,
                 session,
                 changes,
                 drift,
+                kept,
             });
         }
         Ok(out)
     }
 
-    fn rollback(&self, j: Journal, hashes: &mut Hashes) -> Result<Vec<Drift>> {
+    fn rollback(&self, j: Journal, hashes: &mut Hashes) -> Result<(Vec<Drift>, Vec<String>)> {
+        let ids = addon_storage::ids(j.entries.iter().map(|e| e.path.as_str()));
+        let kept = self.keep_storage(&ids, std::slice::from_ref(&j))?;
         let mut report = Vec::new();
         let same_build = j.build_id == self.game.identity.build_id;
         for e in j.entries.iter().rev() {
@@ -378,7 +389,7 @@ impl<'a> Installer<'a> {
                     match hashes.sha256_opt(&path)? {
                         None => {}
                         Some(now) if e.state == State::Pending || Some(&now) == e.after.as_ref() => {
-                            with_retry(&path, || std::fs::remove_file(&path))?;
+                            with_retry(&path, || crate::remove_placed(&path))?;
                         }
                         Some(_) => report.push(Drift::LeftInPlace(e.path.clone())),
                     }
@@ -408,7 +419,27 @@ impl<'a> Installer<'a> {
         }
         placed.save(self.data)?;
         j.close()?;
-        Ok(report)
+        Ok((report, kept))
+    }
+
+    /// Move what the addons `ids` wrote through the storage API out of their
+    /// game folders to `addon-storage/` in the data folder: every file there
+    /// that neither `placed.json` nor one of `open` records the launcher
+    /// placing.
+    fn keep_storage(&self, ids: &BTreeSet<String>, open: &[Journal]) -> Result<Vec<String>> {
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut managed: BTreeSet<String> = Placed::load(self.data)?.files.into_keys().collect();
+        managed.extend(
+            open.iter()
+                .flat_map(|j| j.entries.iter().map(|e| placed::key(&e.path))),
+        );
+        let mut kept = Vec::new();
+        for id in ids {
+            kept.extend(addon_storage::keep(self.data, &self.game.dir, id, &managed)?);
+        }
+        Ok(kept)
     }
 
     fn restore_original(&self, sha: &str, path: &Path) -> Result<()> {
@@ -582,6 +613,9 @@ impl<'a> Installer<'a> {
     }
 
     fn step(&self, n: &mut usize) -> Result<()> {
+        if self.session {
+            crate::busy::check(self.data)?;
+        }
         *n += 1;
         match self.stop_after {
             Some(limit) if *n > limit => Err(Error::Other(format!("stopped after {limit} step(s)"))),
@@ -653,12 +687,35 @@ impl<'a> Installer<'a> {
     }
 
     fn place(&self, plan: &Plan, hashes: &mut Hashes, loaded: Baseline) -> Result<()> {
+        crate::now_doing("checking the game files");
         let objects = self.objects();
         let mut baseline = loaded.clone();
         let mut placed = Placed::load(self.data)?;
         let mut after = BTreeMap::new();
         for (rel, src) in plan.data.iter().chain(&plan.added).chain(&plan.loader) {
             after.insert(rel.as_str(), hashes.sha256(src)?);
+        }
+        let (mut backed_up, mut missing) = (Vec::new(), Vec::new());
+        for rel in plan.data.keys() {
+            if std::fs::symlink_metadata(self.path(rel)).is_ok() {
+                continue;
+            }
+            match baseline.files.get(rel).filter(|r| objects.has(&r.sha256)) {
+                Some(rec) => backed_up.push((rel, rec.sha256.clone())),
+                None => missing.push(rel.clone()),
+            }
+        }
+        if !missing.is_empty() {
+            return Err(Error::MissingStock {
+                files: missing,
+                version: crate::exe_version::read(&self.path(crate::GAME_EXE)),
+            });
+        }
+        for (rel, sha) in backed_up {
+            self.restore_original(&sha, &self.path(rel))?;
+            (self.out)(&format!(
+                "{rel} was missing from the game folder; put back its backed-up original"
+            ));
         }
         let mut conflicts = Vec::new();
         let mut unproven = Vec::new();
@@ -806,6 +863,7 @@ impl<'a> Installer<'a> {
             .chain(&plan.loader)
             .map(|(rel, src)| (rel.as_str(), src))
             .collect();
+        crate::now_doing("copying the mods into the game folder");
         let (mut n, mut copied, mut told) = (0, 0, std::time::Instant::now());
         for i in 0..j.entries.len() {
             self.step(&mut n)?;
@@ -813,8 +871,18 @@ impl<'a> Installer<'a> {
             let path = self.path(&e.path);
             match e.op {
                 Op::ReplaceFile => {
-                    std::fs::copy(sources[e.path.as_str()], &path)
-                        .map_err(|err| crate::quarantine::copy_error(&e.path, &path, err))?;
+                    let src = sources[e.path.as_str()];
+                    match std::fs::copy(src, &path) {
+                        Err(err)
+                            if err.kind() == std::io::ErrorKind::PermissionDenied
+                                && crate::clear_readonly(&path) =>
+                        {
+                            std::fs::copy(src, &path)
+                        }
+                        r => r,
+                    }
+                    .map_err(|err| crate::quarantine::copy_error(&e.path, &path, err))?;
+                    crate::clear_readonly(&path);
                 }
                 Op::CreateDir => std::fs::create_dir(&path).map_err(io_err(&path))?,
                 // Windows refused the file as a threat. The entry stays pending, so
@@ -825,6 +893,7 @@ impl<'a> Installer<'a> {
                     Err(err) if crate::quarantine::is_virus_error(&err) => continue,
                     r => {
                         r.map_err(io_err(&path))?;
+                        crate::clear_readonly(&path);
                     }
                 },
                 Op::RegistryOverride => {
@@ -840,12 +909,24 @@ impl<'a> Installer<'a> {
                 copied += 1;
             }
             j.done(i)?;
+            (self.progress)(copied, sources.len());
             if told.elapsed() >= PROGRESS_EVERY {
                 (self.out)(&format!(
                     "installing: {copied} of {} file(s) copied",
                     sources.len()
                 ));
                 told = std::time::Instant::now();
+            }
+        }
+        let planned: BTreeSet<String> = sources.keys().map(|rel| placed::key(rel)).collect();
+        for id in addon_storage::ids(sources.keys().copied()) {
+            let moved = addon_storage::put_back(self.data, &self.game.dir, &id, &planned)?;
+            if !moved.is_empty() {
+                (self.out)(&format!(
+                    "storage: put back {} file(s) {id} wrote, from {}",
+                    moved.len(),
+                    addon_storage::addon_dir(self.data, &id).display()
+                ));
             }
         }
         j.commit()
@@ -861,6 +942,8 @@ impl<'a> Installer<'a> {
         }
         let loader = self.path(LOADER_DIR);
         if loader.is_dir() {
+            let ids = addon_storage::present(&self.game.dir)?;
+            self.keep_storage(&ids, &Journal::open(self.data)?)?;
             let logs = self.data.join("sessions/orphaned-logs");
             for e in std::fs::read_dir(&loader).map_err(io_err(&loader))?.flatten() {
                 if e.path().extension().is_some_and(|x| x == "log") {

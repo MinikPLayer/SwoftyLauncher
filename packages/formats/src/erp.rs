@@ -185,18 +185,107 @@ pub fn compress_at(data: &[u8], level: i32) -> Result<Vec<u8>> {
 }
 
 static PACKED: std::sync::Mutex<Option<std::path::PathBuf>> = std::sync::Mutex::new(None);
+
+static WORK: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// A count that grows as fragments are compressed and archives written, so a
+/// caller can tell a long build that is working from one that is stuck.
+pub fn work() -> u64 {
+    WORK.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+fn worked() {
+    WORK.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+}
 const PACKED_MIN: usize = 16 << 10;
 
 pub fn cache_compressed(dir: Option<std::path::PathBuf>) {
+    if dir.is_none() {
+        ENCODERS.lock().unwrap_or_else(|e| e.into_inner()).clear();
+    }
     *PACKED.lock().unwrap_or_else(|e| e.into_inner()) = dir;
 }
 
+type Encoder = zstd::zstd_safe::CCtx<'static>;
+
+/// Compression contexts kept between fragments, by level. Setting one up
+/// starts a worker thread and allocates its window, which cost as much as
+/// compressing a small fragment. A reused context keeps its parameters, so it
+/// writes the same bytes as a new one.
+static ENCODERS: std::sync::Mutex<Vec<(i32, Encoder)>> = std::sync::Mutex::new(Vec::new());
+
+fn zstd_error(code: usize) -> Error {
+    Error::Format(format!("zstd: {}", zstd::zstd_safe::get_error_name(code)))
+}
+
+/// The settings the zstd command line compresses with: a checksum, and its
+/// multithreaded path with one worker, whose output differs from the
+/// single-threaded encoder's on large inputs.
+fn encoder(level: i32) -> Result<Encoder> {
+    use zstd::zstd_safe::CParameter;
+    let mut ctx =
+        Encoder::try_create().ok_or_else(|| Error::Format("zstd: no memory for an encoder".into()))?;
+    for p in [
+        CParameter::CompressionLevel(level),
+        CParameter::ChecksumFlag(true),
+        CParameter::NbWorkers(1),
+    ] {
+        ctx.set_parameter(p).map_err(zstd_error)?;
+    }
+    Ok(ctx)
+}
+
 fn encode(data: &[u8], level: i32) -> Result<Vec<u8>> {
-    let mut enc = zstd::Encoder::new(Vec::new(), level)?;
-    enc.include_checksum(true)?;
-    enc.multithread(1)?;
-    std::io::Write::write_all(&mut enc, data)?;
-    Ok(enc.finish()?)
+    use zstd::zstd_safe::{InBuffer, OutBuffer, ResetDirective, zstd_sys::ZSTD_EndDirective};
+    worked();
+    let pooled = {
+        let mut pool = ENCODERS.lock().unwrap_or_else(|e| e.into_inner());
+        pool.iter()
+            .position(|(l, _)| *l == level)
+            .map(|i| pool.swap_remove(i).1)
+    };
+    let mut ctx = match pooled {
+        Some(ctx) => ctx,
+        None => encoder(level)?,
+    };
+    ctx.reset(ResetDirective::SessionOnly).map_err(zstd_error)?;
+    let mut out: Vec<u8> = Vec::with_capacity(zstd::compress_bound(data.len()) + 64);
+    let mut input = InBuffer::around(data);
+    // The input goes in first and the frame ends after, as a stream writer
+    // does, so the frame header carries no content size, like the command
+    // line's.
+    while input.pos() < data.len() {
+        if out.capacity() - out.len() < (1 << 16) {
+            out.reserve(1 << 16);
+        }
+        let at = out.len();
+        ctx.compress_stream2(
+            &mut OutBuffer::around_pos(&mut out, at),
+            &mut input,
+            ZSTD_EndDirective::ZSTD_e_continue,
+        )
+        .map_err(zstd_error)?;
+    }
+    let mut end = InBuffer::around(&[]);
+    loop {
+        let at = out.len();
+        let left = ctx
+            .compress_stream2(
+                &mut OutBuffer::around_pos(&mut out, at),
+                &mut end,
+                ZSTD_EndDirective::ZSTD_e_end,
+            )
+            .map_err(zstd_error)?;
+        if left == 0 {
+            break;
+        }
+        out.reserve(left.max(1 << 16));
+    }
+    ENCODERS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .push((level, ctx));
+    Ok(out)
 }
 
 fn compress_cached(dir: &Path, data: &[u8], level: i32) -> Result<Vec<u8>> {
@@ -401,9 +490,9 @@ pub struct ErpFile {
 
 impl ErpFile {
     pub fn open(path: &Path) -> Result<Self> {
-        let mut file = std::fs::File::open(path)?;
+        let mut file = std::fs::File::open(path).map_err(crate::io_at(path))?;
         let mut index = vec![0; HEADER_LEN];
-        file.read_exact(&mut index)?;
+        file.read_exact(&mut index).map_err(crate::io_at(path))?;
         if &index[..4] != MAGIC {
             return Err(Error::Magic {
                 offset: 0,
@@ -412,7 +501,8 @@ impl ErpFile {
         }
         let data_off = u64::from_le_bytes(index[0x20..0x28].try_into().expect("8 bytes"));
         index.resize(data_off as usize, 0);
-        file.read_exact(&mut index[HEADER_LEN..])?;
+        file.read_exact(&mut index[HEADER_LEN..])
+            .map_err(crate::io_at(path))?;
         Ok(Self {
             path: path.to_path_buf(),
             erp: Erp::parse_index(&index)?.0,
@@ -421,12 +511,13 @@ impl ErpFile {
     }
 
     pub fn load(&self, res: &Resource) -> Result<Resource> {
-        let mut file = std::fs::File::open(&self.path)?;
+        let mut file = std::fs::File::open(&self.path).map_err(crate::io_at(&self.path))?;
         let mut out = res.clone();
         for f in &mut out.fragments {
-            file.seek(SeekFrom::Start(self.data_off + f.offset))?;
+            file.seek(SeekFrom::Start(self.data_off + f.offset))
+                .map_err(crate::io_at(&self.path))?;
             f.raw = vec![0; f.packed as usize];
-            file.read_exact(&mut f.raw)?;
+            file.read_exact(&mut f.raw).map_err(crate::io_at(&self.path))?;
         }
         Ok(out)
     }
@@ -457,8 +548,11 @@ impl ErpFile {
         };
         let head = erp.layout();
         let tmp = dst.with_extension("erp.tmp");
-        let mut src = std::fs::File::open(&self.path)?;
-        let mut out = std::io::BufWriter::with_capacity(1 << 20, std::fs::File::create(&tmp)?);
+        let mut src = std::fs::File::open(&self.path).map_err(crate::io_at(&self.path))?;
+        let mut out = std::io::BufWriter::with_capacity(
+            1 << 20,
+            std::fs::File::create(&tmp).map_err(crate::io_at(&tmp))?,
+        );
         std::io::Write::write_all(&mut out, &head)?;
         let mut buf = vec![0; 1 << 20];
         let frags = erp.resources.iter().flat_map(|r| &r.fragments);
@@ -466,10 +560,10 @@ impl ErpFile {
             match span {
                 None => std::io::Write::write_all(&mut out, &f.raw)?,
                 Some((at, mut left)) => {
-                    src.seek(SeekFrom::Start(at))?;
+                    src.seek(SeekFrom::Start(at)).map_err(crate::io_at(&self.path))?;
                     while left > 0 {
                         let n = left.min(buf.len() as u64) as usize;
-                        src.read_exact(&mut buf[..n])?;
+                        src.read_exact(&mut buf[..n]).map_err(crate::io_at(&self.path))?;
                         std::io::Write::write_all(&mut out, &buf[..n])?;
                         left -= n as u64;
                     }
@@ -478,7 +572,11 @@ impl ErpFile {
         }
         std::io::Write::flush(&mut out)?;
         drop(out);
-        std::fs::rename(&tmp, dst)?;
+        if let Err(e) = std::fs::rename(&tmp, dst) {
+            std::fs::remove_file(&tmp).ok();
+            return Err(crate::io_at(dst)(e));
+        }
+        worked();
         Ok(())
     }
 }
@@ -486,6 +584,84 @@ impl ErpFile {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_cut_short_archive_names_its_file() {
+        let dir = std::env::temp_dir().join(format!("swofty-erp-short-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let mut head = vec![0; HEADER_LEN];
+        head[..4].copy_from_slice(MAGIC);
+        head[0x20..0x28].copy_from_slice(&(HEADER_LEN as u64 + 100).to_le_bytes());
+        for (name, body) in [("index.erp", head.clone()), ("header.erp", head[..10].to_vec())] {
+            let path = dir.join(name);
+            std::fs::write(&path, body).unwrap();
+            let err = ErpFile::open(&path).unwrap_err();
+            assert!(
+                matches!(&err, Error::IoAt { path: p, source } if p == &path && source.kind() == std::io::ErrorKind::UnexpectedEof),
+                "{err}"
+            );
+            assert_eq!(
+                err.to_string(),
+                format!(
+                    "{}: the file is shorter than it should be, so it is incomplete or damaged",
+                    path.display()
+                )
+            );
+        }
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    fn streamed(data: &[u8], level: i32) -> Vec<u8> {
+        let mut enc = zstd::Encoder::new(Vec::new(), level).unwrap();
+        enc.include_checksum(true).unwrap();
+        enc.multithread(1).unwrap();
+        std::io::Write::write_all(&mut enc, data).unwrap();
+        enc.finish().unwrap()
+    }
+
+    #[test]
+    fn a_reused_encoder_writes_what_a_new_one_does() {
+        let mut seed = 7u64;
+        let mut noisy = |n: usize| -> Vec<u8> {
+            (0..n)
+                .map(|i| {
+                    seed = seed
+                        .wrapping_mul(6364136223846793005)
+                        .wrapping_add(1442695040888963407);
+                    if i % 3 == 0 {
+                        (seed >> 59) as u8
+                    } else {
+                        b"track_asset_"[i % 12]
+                    }
+                })
+                .collect()
+        };
+        let inputs = [
+            Vec::new(),
+            noisy(1),
+            noisy(4 << 10),
+            noisy(70 << 10),
+            noisy(3 << 20),
+            noisy(9 << 20),
+        ];
+        for level in [3, ZSTD_LEVEL] {
+            for _ in 0..2 {
+                for data in &inputs {
+                    assert_eq!(
+                        encode(data, level).unwrap(),
+                        streamed(data, level),
+                        "{} bytes, level {level}",
+                        data.len()
+                    );
+                }
+            }
+        }
+        cache_compressed(None);
+        assert_eq!(
+            encode(&inputs[2], ZSTD_LEVEL).unwrap(),
+            streamed(&inputs[2], ZSTD_LEVEL)
+        );
+    }
 
     fn sample() -> Erp {
         let mut header = [0u8; HEADER_LEN];

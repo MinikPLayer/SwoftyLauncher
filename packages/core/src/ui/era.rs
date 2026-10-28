@@ -66,7 +66,7 @@ pub fn fade_alpha(px: usize) -> u8 {
     (255.0 * t * t * (3.0 - 2.0 * t)).round() as u8
 }
 
-fn template_mut<'a>(root: &'a mut Obj, name: &str) -> Result<&'a mut Node> {
+pub(super) fn template_mut<'a>(root: &'a mut Obj, name: &str) -> Result<&'a mut Node> {
     root.at_mut("Templates")?
         .a_mut()?
         .iter_mut()
@@ -74,7 +74,7 @@ fn template_mut<'a>(root: &'a mut Obj, name: &str) -> Result<&'a mut Node> {
         .ok_or_else(|| err(format!("template {name} not found")))
 }
 
-fn named<'a>(n: &'a mut Node, slot: usize, key: &str, name: &str) -> Result<&'a mut Obj> {
+pub(super) fn named<'a>(n: &'a mut Node, slot: usize, key: &str, name: &str) -> Result<&'a mut Obj> {
     let owner = n.name().to_owned();
     n.slot_mut(slot)?
         .iter_mut()
@@ -83,11 +83,11 @@ fn named<'a>(n: &'a mut Node, slot: usize, key: &str, name: &str) -> Result<&'a 
         .ok_or_else(|| err(format!("{owner}: no {name} {key}")))
 }
 
-fn event_mut<'a>(n: &'a mut Node, name: &str) -> Result<&'a mut Obj> {
+pub(super) fn event_mut<'a>(n: &'a mut Node, name: &str) -> Result<&'a mut Obj> {
     named(n, EVENTS, "eventName", name)
 }
 
-fn set_layout(n: &mut Node, path: &[&str]) -> Result<()> {
+pub(super) fn set_layout(n: &mut Node, path: &[&str]) -> Result<()> {
     let group = n
         .slot_mut(LAYOUT)?
         .first_mut()
@@ -122,7 +122,7 @@ fn input_on_active_part(spawner: &mut Node) -> Result<()> {
     Ok(())
 }
 
-fn set_dbentry(n: &mut Node, key: &str, entry: &str) -> Result<()> {
+pub(super) fn set_dbentry(n: &mut Node, key: &str, entry: &str) -> Result<()> {
     set_str(n.props_mut()?.at_mut(key)?.o_mut()?, "dbentry", entry)
 }
 
@@ -294,7 +294,13 @@ pub fn build_ui(data: &[u8]) -> Result<Vec<u8>> {
     Ok(out)
 }
 
-fn place(e: &mut Node, x: f64, y: f64, scale: Option<f64>, rotation: Option<[f64; 4]>) -> Result<()> {
+pub(super) fn place(
+    e: &mut Node,
+    x: f64,
+    y: f64,
+    scale: Option<f64>,
+    rotation: Option<[f64; 4]>,
+) -> Result<()> {
     let o = e.o_mut()?;
     o.set("position", Node::Val(idf::vec3([x, y, 0.0, 0.0])));
     if let Some(s) = scale {
@@ -306,7 +312,7 @@ fn place(e: &mut Node, x: f64, y: f64, scale: Option<f64>, rotation: Option<[f64
     Ok(())
 }
 
-fn first_root(p: &Pkg) -> Result<&Node> {
+pub(super) fn first_root(p: &Pkg) -> Result<&Node> {
     idf::scenes(p)?
         .first()
         .ok_or_else(|| err("a scene file without scenes"))?

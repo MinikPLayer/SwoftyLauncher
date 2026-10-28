@@ -10,6 +10,7 @@ use gpui_kit::component::spinner::Spinner;
 use gpui_kit::component::{Disableable, Icon, Sizable, WindowExt, h_flex, v_flex};
 use gpui_kit::prelude::FluentBuilder;
 use gpui_kit::*;
+use swofty_core::multiplayer::session as mp_session;
 use swofty_core::send_logs::{self, Bundle, GameInfo, MESSAGE_MAX, Report, Stage};
 use swofty_core::store::Store;
 
@@ -140,6 +141,7 @@ impl SendLogs {
             name: name.clone(),
             message,
             game: self.game.clone(),
+            room: mp_session::active_state().map(|s| mp_session::snapshot(&s)),
         };
         let sending = send_logs::available();
         self._work = Some(cx.spawn_in(window, async move |this, cx| {

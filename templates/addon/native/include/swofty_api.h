@@ -125,6 +125,90 @@ typedef struct SwoftyEvents {
 typedef struct SwoftyPaint SwoftyPaint;
 typedef void (*SwoftyPaintFn)(SwoftyPaint *paint, void *user);
 
+/* Overlay v2: the SwoftyOverlay entries after image() exist when the running swofty_core.dll exports
+   SwoftyCoreOverlayVersion and it returns 2 or more (swofty/overlay.hpp checks); the v3 entries after
+   ui_scale() exist when it returns 3 or more. A text style and an input snapshot are read and written
+   up to their size field, so later fields can be added. */
+#define SWOFTY_OVERLAY_VERSION 3
+
+enum {
+    SWOFTY_TEXT_LEFT = 0x00,
+    SWOFTY_TEXT_CENTER = 0x01,
+    SWOFTY_TEXT_RIGHT = 0x02,
+    SWOFTY_TEXT_TOP = 0x00,
+    SWOFTY_TEXT_MIDDLE = 0x10,
+    SWOFTY_TEXT_BASELINE = 0x20,
+    SWOFTY_TEXT_BOTTOM = 0x30,
+};
+
+enum {
+    SWOFTY_GRADIENT_VERTICAL = 0,
+    SWOFTY_GRADIENT_HORIZONTAL = 1,
+};
+
+enum {
+    SWOFTY_POLYLINE_CLOSED = 1,
+};
+
+enum {
+    SWOFTY_MOUSE_LEFT = 1,
+    SWOFTY_MOUSE_RIGHT = 2,
+    SWOFTY_MOUSE_MIDDLE = 4,
+};
+
+/* Gamepad buttons in SwoftyInput.pad_buttons / pad_pressed: the XInput XINPUT_GAMEPAD_* bits. */
+enum {
+    SWOFTY_PAD_UP = 0x0001,
+    SWOFTY_PAD_DOWN = 0x0002,
+    SWOFTY_PAD_LEFT = 0x0004,
+    SWOFTY_PAD_RIGHT = 0x0008,
+    SWOFTY_PAD_START = 0x0010,
+    SWOFTY_PAD_BACK = 0x0020,
+    SWOFTY_PAD_LTHUMB = 0x0040,
+    SWOFTY_PAD_RTHUMB = 0x0080,
+    SWOFTY_PAD_LB = 0x0100,
+    SWOFTY_PAD_RB = 0x0200,
+    SWOFTY_PAD_A = 0x1000,
+    SWOFTY_PAD_B = 0x2000,
+    SWOFTY_PAD_X = 0x4000,
+    SWOFTY_PAD_Y = 0x8000,
+};
+
+typedef struct SwoftyInput {
+    uint32_t size;
+    uint32_t focused;
+    float x, y;
+    float wheel;
+    uint32_t buttons;
+    uint32_t pressed;
+    uint32_t released;
+    uint32_t char_count;
+    uint32_t chars[16];
+    uint8_t keys_down[32];
+    uint8_t keys_pressed[32];
+    uint8_t keys_typed[32];
+    uint32_t pad_connected;
+    uint32_t pad_buttons;
+    uint32_t pad_pressed;
+    float pad_lx, pad_ly, pad_rx, pad_ry;
+    float pad_lt, pad_rt;
+} SwoftyInput;
+
+typedef struct SwoftyTextStyle {
+    uint32_t size;
+    uint32_t align;
+    float px;
+    uint32_t rgba;
+    float tracking;
+    float line_height;
+    uint32_t outline_rgba;
+    float outline_px;
+    uint32_t shadow_rgba;
+    float shadow_dx, shadow_dy, shadow_blur;
+    float max_width;
+    uint32_t font;
+} SwoftyTextStyle;
+
 typedef struct SwoftyOverlay {
     int (*available)(void);
     int (*on_paint)(SwoftyPaintFn fn, void *user, uint32_t *token);
@@ -137,6 +221,38 @@ typedef struct SwoftyOverlay {
     void (*measure)(const SwoftyPaint *paint, float size, const char *utf8, float *width, float *height);
     int (*load_image)(const char *id, const char *file);
     int (*image)(SwoftyPaint *paint, const char *id, float x, float y, float w, float h, uint32_t tint);
+    /* v2 */
+    void (*rect_rounded)(SwoftyPaint *paint, float x, float y, float w, float h, float radius, uint32_t rgba);
+    void (*rect_rounded_outline)(SwoftyPaint *paint, float x, float y, float w, float h, float radius, float thickness,
+                                 uint32_t rgba);
+    void (*rect_gradient)(SwoftyPaint *paint, float x, float y, float w, float h, float radius, uint32_t from,
+                          uint32_t to, uint32_t flags);
+    void (*circle)(SwoftyPaint *paint, float cx, float cy, float radius, uint32_t rgba);
+    void (*circle_outline)(SwoftyPaint *paint, float cx, float cy, float radius, float thickness, uint32_t rgba);
+    void (*arc)(SwoftyPaint *paint, float cx, float cy, float radius, float from, float to, float thickness,
+                uint32_t rgba);
+    void (*polyline)(SwoftyPaint *paint, const float *xy, uint32_t count, float thickness, uint32_t rgba,
+                     uint32_t flags);
+    void (*polygon)(SwoftyPaint *paint, const float *xy, uint32_t count, uint32_t rgba);
+    void (*text_styled)(SwoftyPaint *paint, float x, float y, const SwoftyTextStyle *style, const char *utf8);
+    void (*measure_styled)(const SwoftyPaint *paint, const SwoftyTextStyle *style, const char *utf8, float *width,
+                           float *height);
+    int (*image_uv)(SwoftyPaint *paint, const char *id, float x, float y, float w, float h, float u0, float v0,
+                    float u1, float v1, uint32_t tint);
+    int (*image_nine)(SwoftyPaint *paint, const char *id, float x, float y, float w, float h, float left, float top,
+                      float right, float bottom, float scale, uint32_t tint);
+    int (*image_size)(const char *id, float *width, float *height);
+    void (*push_clip)(SwoftyPaint *paint, float x, float y, float w, float h);
+    void (*pop_clip)(SwoftyPaint *paint);
+    void (*push_transform)(SwoftyPaint *paint, const float *m);
+    void (*pop_transform)(SwoftyPaint *paint);
+    void (*push_opacity)(SwoftyPaint *paint, float opacity);
+    void (*pop_opacity)(SwoftyPaint *paint);
+    void (*safe_area)(const SwoftyPaint *paint, float *x, float *y, float *w, float *h);
+    float (*ui_scale)(const SwoftyPaint *paint);
+    /* v3 */
+    int (*input)(const SwoftyPaint *paint, SwoftyInput *out);
+    int (*focus)(int on);
 } SwoftyOverlay;
 
 #define SWOFTY_TELEMETRY_VERSION 1
@@ -355,6 +471,25 @@ typedef struct SwoftyHud {
     int (*set)(const char *path, uint32_t type, const void *value);
 } SwoftyHud;
 
+/* Team HQ hub tabs (swofty/hub.hpp). Present on cores that export SwoftyCoreHub; the table is read through
+   GetProcAddress, so an addon built against this header also loads on an older core and sees it absent.
+   An addon's manifest `hub_tab` {name, title, options, data_group} makes the core add a Team HQ laptop tab
+   for careers of data_group (after STANDINGS), whose page template is swofty_hub_<name> and whose data the
+   core publishes at view_model_data.swofty_hub_<name> (title, count, o<k>.label/value/description).
+   Version 1: available; hide_rnd(on) hides the R&D tab of Team HQ while on is set: Team HQ builds it
+   hidden, and an open Team HQ hides or shows it on the next frame (cores before the live path leave it out
+   from the next Team HQ entry instead); set_option(addon, option, value) picks the option state whose
+   value is `value` (a choice value, "true"/"false", or a number) through the same command ADDON SETTINGS
+   runs. */
+#define SWOFTY_API_HUB 1
+#define SWOFTY_HUB_VERSION 1
+typedef struct SwoftyHub {
+    uint32_t version;
+    int (*available)(void);
+    int (*hide_rnd)(int on);
+    int (*set_option)(const char *addon, const char *option, const char *value);
+} SwoftyHub;
+
 /* Runtime string overrides (API v8): the localised text a lng_* key resolves to, changed while the
    game runs. language NULL or "*" means every language; otherwise a language code (eng, fre, ...)
    that applies while it is the game's current language and wins over "*". The text is UTF-8 and is
@@ -381,6 +516,11 @@ enum {
 };
 
 enum {
+    SWOFTY_CAREER_CONTENT_DRIVER = 1,
+    SWOFTY_CAREER_CONTENT_MY_TEAM = 2,
+};
+
+enum {
     SWOFTY_CAREER_CONTENT_QUEUED = 0,
     SWOFTY_CAREER_CONTENT_LIVE = 1,
     SWOFTY_CAREER_CONTENT_OFF = 2,
@@ -398,6 +538,7 @@ typedef struct SwoftyCareerContentDesc {
     const char *entitlement;
     int32_t car_group;
     uint32_t badge;
+    uint32_t careers;
 } SwoftyCareerContentDesc;
 
 typedef struct SwoftyCareerContentInfo {

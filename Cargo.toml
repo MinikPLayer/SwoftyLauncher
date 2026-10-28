@@ -4,7 +4,7 @@ members = ["addons/builtins", "apps/cli", "apps/launcher", "installer", "package
 default-members = ["addons/builtins", "apps/cli", "packages/addon-api", "packages/core", "packages/formats", "packages/sdk", "templates/launcher-addon"]
 
 [workspace.package]
-version = "1.5.9"
+version = "1.5.29"
 edition = "2024"
 rust-version = "1.95"
 license = "AGPL-3.0-or-later"
@@ -23,7 +23,9 @@ clap = { version = "4", features = ["derive", "env", "string"] }
 flate2 = "1"
 md-5 = "0.11"
 png = "0.18"
-rars = { version = "=0.10.0", default-features = false }
+rars = { version = "=0.12.0", default-features = false }
+ring = "0.17"
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 semver = { version = "1", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -31,7 +33,10 @@ sha1 = "0.11"
 sha2 = "0.11"
 tar = { version = "0.4", default-features = false }
 thiserror = "2"
+tungstenite = { version = "0.30", default-features = false, features = ["handshake"] }
 ureq = "3"
+webpki-roots = "1"
+zeroize = "1"
 zip = { version = "9", default-features = false, features = ["deflate"] }
 zstd = { version = "0.14", features = ["zstdmt"] }
 

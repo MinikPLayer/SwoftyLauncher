@@ -12,7 +12,12 @@
   kb.py --agent A import <rows.tsv> <table>           add rows not yet present (ghidra_export output)
 Tables: functions globals db_keys strings_anchors subsystems verify
 """
-import argparse, datetime, fcntl, json, os, re, sys, contextlib
+import argparse, datetime, json, os, re, sys, contextlib
+try:
+    import fcntl
+except ImportError:  # Windows
+    fcntl = None
+    import msvcrt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RE = os.path.dirname(HERE)
@@ -227,6 +232,16 @@ def djb2(s):
 def locked():
     os.makedirs(DB, exist_ok=True)
     with open(LOCK, 'a') as lf:
+        if fcntl is None:
+            # Windows: lock the first byte, blocking until it is free.
+            lf.seek(0)
+            msvcrt.locking(lf.fileno(), msvcrt.LK_LOCK, 1)
+            try:
+                yield
+            finally:
+                lf.seek(0)
+                msvcrt.locking(lf.fileno(), msvcrt.LK_UNLCK, 1)
+            return
         fcntl.flock(lf, fcntl.LOCK_EX)
         try:
             yield

@@ -12,9 +12,10 @@ use std::time::{Duration, SystemTime};
 
 use crate::GAME_EXE;
 use crate::baseline::sha256_file;
+use crate::compat::AdminLayer;
 use crate::install::{PROXY, has_override};
 use crate::process::{GameProcess, same_folder};
-use crate::quarantine::Cause;
+use crate::quarantine::{Carrier, Cause};
 use crate::session::LOADER_LOG;
 
 pub type Probe<T> = std::result::Result<T, String>;
@@ -59,6 +60,14 @@ pub struct Findings {
     /// The value names under F1_25.exe's Image File Execution Options key,
     /// where Exploit protection keeps its program settings.
     pub exec_options: Option<Probe<Vec<String>>>,
+    /// The compatibility settings on the game folder's F1_25.exe, as
+    /// `<layers> (for this user|for all users)`.
+    pub layers: Option<Probe<Vec<String>>>,
+    /// The compatibility settings on the programs that start the game
+    /// (`compat::starter_layers`).
+    pub starter_layers: Option<Vec<AdminLayer>>,
+    /// The EA app processes running, and the compatibility shims in each.
+    pub ea_app: Vec<EaApp>,
     /// VerifiedAndReputablePolicyState: 0 off, 1 on, 2 evaluation.
     pub smart_app_control: Option<Probe<Option<u32>>>,
     pub logs: Vec<EventLog>,
@@ -92,6 +101,13 @@ pub struct Seen {
     pub mitigation: Option<Probe<Mitigation>>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct EaApp {
+    pub pid: u32,
+    pub image: Option<String>,
+    pub shims: Probe<Vec<String>>,
+}
+
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Modules {
     pub count: usize,
@@ -99,6 +115,9 @@ pub struct Modules {
     pub version: Vec<String>,
     /// The file names of modules from outside the game and Windows folders.
     pub others: Vec<String>,
+    /// The compatibility shim DLLs Windows loaded, which a compatibility
+    /// setting or a shim database brings in.
+    pub shims: Vec<String>,
 }
 
 /// The process's DLL load policies (GetProcessMitigationPolicy).
@@ -289,6 +308,29 @@ fn tidy_with(path: &str, home: Option<&str>) -> String {
     }
 }
 
+/// Windows' compatibility shim DLLs. apphelp.dll is left out: most processes
+/// load it whether a shim applies or not.
+const SHIMS: &[&str] = &[
+    "AcLayers.dll",
+    "AcGenral.dll",
+    "AcSpecfc.dll",
+    "AcXtrnal.dll",
+    "AcWinRT.dll",
+];
+
+/// Programs that hook into games, by the start of their DLL's name.
+const HOOKS: &[(&str, &str)] = &[
+    ("medal-hook", "Medal"),
+    ("rtsshooks", "RivaTuner Statistics Server"),
+    ("discordhook", "Discord's overlay"),
+    ("graphics-hook", "OBS Studio"),
+    ("windhawk", "Windhawk"),
+];
+
+/// Exploit protection's program settings among the Image File Execution
+/// Options value names. MaxLoaderThreads alone is common and changes nothing.
+const EXPLOIT_PROTECTION: &[&str] = &["MitigationOptions", "MitigationAuditOptions", "EAFModules"];
+
 /// The version.dll files and outside modules among a process's module paths.
 pub fn modules(paths: &[String], game: &Path, windows: Option<&str>) -> Modules {
     let game = game.to_string_lossy();
@@ -300,7 +342,17 @@ pub fn modules(paths: &[String], game: &Path, windows: Option<&str>) -> Modules 
     others.sort_by_key(|n| n.to_lowercase());
     others.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
     others.truncate(MAX_OTHERS);
+    let mut shims: Vec<String> = Vec::new();
+    for p in paths {
+        let name = file_name(p);
+        if SHIMS.iter().any(|s| s.eq_ignore_ascii_case(name))
+            && !shims.iter().any(|s| s.eq_ignore_ascii_case(name))
+        {
+            shims.push(name.to_owned());
+        }
+    }
     Modules {
+        shims,
         count: paths.len(),
         version: paths
             .iter()
@@ -309,6 +361,20 @@ pub fn modules(paths: &[String], game: &Path, windows: Option<&str>) -> Modules 
             .collect(),
         others,
     }
+}
+
+/// The programs that hook into games among a process's outside modules.
+fn hooks(others: &[String]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for m in others {
+        let m = m.to_ascii_lowercase();
+        if let Some((_, product)) = HOOKS.iter().find(|(prefix, _)| m.starts_with(prefix))
+            && !out.iter().any(|p| p == product)
+        {
+            out.push((*product).to_owned());
+        }
+    }
+    out
 }
 
 /// The DLLs a Wine process has mapped, from `/proc/<pid>/maps`.
@@ -323,6 +389,7 @@ pub fn mapped_modules(maps: &str, game: &Path) -> Modules {
     }
     Modules {
         others: Vec::new(),
+        shims: Vec::new(),
         ..modules(&paths, game, None)
     }
 }
@@ -474,14 +541,100 @@ impl Findings {
             if m.version.iter().any(|p| in_folder(p, game)) {
                 continue;
             }
-            if let Some(path) = m.version.first() {
+            let Some(path) = m.version.first().map(|p| tidy(p)) else {
+                continue;
+            };
+            if policy(g).prefer_system32 {
                 return Some(Cause::OtherCopy {
-                    path: tidy(path),
-                    prefer_system32: policy(g).prefer_system32,
+                    path,
+                    prefer_system32: true,
                 });
             }
+            if self.exploit_protection() {
+                return Some(Cause::ExploitProtection { path });
+            }
+            let layers = match &self.layers {
+                Some(Ok(l)) => l.clone(),
+                _ => Vec::new(),
+            };
+            if !layers.is_empty() || !m.shims.is_empty() {
+                return Some(Cause::CompatLayer {
+                    path,
+                    from: if layers.is_empty() { self.carrier() } else { None },
+                    layers,
+                    shims: m.shims.clone(),
+                });
+            }
+            let names = self.third_party_antivirus();
+            if !names.is_empty() {
+                return Some(Cause::Antivirus { path, names });
+            }
+            return Some(Cause::Unexplained {
+                path,
+                hooks: hooks(&m.others),
+            });
         }
-        sac.then_some(Cause::SmartAppControl { seen: false })
+        if sac {
+            return Some(Cause::SmartAppControl { seen: false });
+        }
+        let unreadable = !self.games.is_empty() && self.games.iter().all(|g| g.modules.is_err());
+        (unreadable && self.third_party_antivirus().is_empty()).then_some(Cause::Unreadable)
+    }
+
+    /// The program that most likely started the game with compatibility
+    /// layers: the first one with a setting of its own, else an EA app that
+    /// runs with shims.
+    fn carrier(&self) -> Option<Carrier> {
+        if let Some(first) = self.starter_layers.iter().flatten().next() {
+            let on = |l: &&AdminLayer| l.name == first.name;
+            return Some(Carrier {
+                name: first.name.clone(),
+                exe: Some(first.exe.clone()),
+                layers: self
+                    .starter_layers
+                    .iter()
+                    .flatten()
+                    .filter(on)
+                    .map(|l| format!("{} ({})", l.layers.trim(), l.scope()))
+                    .collect(),
+            });
+        }
+        self.ea_app
+            .iter()
+            .find(|a| matches!(&a.shims, Ok(s) if !s.is_empty()))
+            .map(|a| Carrier {
+                name: crate::ea_app::PROCESS.to_owned(),
+                exe: a.image.as_deref().map(tidy),
+                layers: Vec::new(),
+            })
+    }
+
+    fn exploit_protection(&self) -> bool {
+        matches!(&self.exec_options, Some(Ok(names)) if names.iter().any(|n| {
+            let value = n.rsplit('\\').next().unwrap_or(n);
+            EXPLOIT_PROTECTION.iter().any(|k| value.eq_ignore_ascii_case(k))
+        }))
+    }
+
+    /// The antivirus products registered with Windows and on, other than
+    /// Microsoft Defender.
+    fn third_party_antivirus(&self) -> Vec<String> {
+        let Some(Ok(listed)) = &self.antivirus else {
+            return Vec::new();
+        };
+        let mut out: Vec<String> = Vec::new();
+        for entry in listed {
+            let Some(name) = entry.strip_suffix(" (on)") else {
+                continue;
+            };
+            if !name.contains("Microsoft Defender")
+                && !name.contains("Windows Defender")
+                && !out.iter().any(|n| n == name)
+            {
+                out.push(name.to_owned());
+            }
+        }
+        out
     }
 
     /// The findings as log lines.
@@ -539,6 +692,47 @@ impl Findings {
                 "Image File Execution Options for {GAME_EXE}: not readable ({e})"
             )),
             None => {}
+        }
+        match &self.layers {
+            Some(Ok(layers)) if layers.is_empty() => {
+                out.push(format!("compatibility settings on {GAME_EXE}: none"))
+            }
+            Some(Ok(layers)) => out.push(format!(
+                "compatibility settings on {GAME_EXE}: {}",
+                layers.join(", ")
+            )),
+            Some(Err(e)) => out.push(format!(
+                "compatibility settings on {GAME_EXE}: not readable ({e})"
+            )),
+            None => {}
+        }
+        match &self.starter_layers {
+            Some(found) if found.is_empty() => out.push(format!(
+                "compatibility settings on {} and the offline play stub: none",
+                crate::compat::STARTERS.join(", ")
+            )),
+            Some(found) => out.extend(found.iter().map(|l| {
+                format!(
+                    "compatibility settings on {}: {} ({}) on {}",
+                    l.name,
+                    l.layers.trim(),
+                    l.scope(),
+                    l.exe
+                )
+            })),
+            None => {}
+        }
+        for a in &self.ea_app {
+            let pid = a.pid;
+            let name = crate::ea_app::PROCESS;
+            out.push(match &a.shims {
+                Ok(s) if s.is_empty() => format!("{name} pid {pid}: no Windows compatibility shims"),
+                Ok(s) => format!(
+                    "{name} pid {pid}: Windows compatibility shims loaded: {}",
+                    s.join(", ")
+                ),
+                Err(e) => format!("{name} pid {pid}: modules not readable ({e})"),
+            });
         }
         match &self.smart_app_control {
             Some(Ok(state)) => out.push(format!(
@@ -647,6 +841,12 @@ impl Findings {
                         m.others.join(", ")
                     ));
                 }
+                if !m.shims.is_empty() {
+                    out.push(format!(
+                        "pid {pid}: Windows compatibility shims loaded: {}",
+                        m.shims.join(", ")
+                    ));
+                }
             }
             Err(e) => out.push(format!("pid {pid}: modules not readable ({e})")),
         }
@@ -734,6 +934,16 @@ mod platform {
                 .collect();
             f.search = Some(search());
             f.exec_options = Some(exec_options());
+            f.layers = Some(Ok(crate::compat::layers(&game.join(GAME_EXE))
+                .into_iter()
+                .map(|l| format!("{} ({})", l.layers.trim(), l.scope()))
+                .collect()));
+            f.starter_layers = Some(crate::compat::starter_layers(game));
+            f.ea_app = crate::process::named(crate::ea_app::PROCESS)
+                .iter()
+                .take(MAX_GAMES)
+                .map(|a| ea_app(a.pid, game, windows.as_deref()))
+                .collect();
             f.smart_app_control = Some(smart_app_control());
             let joined = |h: std::thread::ScopedJoinHandle<'_, Probe<Vec<Event>>>| {
                 h.join().unwrap_or_else(|_| Err("the check failed".into()))
@@ -778,6 +988,15 @@ mod platform {
         Seen {
             mitigation: Some(mitigation),
             ..seen_base(g, game, modules)
+        }
+    }
+
+    fn ea_app(pid: u32, game: &Path, windows: Option<&str>) -> EaApp {
+        let paths = win32::Process::open(pid).and_then(|p| p.modules()).map_err(error);
+        EaApp {
+            pid,
+            image: paths.as_ref().ok().and_then(|p| p.first().cloned()),
+            shims: paths.map(|p| modules(&p, game, windows).shims),
         }
     }
 
@@ -1218,6 +1437,7 @@ mod tests {
                 count: 212,
                 version: version.iter().map(|v| (*v).to_owned()).collect(),
                 others: Vec::new(),
+                shims: Vec::new(),
             }),
             mitigation: Some(Ok(mitigation)),
         }
@@ -1461,9 +1681,9 @@ mod tests {
         let f = found(Vec::new(), vec![running(&[SYSTEM], Mitigation::default())]);
         assert_eq!(
             f.cause(&game()),
-            Some(Cause::OtherCopy {
+            Some(Cause::Unexplained {
                 path: SYSTEM.into(),
-                prefer_system32: false
+                hooks: Vec::new()
             })
         );
         let prefer = Mitigation {
@@ -1481,6 +1701,226 @@ mod tests {
     }
 
     #[test]
+    fn a_game_it_cannot_look_inside_is_not_blamed_on_an_antivirus() {
+        let denied = Seen {
+            image: None,
+            image_size: None,
+            ours: false,
+            modules: Err("access denied".into()),
+            mitigation: Some(Err("access denied".into())),
+            ..running(&[], Mitigation::default())
+        };
+        let mut f = found(Vec::new(), vec![denied]);
+        assert_eq!(f.cause(&game()), Some(Cause::Unreadable));
+        f.antivirus = Some(Ok(vec!["Microsoft Defender Antivirus (on)".into()]));
+        assert_eq!(f.cause(&game()), Some(Cause::Unreadable));
+        f.antivirus = Some(Ok(vec!["Bitdefender Antivirus (on)".into()]));
+        assert_eq!(f.cause(&game()), None);
+        f.antivirus = None;
+        f.smart_app_control = Some(Ok(Some(1)));
+        assert_eq!(f.cause(&game()), Some(Cause::SmartAppControl { seen: false }));
+        assert_eq!(found(Vec::new(), Vec::new()).cause(&game()), None);
+    }
+
+    fn system_copy() -> Findings {
+        found(Vec::new(), vec![running(&[SYSTEM], Mitigation::default())])
+    }
+
+    fn with_modules(f: &mut Findings, others: &[&str], shims: &[&str]) {
+        let Ok(m) = &mut f.games[0].modules else {
+            panic!("modules read")
+        };
+        m.others = others.iter().map(|o| (*o).to_owned()).collect();
+        m.shims = shims.iter().map(|o| (*o).to_owned()).collect();
+    }
+
+    #[test]
+    fn exploit_protection_settings_explain_another_copy() {
+        let mut f = system_copy();
+        f.exec_options = Some(Ok(vec!["MaxLoaderThreads".into()]));
+        assert!(
+            matches!(f.cause(&game()), Some(Cause::Unexplained { .. })),
+            "MaxLoaderThreads alone"
+        );
+        f.exec_options = Some(Ok(vec![
+            "MaxLoaderThreads".into(),
+            "MitigationOptions".into(),
+            "MitigationAuditOptions".into(),
+            "EAFModules".into(),
+        ]));
+        assert_eq!(
+            f.cause(&game()),
+            Some(Cause::ExploitProtection { path: SYSTEM.into() })
+        );
+        f.exec_options = Some(Ok(vec![r"0\MitigationOptions".into()]));
+        assert_eq!(
+            f.cause(&game()),
+            Some(Cause::ExploitProtection { path: SYSTEM.into() })
+        );
+    }
+
+    #[test]
+    fn compatibility_settings_or_shims_explain_another_copy() {
+        let mut f = system_copy();
+        f.layers = Some(Ok(vec!["~ HIGHDPIAWARE (for all users)".into()]));
+        assert_eq!(
+            f.cause(&game()),
+            Some(Cause::CompatLayer {
+                path: SYSTEM.into(),
+                layers: vec!["~ HIGHDPIAWARE (for all users)".into()],
+                shims: Vec::new(),
+                from: None
+            })
+        );
+        let mut f = system_copy();
+        f.layers = Some(Ok(Vec::new()));
+        with_modules(&mut f, &[], &["AcLayers.dll", "AcGenral.dll"]);
+        assert!(matches!(f.cause(&game()), Some(Cause::CompatLayer { shims, .. }) if shims.len() == 2));
+        let paths: Vec<String> = [
+            r"C:\WINDOWS\SYSTEM32\apphelp.dll",
+            r"C:\WINDOWS\SYSTEM32\AcLayers.DLL",
+            SYSTEM,
+        ]
+        .map(String::from)
+        .to_vec();
+        assert_eq!(
+            modules(&paths, &game(), Some(r"C:\WINDOWS")).shims,
+            ["AcLayers.DLL"]
+        );
+    }
+
+    fn starter(name: &str, exe: &str, layers: &str, all_users: bool) -> AdminLayer {
+        AdminLayer {
+            all_users,
+            name: name.into(),
+            exe: exe.into(),
+            layers: layers.into(),
+        }
+    }
+
+    #[test]
+    fn shims_are_traced_to_the_program_that_starts_the_game() {
+        const EA: &str = r"C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\EADesktop.exe";
+        let carrier = |f: &Findings| match f.cause(&game()) {
+            Some(Cause::CompatLayer { from, .. }) => from,
+            other => panic!("{other:?}"),
+        };
+        let mut f = system_copy();
+        f.layers = Some(Ok(Vec::new()));
+        with_modules(&mut f, &[], &["AcLayers.DLL", "AcGenral.DLL"]);
+        f.starter_layers = Some(Vec::new());
+        assert_eq!(carrier(&f), None);
+
+        f.ea_app = vec![
+            EaApp {
+                pid: 900,
+                image: None,
+                shims: Err("access denied".into()),
+            },
+            EaApp {
+                pid: 901,
+                image: Some(EA.into()),
+                shims: Ok(vec!["AcLayers.DLL".into()]),
+            },
+        ];
+        assert_eq!(
+            carrier(&f),
+            Some(Carrier {
+                name: "EADesktop.exe".into(),
+                exe: Some(EA.into()),
+                layers: Vec::new(),
+            })
+        );
+
+        f.starter_layers = Some(vec![
+            starter("EADesktop.exe", EA, "~ RUNASADMIN", false),
+            starter("EADesktop.exe", EA, "WIN8RTM", true),
+            starter(
+                "swofty-launcher.exe",
+                r"C:\Swofty\swofty-launcher.exe",
+                "~ WIN7RTM",
+                false,
+            ),
+        ]);
+        assert_eq!(
+            carrier(&f),
+            Some(Carrier {
+                name: "EADesktop.exe".into(),
+                exe: Some(EA.into()),
+                layers: vec![
+                    "~ RUNASADMIN (for this user)".into(),
+                    "WIN8RTM (for all users)".into()
+                ],
+            })
+        );
+        f.starter_layers = Some(vec![starter(
+            "swofty-launcher.exe",
+            r"C:\Swofty\swofty-launcher.exe",
+            "~ WIN7RTM",
+            false,
+        )]);
+        assert!(matches!(carrier(&f), Some(c) if c.name == "swofty-launcher.exe"));
+
+        f.layers = Some(Ok(vec!["~ HIGHDPIAWARE (for this user)".into()]));
+        assert_eq!(carrier(&f), None, "a setting on F1_25.exe itself comes first");
+
+        let lines = f.lines(&game());
+        assert!(
+            lines.contains(&r"compatibility settings on swofty-launcher.exe: ~ WIN7RTM (for this user) on C:\Swofty\swofty-launcher.exe".to_owned()),
+            "{lines:#?}"
+        );
+        assert!(lines.contains(&"EADesktop.exe pid 900: modules not readable (access denied)".to_owned()));
+        assert!(
+            lines.contains(
+                &"EADesktop.exe pid 901: Windows compatibility shims loaded: AcLayers.DLL".to_owned()
+            )
+        );
+        f.starter_layers = Some(Vec::new());
+        assert!(f.lines(&game()).contains(
+            &"compatibility settings on EADesktop.exe, EALauncher.exe, swofty-launcher.exe and the offline play stub: none"
+                .to_owned()
+        ));
+    }
+
+    #[test]
+    fn only_a_third_party_antivirus_is_named() {
+        let mut f = system_copy();
+        f.antivirus = Some(Ok(vec!["Microsoft Defender Antivirus (on)".into()]));
+        assert!(matches!(f.cause(&game()), Some(Cause::Unexplained { .. })));
+        f.antivirus = Some(Ok(vec![
+            "Microsoft Defender Antivirus (off)".into(),
+            "Reason Cybersecurity (on)".into(),
+            "Norton Security (off)".into(),
+        ]));
+        assert_eq!(
+            f.cause(&game()),
+            Some(Cause::Antivirus {
+                path: SYSTEM.into(),
+                names: vec!["Reason Cybersecurity".into()]
+            })
+        );
+        f.antivirus = Some(Ok(vec!["Bitdefender Antivirus (on)".into()]));
+        assert!(matches!(f.cause(&game()), Some(Cause::Antivirus { .. })));
+    }
+
+    #[test]
+    fn an_unexplained_copy_names_the_hooks_in_the_game() {
+        let mut f = system_copy();
+        with_modules(
+            &mut f,
+            &["medal-hook64-v2.dll", "RTSSHooks64.dll", "160_E658703.bin"],
+            &[],
+        );
+        assert_eq!(
+            f.cause(&game()),
+            Some(Cause::Unexplained {
+                path: SYSTEM.into(),
+                hooks: vec!["Medal".into(), "RivaTuner Statistics Server".into()]
+            })
+        );
+    }
+
+    #[test]
     fn smart_app_control_on_is_the_cause_only_when_nothing_else_is() {
         let ours = format!(r"{GAME}\version.dll");
         let mut f = found(Vec::new(), vec![running(&[&ours, SYSTEM], Mitigation::default())]);
@@ -1491,7 +1931,7 @@ mod tests {
         assert_eq!(f.cause(&game()), None);
         f.games = vec![running(&[SYSTEM], Mitigation::default())];
         f.smart_app_control = Some(Ok(Some(1)));
-        assert!(matches!(f.cause(&game()), Some(Cause::OtherCopy { .. })));
+        assert!(matches!(f.cause(&game()), Some(Cause::Unexplained { .. })));
         assert_eq!(Findings::default().cause(&game()), None);
     }
 
@@ -1585,6 +2025,7 @@ mod tests {
                 count: 3,
                 version: vec!["/games/F1 25/version.dll".into()],
                 others: Vec::new(),
+                shims: Vec::new(),
             }),
             mitigation: None,
         };

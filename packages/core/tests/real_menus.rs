@@ -930,3 +930,107 @@ fn addon_settings_scrolls_sideways_and_shows_details_on_the_focused_tile() {
     assert_eq!(back.last().unwrap().1, "focus");
     std::fs::remove_dir_all(&out).ok();
 }
+
+#[test]
+fn the_mfd_page_and_a_map_patch_share_flow_race_and_persistent() {
+    use swofty_core::activation::place::track_group;
+    use swofty_core::activation::ui::{MapUi, build_ui};
+    use swofty_core::build::{Built, build_menus};
+    use swofty_core::map::TrackPackage;
+    use swofty_core::settings::SessionAddon;
+    use swofty_core::ui::mfd;
+
+    let Some(game) = std::env::var_os("F1_25_DIR").map(PathBuf::from) else {
+        eprintln!("F1_25_DIR is not set; skipping");
+        return;
+    };
+    let Some(dir) = std::env::var_os("SWOFTY_MAPS_DIR")
+        .map(PathBuf::from)
+        .map(|d| d.join("bahrain24"))
+        .filter(|d| d.join("manifest.json").is_file())
+    else {
+        eprintln!("SWOFTY_MAPS_DIR has no bahrain24 package; skipping");
+        return;
+    };
+    let pkg = TrackPackage::parse(&std::fs::read(dir.join("manifest.json")).unwrap()).unwrap();
+    let out = std::env::temp_dir().join(format!("swofty-menus-mfd-{}", std::process::id()));
+    std::fs::remove_dir_all(&out).ok();
+    let resolve = |rel: &str| stock(&game, rel);
+    let maps = [MapUi {
+        pkg: &pkg,
+        dir: &dir,
+        asset_group: track_group("bahrain24", "bahrain24"),
+    }];
+    let map_ui = build_ui(&maps, &resolve, &out.join("cache")).unwrap();
+    let race = format!("{}/flow_race.erp", swofty_core::ui::UI);
+    let persistent = format!("{}/persistent.erp", swofty_core::ui::UI);
+    assert!(map_ui.replaced.contains_key(&race) && map_ui.replaced.contains_key(&persistent));
+    let mut built = Built {
+        overlay: out.join("overlay"),
+        ..Built::default()
+    };
+    built.plan.data.extend(map_ui.replaced.clone());
+    let mut session = session();
+    let addon: SessionAddon = serde_json::from_value(serde_json::json!({
+        "id": "t.mfd", "name": "MFD test", "version": "1.0.0", "enabled": true, "locked": false,
+        "enable_commands": ["swofty_enable:t.mfd:0", "swofty_enable:t.mfd:1"],
+        "options": [{ "id": "limiter", "type": "toggle", "binds": "native", "label": "Pit limiter", "current": 1,
+                      "states": [{ "value": false, "text": "Off", "command": "swofty_set:t.mfd:limiter:0" },
+                                 { "value": true, "text": "On", "command": "swofty_set:t.mfd:limiter:1" }] }],
+        "mfd": { "title": "PIT LANE", "rows": ["limiter"] }
+    }))
+    .unwrap();
+    session.addons.push(addon);
+    build_menus(&mut built, &mut session, &resolve, &|_, _| None, true).unwrap();
+    assert!(
+        built
+            .lines
+            .iter()
+            .any(|l| l == "ADDONS MFD page: 1 row(s) from t.mfd"),
+        "{:?}",
+        built.lines
+    );
+    for rel in [&race, &persistent] {
+        let ours = &built.plan.data[rel];
+        assert_eq!(
+            *ours,
+            out.join("overlay").join(rel),
+            "{rel} is built by the menus"
+        );
+        let stock_erp = Erp::parse(&std::fs::read(resolve(rel)).unwrap()).unwrap();
+        let ours_erp = Erp::parse(&std::fs::read(ours).unwrap()).unwrap();
+        let mut kept = 0;
+        for res in Erp::parse(&std::fs::read(&map_ui.replaced[rel]).unwrap())
+            .unwrap()
+            .resources
+        {
+            let theirs = res.content_hash().unwrap();
+            if stock_erp.find(&res.name).ok().map(|s| s.hash) != Some(theirs) {
+                assert_eq!(
+                    ours_erp.find(&res.name).unwrap().hash,
+                    res.hash,
+                    "{rel}: {} lost the map edits",
+                    res.name
+                );
+                kept += 1;
+            }
+        }
+        assert!(kept > 0, "{rel} has no map edits");
+    }
+    let templates = fragment(&built.plan.data[&race], mfd::TEMPLATES, 0);
+    assert!(
+        templates
+            .windows(mfd::PANEL.len())
+            .any(|w| w == mfd::PANEL.as_bytes()),
+        "flow_race.erp has no ADDONS panel"
+    );
+    let metadata = fragment(&built.plan.data[&persistent], mfd::METADATA, 0);
+    let doc = swofty_formats::bxml::Document::parse(&metadata).unwrap();
+    let names: Vec<String> = doc.root.children[0]
+        .children
+        .iter()
+        .filter_map(|c| c.attr(b"Name").map(|v| String::from_utf8_lossy(v).into_owned()))
+        .collect();
+    assert_eq!(names.last().map(String::as_str), Some(mfd::PANEL), "{names:?}");
+    std::fs::remove_dir_all(&out).ok();
+}

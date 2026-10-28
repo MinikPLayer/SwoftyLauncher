@@ -676,7 +676,20 @@ fn install_with(
                 continue;
             }
             progress(Event::Stage(Stage::Installing));
-            store.install_addon(&path)
+            let installed = store.install_addon(&path);
+            if let Ok(m) = &installed
+                && m.id == s.addon.id
+                && let Err(e) = super::record_install(store, &m.id, &s.version)
+            {
+                super::log(
+                    &store.root,
+                    &format!(
+                        "{}: the install from {} went unrecorded: {e}",
+                        m.id, s.version.url
+                    ),
+                );
+            }
+            installed
         };
         let m = match installed {
             Ok(m) => m,

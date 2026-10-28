@@ -364,3 +364,38 @@ fn the_verify_link_opens_steams_check_for_f1_25() {
         format!("steam://validate/{}", swofty_core::STEAM_APP_ID)
     );
 }
+
+#[test]
+fn missing_files_are_told_to_update_an_older_game_and_verify_a_current_one() {
+    let files = vec!["character_package/heads/nico_rosberg_head_d.tif.2024.mipmaps".to_owned()];
+    let older = stock::missing_text(&files, Some("1.0.138.5601"));
+    assert!(
+        older.starts_with("nico_rosberg_head_d.tif.2024.mipmaps is missing from the game folder;"),
+        "{older}"
+    );
+    assert!(
+        older.contains("F1 25 1.0.138.5601 is older than 1.0.141.7865; update F1 25 in Steam or the EA app"),
+        "{older}"
+    );
+    assert!(!older.contains("verify"), "{older}");
+    let current = stock::missing_text(&files, Some("1.0.141.7865"));
+    assert!(
+        current.contains("verify the game files in Steam (open steam://validate/3059520"),
+        "{current}"
+    );
+    assert!(!current.contains("update F1 25"), "{current}");
+    let unknown = stock::missing_text(&files, None);
+    let (update, verify) = (
+        unknown.find("update F1 25").unwrap(),
+        unknown.find("verify").unwrap(),
+    );
+    assert!(update < verify, "{unknown}");
+    assert_eq!(stock::fix_for(Some("1.0.138.5601")), stock::Fix::Update);
+    assert_eq!(stock::fix_for(Some("1.0.141.7865")), stock::Fix::Verify);
+    assert_eq!(stock::fix_for(None), stock::Fix::Both);
+    let mut r = stock::Report::missing(files, Path::new("/games/F1 25"), Some("1.0.138.5601".into()));
+    r.at = 1_793_144_157.5;
+    let back: stock::Report = serde_json::from_str(&serde_json::to_string(&r).unwrap()).unwrap();
+    assert_eq!(back, r);
+    assert_eq!(back.fix(), stock::Fix::Update);
+}

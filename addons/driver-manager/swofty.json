@@ -2,7 +2,7 @@
   "schema_version": 1,
   "id": "swofty.driver-manager",
   "name": "Driver Manager",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": "Swofty",
   "description": "Create new F1 25 drivers in the launcher: name, code, number, nationality, head, kit, pose, commentary name and ratings. They join careers you start afterwards as free agents.",
   "license": "AGPL-3.0-or-later",

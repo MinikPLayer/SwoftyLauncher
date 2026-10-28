@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, HashMap};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::manifest::{AddonManifest, Binds, OptionType, ScreenOp};
+use crate::manifest::{AddonManifest, Binds, CareerSetup, HubTab, OptionType, ScreenOp};
 use crate::map::TrackPackage;
 use crate::owned::OwnedItem;
 use crate::profile::Profile;
@@ -130,6 +130,18 @@ pub struct SessionAddon {
     pub enable_commands: [String; 2],
     #[serde(default)]
     pub options: Vec<SessionOption>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub career_setup: Option<CareerSetup>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hub_tab: Option<HubTab>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mfd: Option<SessionMfd>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SessionMfd {
+    pub title: String,
+    pub rows: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -143,6 +155,8 @@ pub struct SessionOption {
     pub description: String,
     pub current: usize,
     pub states: Vec<SessionState>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub hidden: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -260,8 +274,15 @@ impl SessionSettings {
                                 command: format!("swofty_set:{}:{}:{i}", m.id, o.id),
                             })
                             .collect(),
+                        hidden: o.hidden,
                     })
                     .collect(),
+                career_setup: m.career_setup.clone(),
+                hub_tab: m.hub_tab.clone(),
+                mfd: m.hud.as_ref().and_then(|h| h.mfd.as_ref()).map(|f| SessionMfd {
+                    title: f.title.clone().unwrap_or_else(|| m.name.clone()),
+                    rows: f.rows.clone(),
+                }),
             })
             .collect();
         let out = Self {

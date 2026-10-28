@@ -468,9 +468,11 @@ bool make_merge()
     return SUCCEEDED(hr);
 }
 
-bool init(ID3D12CommandQueue *q)
+// The device comes from the game's resource, never from the queue: a queue can be Streamline's proxy,
+// whose device makes proxy command lists that the hooked ExecuteCommandLists cannot take.
+bool init(ID3D12CommandQueue *q, ID3D12Resource *res)
 {
-    if (FAILED(q->GetDevice(IID_PPV_ARGS(&device))))
+    if (FAILED(res->GetDevice(IID_PPV_ARGS(&device))))
         return false;
     if (!make_root()) {
         swofty::log("[postfx] could not make the passes' root signature; post-processing is off");
@@ -817,7 +819,7 @@ void copy_back(ID3D12GraphicsCommandList *l, ID3D12Resource *back, D3D12_RESOURC
 bool run(ID3D12CommandQueue *q, ID3D12Resource *res, D3D12_RESOURCE_STATES state, ID3D12Resource *hudless,
          D3D12_RESOURCE_STATES hudless_state, ID3D12Resource *back = nullptr)
 {
-    if (!device && !init(q)) {
+    if (!device && !init(q, res)) {
         broken = true;
         return false;
     }
@@ -1479,6 +1481,7 @@ void postfx_setup()
     d3d12hooks::on_barrier(on_barrier);
     d3d12hooks::on_exec(on_exec);
     d3d12hooks::on_present(on_present);
+    d3d12hooks::ProbeScope probe;
     bool hooked = d3d12hooks::arm_device();
     if (hooked && !d3d12hooks::arm_swapchain())
         swofty::log("[postfx] the swapchain hooks did not arm; passes stay before the HUD");

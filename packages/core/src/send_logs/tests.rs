@@ -92,6 +92,7 @@ fn report(game: &Path) -> Report {
             build_id: Some(20_553_335),
             version: Some("1.17.0".into()),
         },
+        room: None,
     }
 }
 
@@ -1095,6 +1096,25 @@ fn finds_a_crash_report_kept_in_a_session_folder() {
 }
 
 #[test]
+fn sends_the_career_editor_snapshot_a_game_that_cant_write_its_folder_left_in_the_data_folder() {
+    let root = tmp("snapshot-kept");
+    let (store, game) = fake_data(&root);
+    std::fs::File::options()
+        .write(true)
+        .open(game.join(SNAPSHOT))
+        .unwrap()
+        .set_modified(std::time::SystemTime::now() - Duration::from_secs(3600))
+        .unwrap();
+    let kept = crate::addon_storage::addon_dir(&store.root, "swofty.career-editor").join("snapshot.json");
+    put(&kept, r#"{"status":{"career":false}}"#);
+    let bundle = Bundle::collect_with(&store, &report(&game), Limits::default(), "20261020-101010");
+    assert_eq!(
+        entry(&bundle.zip().unwrap(), "game/career-editor/snapshot.json"),
+        r#"{"status":{"career":false}}"#
+    );
+}
+
+#[test]
 fn sends_the_loaders_fallback_log_and_says_why_it_was_used() {
     let root = tmp("fallback");
     let (store, game) = fake_data(&root);
@@ -1184,7 +1204,7 @@ fn says_when_the_mod_loader_never_attached() {
     assert!(
         summary.contains(
             "\nMod loader\n  sessions/20261020-090000                 mod loader never attached \
-             (version.dll not loaded; antivirus suspected)\n  sessions/20261019-090000                 \
+             (version.dll not loaded)\n  sessions/20261019-090000                 \
              mod loader attached\n"
         ),
         "{summary}"
@@ -1535,4 +1555,88 @@ fn names_the_overlay_addons_and_whether_the_overlay_drew() {
         .unwrap();
     assert_eq!(pitlane["experimental_features"], serde_json::json!(["overlay"]));
     std::fs::remove_dir_all(&root).ok();
+}
+
+#[test]
+fn sends_the_room_logs_trace_and_state_without_secrets() {
+    let root = tmp("room");
+    let (store, game) = fake_data(&root);
+    crate::multiplayer::diag::secret("bundle-test", &["turn-credential-9f8e7d"]);
+    put(
+        &store.root.join(crate::multiplayer::diag::FILE),
+        "20261026-101010.000Z room ABCD opened: 1 member(s)\n20261026-101011.000Z leaked turn-credential-9f8e7d\n",
+    );
+    put(
+        &store.root.join(crate::multiplayer::diag::PREVIOUS),
+        "20261026-090000.000Z phase: in the lobby\n",
+    );
+    put(
+        &game.join(crate::multiplayer::bridge::STATUS_FILE),
+        r#"{"pid":42,"self":2,"base":41000,"game_port":21414}"#,
+    );
+    put(&game.join(NET_TRACE), "# swofty net trace\nbind s=1 port=21414\n");
+    put(
+        &store
+            .root
+            .join(crate::multiplayer::diag::PRINTS_DIR)
+            .join("ABCD-20261026-101010.json"),
+        r#"{"room":"ABCD","host":{"note":"turn-credential-9f8e7d"}}"#,
+    );
+    let mut r = report(&game);
+    r.room = Some(serde_json::json!({
+        "phase": {"phase": "in_lobby"},
+        "room": {"code": "ABCD"},
+        "session_token": "tok-should-go",
+        "last_error": "relay said turn-credential-9f8e7d",
+    }));
+    let bundle = Bundle::collect_with(&store, &r, Limits::default(), "20261026-101010");
+    crate::multiplayer::diag::secret("bundle-test", &[]);
+    let zip = bundle.zip().unwrap();
+    let got = names(&zip);
+    for want in [
+        "state/multiplayer.log",
+        "state/multiplayer.1.log",
+        "game/netplay.json",
+        "game/net-trace.log",
+        "multiplayer/session.json",
+        "state/multiplayer-prints/ABCD-20261026-101010.json",
+    ] {
+        assert!(got.contains(want), "no {want} in {got:?}");
+    }
+    assert!(entry(&zip, "state/multiplayer.log").contains("room ABCD opened"));
+    assert!(entry(&zip, "game/netplay.json").contains("\"game_port\":21414"));
+    assert!(entry(&zip, "game/net-trace.log").contains("bind s=1 port=21414"));
+    let room = entry(&zip, "multiplayer/session.json");
+    assert!(room.contains("\"code\": \"ABCD\""), "{room}");
+    for name in &got {
+        let text = entry(&zip, name);
+        assert!(!text.contains("turn-credential-9f8e7d"), "{name}: {text}");
+        assert!(!text.contains("tok-should-go"), "{name}: {text}");
+    }
+}
+
+#[test]
+fn leaves_out_room_files_that_are_not_there() {
+    let root = tmp("no-room");
+    let (store, game) = fake_data(&root);
+    let bundle = Bundle::collect_with(&store, &report(&game), Limits::default(), "20261026-101010");
+    let got = names(&bundle.zip().unwrap());
+    for absent in [
+        "state/multiplayer.log",
+        "game/netplay.json",
+        "game/net-trace.log",
+        "multiplayer/session.json",
+    ] {
+        assert!(!got.contains(absent), "{absent} in {got:?}");
+    }
+}
+
+#[test]
+fn memory_names_the_page_file_when_windows_gives_the_commit_limit() {
+    let gb = 1024 * 1024 * 1024;
+    assert_eq!(
+        memory_text(16 * gb, Some(35 * gb)),
+        ", 16 GB memory, 19 GB page file (35 GB commit limit)"
+    );
+    assert_eq!(memory_text(32 * gb, None), ", 32 GB memory");
 }

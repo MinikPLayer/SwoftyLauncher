@@ -22,7 +22,8 @@ none), `championship_vtable` (it returned another object), `no_season`, `bad_sea
 `season: championship not found (<reason>): comp::get … vt …, entity …`.
 
 Errors (`ok: false`, `error`): `not_ready` (no career, or the championship not seen yet), `bad_args`,
-`not_future` (the op touches the current, a past or a started round), `unknown_weekend`,
+`not_future` (the op touches the current, a past or a started round), `round_count` (the op would
+change the round count away from the season's race weekends, see "Round count"), `unknown_weekend`,
 `duplicate_weekend`, `unknown_track`, `no_career_id`, `no_driver`, `storage_failed`, `unsupported` (the op is documented but not
 available in this build; `after` is `{ "detail": string }`), `game_refused`.
 
@@ -59,6 +60,7 @@ Every op logs one line: `[career-editor] season.<op> … <before> -> <after>`, o
   "round": 5,                 // current round, 1-based
   "rounds": 24,               // rounds in the season
   "weekend": "rw_miami",      // current round's weekend name
+  "race_weekends": 24,        // race-weekend activities on the game's calendar this season (see "Round count"), null if unreadable
   "completion": 0,            // championship completion state (raw)
   "season_completion": 0,     // season completion_state (raw)
   "current_minutes": 123456,  // CareerTimeComponent current_minutes (what its serialiser saves), null if absent
@@ -113,6 +115,8 @@ Driver and team names are not in the section: resolve the stat ids from the game
   "season_index": 0,
   "current_round": 5,
   "editable_from": 6,         // first round the ops accept, null when none
+  "race_weekends": 24,        // race-weekend activities on the game's calendar this season, null if unreadable
+  "round_count_ok": true,     // rounds == race_weekends; false: season.calendar.repair is needed; null if unreadable
   "rounds": [{
     "round": 1, "weekend": "rw_bahrain", "track": "bahrain",   // track: weekend name without rw_ and the _26 suffix
     "track_stat_id": 3,       // weekend+0x278, null when 0xff; the round's real track
@@ -127,6 +131,40 @@ Driver and team names are not in the section: resolve the stat ids from the game
 
 Dates are not in this section yet: the save stores weekend names only and the per-round date source is
 not bound.
+
+## Round count
+
+The game's season flow reads two things that the save keeps apart:
+
+- `Season.weekends` (one Weekend per round, saved as `weekend_names[]`) and `Season.current_weekend`.
+  The current-weekend getter (Championship list vtable +0x98 -> +0x90, 0x140ae6ca0) returns
+  `weekends[current_weekend]`, or null when `current_weekend` is past the end.
+- The race-weekend activities on the career calendar. The ScheduleComponent builds its calendar entries
+  (+0x2a8, 0x28 bytes each: activity definition +0x10, minutes +0x18) from the season length's event list
+  in the gamedb (`event_list` / `default_track_list`, read at component init 0x140bc8fb0). The daily tick
+  (0x14126a1a0) re-times them (0x140bc9700) and puts all of them on every driver and team calendar of the
+  season. The career clock stops at each race-weekend activity (ActivityDef type 0x0a, `RaceWeekend`),
+  and the game races the current weekend. They are not saved, so a load rebuilds them from the gamedb.
+
+`GameModeChampionship::setWhereToNext` (0x1407ba860) reads the current weekend without a null check
+(+0x64b), and `Season::completeSeason` (0x1407ba160) completes the season only when the current weekend
+is complete and is the last one (`count <= current_weekend + 1`). So the round count has to equal the
+race-weekend count:
+
+| rounds vs race weekends | what the game does |
+|---|---|
+| equal | the season ends after its last round |
+| fewer rounds (a round removed) | after the last round the next race-weekend activity finds no weekend: crash in `setWhereToNext` reading null+0x23c |
+| more rounds (a round added) | the race-weekend activities run out before the last round; the season can't complete |
+
+`race_weekends` counts the `RaceWeekend` activities of the busiest driver calendar in the
+ScheduleComponent's record for this season index (`ScheduleSeason.driver_calendars`,
+`DriverCalendar.activities`, `CalendarActivity.activity`, `ActivityDef.type`), the count the game's
+own season-length lookup takes (0x141267be0, which the daily tick matches against the contract
+schedule's season lengths). `reorder` and `set_round`
+keep the count. `add_round` and `remove_round` are accepted only when they leave the count at
+`race_weekends` or move it closer (a season edited before this rule); otherwise `round_count`, also when
+`race_weekends` is unreadable.
 
 ## Ops
 
@@ -192,16 +230,36 @@ in the log line).
 
 ### `season.calendar.add_round`
 Args: `{ "weekend": string, "at"?: int (default: after the last round), "verified"?: bool,
-"track_stat_id"?: int }`. Inserts a new round at `at` (1-based; must be after the current round). Undo:
-`remove_round` at `at`.
+"track_stat_id"?: int }`. Inserts a new round at `at` (1-based; must be after the current round). Only
+while the season has fewer rounds than `race_weekends` (else `round_count`). Undo: `remove_round` at `at`.
 
 ### `season.calendar.remove_round`
-Args: `{ "round": int }`. Removes a future, not-started round. Undo: `add_round` with the removed
+Args: `{ "round": int }`. Removes a future, not-started round. Only while the season has more rounds
+than `race_weekends` (else `round_count`). Undo: `add_round` with the removed
 weekend name and `at` = `round` (the name stays known while another season has it; otherwise pass
 `verified` and the `track_stat_id` from the log line).
 
-Risks for these four: the code read so far finds nothing else keyed by round index, but the in-game
-calendar dates, the transfer-window round and per-round weather need the in-game check.
+Risks for these four: the race dates stay with the game's race-weekend activities (see "Round
+count"), so a moved or replaced round races on the date of the round it lands on. The transfer-window
+round and per-round weather need the in-game check.
+
+### `season.calendar.repair`
+Args: `{ "weekends"?: [{ "weekend": string, "verified"?: bool, "track_stat_id"?: int }] }`. Brings the
+round count back to `race_weekends`:
+- more rounds: removes the last rounds after the current one that have not started, from the end
+  (`not_future` when too few of them have not started);
+- fewer rounds: appends the missing rounds after the last one. With `weekends` (exactly the missing
+  count, each checked like `add_round`), those; without, weekends of this championship's other seasons
+  (the previous seasons first, latest first, then later ones, each in round order) whose name and track
+  are not on this calendar, with that weekend's name and track id (`unknown_track` when too few).
+- equal: nothing (`ok`, `before` = `after`).
+
+`round_count` when `race_weekends` is unreadable. Result `before`/`after` as for the other calendar ops.
+Undo: backup only (the History tab's save backups).
+
+Log line: `[career-editor] season.calendar.repair season <n> <rounds> rounds -> <race weekends> (race
+weekends on the game's calendar): removed round <r> "<name>"; added "<name>" (track <t>) as round <r>;
+... <before> -> <after>`.
 
 ### `season.calendar.toggle_sprint`
 Args: `{ "round": int, "sprint": bool }`. **`unsupported` live.** A loaded career keeps only weekend
@@ -263,9 +321,10 @@ structs (`swofty/game/career.hpp`, `core.hpp`) via `offsetof`/`sizeof`, read thr
 | structs (other lanes) | `CareerTimeComponent.current_minutes` (economy), `EntrantRecord` (drivers), `NeAllocator` / `NeAllocatorVtbl` (core) |
 | vtables | `vt_Career_Championship`, `vt_Career_Season`, `vt_Career_Weekend` |
 | globals | `g_Ne_DefaultAllocator` |
+| structs (read, round count) | `ScheduleComponent.seasons`, `ScheduleSeason.driver_calendars`, `DriverCalendar.activities`, `CalendarActivity.activity`, `ActivityDef.type` |
 | functions (called) | `Career_Rebuild_ChampionshipStandings`, `Career_Create_SeasonWeekend`, `Career_Add_SeasonWeekend`, `Career_Teardown_Weekend`, `Ne_Detach_ChildNode` |
 | functions (wrapped) | `Career_Rebuild_SeasonStandings` |
-| components helper | `ce::comp::get(Championship)` (CareerEntity.current_championship), `ce::comp::get(CareerTime)`, `ce::comp::entrants()` |
+| components helper | `ce::comp::get(Championship)` (CareerEntity.current_championship), `ce::comp::get(CareerTime)`, `ce::comp::get(Schedule)`, `ce::comp::entrants()` |
 
 Constants left in code, none of them a field: the track placeholder `0xff`, the weekend destructor's
 vtable slot 0, a game vector's end pointer following its begin (`sizeof(void *)`), and size limits.

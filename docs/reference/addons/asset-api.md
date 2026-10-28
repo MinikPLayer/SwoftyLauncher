@@ -148,6 +148,13 @@ conflict: text lng_team_tor_hashtag (eng): example.pack (alphatauri) overrides e
 
 Each build also writes the pairs, with the overridden items, to `$DATA/cache/overlay/<profile>/conflicts.json` ([`swofty conflicts`](/reference/cli#swofty-conflicts)).
 
+With a track that has menu pictures in the profile, the build keeps the track picture arrays, `minimap.uidb` and `overrides.uidb` it writes for the tracks. An `erp.put-resource`, `erp.replace-resource`, `erp.remove-resource`, `erp.copy-resource` or `erp.overlay` that replaces one of them is left out, while `erp.patch-pkg` edits still apply on top. The build warns, and lists the pair with the last of those tracks in load order as the winner:
+
+```text
+Example Cars ships its own track menu pictures; the launcher's track menus are kept
+Test Ring overrides Example Cars on 4 archive resources
+```
+
 ## In the game
 
 You'll find the build's `swofty/assets.json` and its files in the loader folder `swofty/` inside the game folder. Paths in that JSON are relative to `swofty/`.

@@ -18,6 +18,14 @@ pub const LAYERS_KEY: &str = r"Software\Microsoft\Windows NT\CurrentVersion\AppC
 /// the anti-cheat launcher's slot.
 pub const SESSION_EXES: &[&str] = &[GAME_EXE, "EAAntiCheat.GameServiceLauncher.exe"];
 
+/// The programs that start F1 25, wherever they are installed. Windows hands
+/// a program's compatibility layers on to the programs it starts.
+pub const STARTERS: &[&str] = &[
+    crate::ea_app::PROCESS,
+    crate::ea_app::LAUNCHER_EXE,
+    "swofty-launcher.exe",
+];
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdminLayer {
     pub all_users: bool,
@@ -80,12 +88,22 @@ fn same_file(a: &Path, b: &Path) -> bool {
         )
 }
 
+/// Whether `layers` sets any compatibility layer, not just the `~` marker.
+pub fn has_layers(layers: &str) -> bool {
+    layers.split_whitespace().any(|l| l != "~")
+}
+
+#[cfg(test)]
 fn matching(listing: &str, all_users: bool, exe: &Path) -> Vec<AdminLayer> {
+    matching_with(listing, all_users, exe, has_run_as_admin)
+}
+
+fn matching_with(listing: &str, all_users: bool, exe: &Path, keep: fn(&str) -> bool) -> Vec<AdminLayer> {
     let path = exe.to_string_lossy();
     let name = path.rsplit(['\\', '/']).next().unwrap_or(&path);
     parse_reg_query(listing)
         .into_iter()
-        .filter(|(stored, data)| has_run_as_admin(data) && same_file(Path::new(stored), exe))
+        .filter(|(stored, data)| keep(data) && same_file(Path::new(stored), exe))
         .map(|(stored, layers)| AdminLayer {
             all_users,
             name: name.to_owned(),
@@ -97,15 +115,76 @@ fn matching(listing: &str, all_users: bool, exe: &Path) -> Vec<AdminLayer> {
 
 /// Every run-as-administrator setting on `exe`, per user first.
 pub fn admin_layers(exe: &Path) -> Vec<AdminLayer> {
+    layer_settings(exe, has_run_as_admin)
+}
+
+/// Every compatibility setting on `exe` (the Compatibility tab of its
+/// Properties, run as administrator included), per user first.
+pub fn layers(exe: &Path) -> Vec<AdminLayer> {
+    layer_settings(exe, has_layers)
+}
+
+fn layer_settings(exe: &Path, keep: fn(&str) -> bool) -> Vec<AdminLayer> {
+    listings()
+        .into_iter()
+        .flat_map(|(listing, all_users)| matching_with(&listing, all_users, exe, keep))
+        .collect()
+}
+
+/// The per-user and all-users `reg query` listings of [`LAYERS_KEY`].
+fn listings() -> Vec<(String, bool)> {
     [("HKCU", false), ("HKLM", true)]
         .into_iter()
         .filter_map(|(hive, all_users)| {
             let key = format!(r"{hive}\{LAYERS_KEY}");
-            let listing = windows_tool("reg", &["query", &key, "/reg:64"])?;
-            Some(matching(&listing, all_users, exe))
+            Some((windows_tool("reg", &["query", &key, "/reg:64"])?, all_users))
         })
-        .flatten()
         .collect()
+}
+
+/// The compatibility settings on the programs that start the game in `game`:
+/// [`STARTERS`], and the session launcher in the game folder.
+pub fn starter_layers(game: &Path) -> Vec<AdminLayer> {
+    starter_layers_in(&listings(), game)
+}
+
+/// [`starter_layers`] from the listings given, in [`STARTERS`] order with the
+/// session launcher last, per user first.
+pub fn starter_layers_in(listings: &[(String, bool)], game: &Path) -> Vec<AdminLayer> {
+    let stub = game.join(SESSION_EXES[1]);
+    let mut found: Vec<AdminLayer> = listings
+        .iter()
+        .flat_map(|(listing, all_users)| {
+            parse_reg_query(listing)
+                .into_iter()
+                .filter(|(_, data)| has_layers(data))
+                .filter_map(|(stored, layers)| {
+                    let file = stored.rsplit(['\\', '/']).next().unwrap_or(&stored);
+                    let name = STARTERS
+                        .iter()
+                        .find(|n| n.eq_ignore_ascii_case(file))
+                        .map(|n| (*n).to_owned())
+                        .or_else(|| {
+                            same_file(Path::new(&stored), &stub).then(|| SESSION_EXES[1].to_owned())
+                        })?;
+                    Some(AdminLayer {
+                        all_users: *all_users,
+                        name,
+                        exe: stored,
+                        layers,
+                    })
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    let rank = |l: &AdminLayer| {
+        STARTERS
+            .iter()
+            .position(|n| *n == l.name)
+            .unwrap_or(STARTERS.len())
+    };
+    found.sort_by_key(|l| (rank(l), l.all_users));
+    found
 }
 
 /// True when this process runs with a high (or system) integrity level.
@@ -357,9 +436,54 @@ mod shell {
         fn ShellExecuteExW(info: *mut ShellExecuteInfoW) -> i32;
     }
 
+    const COINIT_APARTMENTTHREADED: u32 = 0x2;
+    const COINIT_DISABLE_OLE1DDE: u32 = 0x4;
+
+    #[link(name = "ole32")]
+    unsafe extern "system" {
+        fn CoInitializeEx(reserved: *mut c_void, coinit: u32) -> i32;
+        fn CoUninitialize();
+    }
+
     #[link(name = "kernel32")]
     unsafe extern "system" {
         fn CloseHandle(handle: *mut c_void) -> i32;
+        fn GetProcessId(process: *mut c_void) -> u32;
+        fn WaitForSingleObject(handle: *mut c_void, ms: u32) -> u32;
+        fn GetExitCodeProcess(process: *mut c_void, code: *mut u32) -> i32;
+    }
+
+    const WAIT_OBJECT_0: u32 = 0;
+
+    pub struct Process(*mut c_void);
+
+    // SAFETY: a process handle can be waited on and closed from any thread.
+    unsafe impl Send for Process {}
+
+    impl Process {
+        pub fn pid(&self) -> u32 {
+            // SAFETY: the handle is open until drop.
+            unsafe { GetProcessId(self.0) }
+        }
+
+        pub fn exited_within(&self, wait: std::time::Duration) -> Option<u32> {
+            let ms = u32::try_from(wait.as_millis()).unwrap_or(u32::MAX);
+            // SAFETY: the handle is open until drop, and `code` outlives the call.
+            unsafe {
+                if WaitForSingleObject(self.0, ms) != WAIT_OBJECT_0 {
+                    return None;
+                }
+                let mut code = 0;
+                (GetExitCodeProcess(self.0, &mut code) != 0).then_some(code)
+            }
+        }
+    }
+
+    impl Drop for Process {
+        fn drop(&mut self) {
+            // SAFETY: the handle came from ShellExecuteExW with NOCLOSEPROCESS and is closed once.
+            unsafe { CloseHandle(self.0) };
+        }
     }
 
     fn wide(s: &std::ffi::OsStr) -> Vec<u16> {
@@ -376,7 +500,7 @@ mod shell {
         format!("\"{inner}\"")
     }
 
-    pub fn relaunch_elevated() -> Result<(), String> {
+    pub fn relaunch_elevated() -> Result<Option<Process>, String> {
         let exe = std::env::current_exe().map_err(|e| e.to_string())?;
         let args: Vec<String> = std::env::args().skip(1).map(|a| quote(&a)).collect();
         let (verb, file) = (wide("runas".as_ref()), wide(exe.as_os_str()));
@@ -399,9 +523,19 @@ mod shell {
             icon_or_monitor: std::ptr::null_mut(),
             process: std::ptr::null_mut(),
         };
-        // SAFETY: every string the struct points at outlives the call, and the
-        // process handle it returns is closed once.
-        let ok = unsafe { ShellExecuteExW(&mut info) } != 0;
+        // SAFETY: COM is initialised for this thread only and uninitialised after the call when it succeeded,
+        // and every string the struct points at outlives the call.
+        let ok = unsafe {
+            let com = CoInitializeEx(
+                std::ptr::null_mut(),
+                COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE,
+            ) >= 0;
+            let ok = ShellExecuteExW(&mut info) != 0;
+            if com {
+                CoUninitialize();
+            }
+            ok
+        };
         if !ok {
             let e = std::io::Error::last_os_error();
             return Err(if e.raw_os_error() == Some(ERROR_CANCELLED) {
@@ -410,11 +544,7 @@ mod shell {
                 e.to_string()
             });
         }
-        if !info.process.is_null() {
-            // SAFETY: the handle came from ShellExecuteExW with NOCLOSEPROCESS.
-            unsafe { CloseHandle(info.process) };
-        }
-        Ok(())
+        Ok((!info.process.is_null()).then_some(Process(info.process)))
     }
 
     #[cfg(test)]
@@ -427,12 +557,38 @@ mod shell {
     }
 }
 
-/// Starts this program again as administrator, with the same arguments,
-/// through the Windows elevation prompt. Ok once the new process has started;
-/// the caller then exits.
-pub fn relaunch_elevated() -> Result<(), String> {
+/// The copy of this program [`relaunch_elevated`] started as administrator.
+pub struct Elevated {
     #[cfg(windows)]
-    return shell::relaunch_elevated();
+    process: Option<shell::Process>,
+}
+
+impl Elevated {
+    pub fn pid(&self) -> Option<u32> {
+        #[cfg(windows)]
+        return self.process.as_ref().map(shell::Process::pid);
+        #[cfg(not(windows))]
+        None
+    }
+
+    /// Its exit code, when it closed within `wait`.
+    pub fn exited_within(&self, wait: std::time::Duration) -> Option<u32> {
+        #[cfg(windows)]
+        return self.process.as_ref()?.exited_within(wait);
+        #[cfg(not(windows))]
+        {
+            let _ = wait;
+            None
+        }
+    }
+}
+
+/// Starts this program again as administrator, with the same arguments,
+/// through the Windows elevation prompt. Ok with the new process once it has
+/// started; the caller waits a moment before it exits.
+pub fn relaunch_elevated() -> Result<Elevated, String> {
+    #[cfg(windows)]
+    return shell::relaunch_elevated().map(|process| Elevated { process });
     #[cfg(not(windows))]
     Err("restarting as administrator is only for Windows".to_owned())
 }
@@ -494,6 +650,58 @@ mod tests {
         assert!(!has_run_as_admin("~ RUNASINVOKER"));
         assert!(!has_run_as_admin("~ NORUNASADMIN"));
         assert!(!has_run_as_admin(""));
+    }
+
+    #[test]
+    fn reads_any_compatibility_layer() {
+        assert!(has_layers("~ HIGHDPIAWARE"));
+        assert!(has_layers("WIN7RTM"));
+        assert!(!has_layers("~"));
+        assert!(!has_layers(""));
+        let other = matching_with(LISTING, false, Path::new(r"C:\Games\Other\other.exe"), has_layers);
+        assert_eq!(other.len(), 1);
+        assert_eq!(other[0].layers, "~ HIGHDPIAWARE");
+        assert!(matching(LISTING, false, Path::new(r"C:\Games\Other\other.exe")).is_empty());
+        assert!(matching_with(LISTING, false, Path::new(r"C:\Games\Empty\empty.exe"), has_layers).is_empty());
+    }
+
+    #[test]
+    fn finds_the_layers_on_the_programs_that_start_the_game() {
+        let game = Path::new(r"D:\Games\F1 25");
+        let user = concat!(
+            "\r\n",
+            "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\r\n",
+            "    C:\\Tools\\Swofty Launcher\\swofty-launcher.exe    REG_SZ    ~ WIN8RTM\r\n",
+            "    D:\\Games\\F1 25\\F1_25.exe    REG_SZ    ~ HIGHDPIAWARE\r\n",
+            "    D:\\Battlefield\\EAAntiCheat.GameServiceLauncher.exe    REG_SZ    ~ RUNASADMIN\r\n",
+            "    d:\\games\\f1 25\\eaanticheat.gameservicelauncher.exe    REG_SZ    WIN7RTM\r\n",
+            "    C:\\Other\\EADesktop.exe.bak    REG_SZ    ~ RUNASADMIN\r\n",
+            "    C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\EALauncher.exe    REG_SZ    ~\r\n",
+        );
+        let machine = concat!(
+            "\r\n",
+            "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows NT\\CurrentVersion\\AppCompatFlags\\Layers\r\n",
+            "    C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\eadesktop.exe    REG_SZ    ~ RUNASADMIN\r\n",
+        );
+        let found = starter_layers_in(&[(user.into(), false), (machine.into(), true)], game);
+        let seen: Vec<(&str, &str, bool)> = found
+            .iter()
+            .map(|l| (l.name.as_str(), l.layers.as_str(), l.all_users))
+            .collect();
+        assert_eq!(
+            seen,
+            [
+                ("EADesktop.exe", "~ RUNASADMIN", true),
+                ("swofty-launcher.exe", "~ WIN8RTM", false),
+                ("EAAntiCheat.GameServiceLauncher.exe", "WIN7RTM", false),
+            ]
+        );
+        assert_eq!(
+            found[0].exe,
+            r"C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\eadesktop.exe"
+        );
+        assert!(starter_layers_in(&[(LISTING.into(), false)], game).is_empty());
+        assert!(starter_layers_in(&[], game).is_empty());
     }
 
     #[test]

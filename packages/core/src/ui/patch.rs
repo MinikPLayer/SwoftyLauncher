@@ -313,6 +313,11 @@ fn subpage_route(id: &str, src: &str, dst: &str, kind: i32) -> Node {
 }
 
 fn migrate_route(id: &str, src: &str, flow: &str, dst: &str) -> Node {
+    migrate_route_with(id, src, flow, dst, ("open_no_input", ""), 2)
+}
+
+fn migrate_route_with(id: &str, src: &str, flow: &str, dst: &str, open: (&str, &str), kind: i32) -> Node {
+    let (sub, message) = open;
     route(
         id,
         vec![
@@ -332,16 +337,16 @@ fn migrate_route(id: &str, src: &str, flow: &str, dst: &str) -> Node {
                 "TriggerSubRoute",
                 3,
                 &[
-                    ("SubRoute", "open_no_input"),
+                    ("SubRoute", sub),
                     ("Target", dst),
                     ("From", src),
-                    ("Message", ""),
+                    ("Message", message),
                 ],
                 Some("2"),
             ),
         ],
         "3",
-        2,
+        kind,
         Some(dst),
     )
 }
@@ -397,6 +402,238 @@ pub fn anchor_routes(data: &[u8], screens: &[(String, String, String)]) -> Resul
             let routes = g.o_mut()?.at_mut("Routes")?.a_mut()?;
             if !routes.iter().any(|r| id_of(r) == Some(&id)) {
                 routes.push(subpage_route(&id, anchor, s, 1));
+            }
+        }
+        Ok(())
+    })
+}
+
+/// The Driver Career tile's route to the season length step, which a career setup's entry route copies.
+pub const SETUP_ENTRY_SOURCE: &str = "career_wizard_driver_career_to_f1";
+/// The message the career menu opens the career content select with for Driver Career.
+pub const DRIVER_CAREER: &str = "driver_career";
+
+pub struct SetupRoutes {
+    pub route: String,
+    pub home: String,
+    pub rows: String,
+    pub next: String,
+    pub next_flow: String,
+    pub back: String,
+    pub back_flow: String,
+    pub back_route: String,
+}
+
+/// The route groups of a career setup's home and rows page. The home's `confirm` closes it, moves to the
+/// wizard's flow and opens `next`; its `back` moves to the content select's flow and opens it for Driver Career.
+pub fn setup_route_groups(s: &SetupRoutes) -> Vec<Node> {
+    let mut home = screen_routes(&s.home);
+    let mut back = migrate_route_with("back", &s.home, &s.back_flow, &s.back, ("open", DRIVER_CAREER), 2);
+    no_auto_focus(&mut back);
+    home.push(back);
+    home.push(migrate_route_with(
+        super::pages::SETUP_CONFIRM,
+        &s.home,
+        &s.next_flow,
+        &s.next,
+        ("open", ""),
+        1,
+    ));
+    home.push(subpage_route(super::pages::SETUP_OPTIONS, &s.home, &s.rows, 1));
+    let mut rows = screen_routes(&s.rows);
+    rows.push(subpage_route("back", &s.rows, &s.home, 2));
+    vec![route_group(&s.home, home), route_group(&s.rows, rows)]
+}
+
+fn entry_route(group: &Node, s: &SetupRoutes) -> Result<Node> {
+    let mut r = group
+        .o()?
+        .at("Routes")?
+        .a()?
+        .iter()
+        .find(|r| id_of(r) == Some(SETUP_ENTRY_SOURCE))
+        .cloned()
+        .ok_or_else(|| err(format!("{} has no {SETUP_ENTRY_SOURCE} route", s.back)))?;
+    let from = r
+        .o()?
+        .at("Attributes")?
+        .a()?
+        .iter()
+        .filter_map(Node::as_obj)
+        .find(|a| a.str_at("Id").ok() == Some("Destination"))
+        .and_then(|a| a.str_at("Value").ok())
+        .map(str::to_owned)
+        .ok_or_else(|| err(format!("{SETUP_ENTRY_SOURCE} has no destination")))?;
+    replace_strings(&mut r, &|v| match v {
+        v if v == from => Some(s.home.clone()),
+        "career_season_setup_flow" => Some("options_flow".into()),
+        "open_no_input" => Some("open".into()),
+        _ => None,
+    });
+    set_str(r.o_mut()?, "Id", &s.route)?;
+    let cmds = r.o_mut()?.at_mut("Commands")?.a_mut()?;
+    let id = cmds
+        .iter()
+        .filter_map(|c| cmd_attr(c, "Id")?.parse::<u32>().ok())
+        .max()
+        .unwrap_or(0)
+        + 1;
+    let wiped = cmds
+        .iter()
+        .find(|c| cmd_type(c) == Some("TriggerSubRoute") && cmd_attr(c, "SubRoute") == Some("close"))
+        .and_then(|c| c.as_obj()?.get("Dependencies")?.as_val()?.as_str())
+        .map(str::to_owned);
+    cmds.push(route_cmd(
+        "FrontendSceneSwitch",
+        id,
+        &SETUP_SCENE,
+        wiped.as_deref(),
+    ));
+    Ok(r)
+}
+
+/// The stock CUSTOM settings page's backdrop, which every route into a career setup page switches to.
+const SETUP_SCENE: [(&str, &str); 4] = [
+    ("Target", ""),
+    ("SceneOverride", "Customisation"),
+    ("SubSceneOverride", "Generic"),
+    ("CameraOverride", "Main"),
+];
+
+fn cmd_type(c: &Node) -> Option<&str> {
+    c.as_obj()?.get("Type")?.as_val()?.as_str()
+}
+
+fn cmd_attr<'a>(c: &'a Node, key: &str) -> Option<&'a str> {
+    c.as_obj()?
+        .get("Attributes")?
+        .as_arr()?
+        .items
+        .iter()
+        .filter_map(Node::as_obj)
+        .find(|a| a.str_at("Id").ok() == Some(key))?
+        .str_at("Value")
+        .ok()
+}
+
+fn no_auto_focus(r: &mut Node) {
+    if let Some(a) = r
+        .as_obj_mut()
+        .and_then(|o| o.get_mut("Attributes"))
+        .and_then(Node::as_arr_mut)
+    {
+        a.items
+            .push(obj(vec![("Id", s("AutoFocus")), ("Value", s("false"))]));
+    }
+}
+
+/// The way back from the wizard step `next` to the home, as the wizard's own routes leave its flow: `next` and the
+/// slices its group opens transition out, the slices close, and the flow moves to the options flow.
+fn wizard_exit_route(s: &SetupRoutes, slices: &[&str]) -> Node {
+    let out = |id: u32, target: &str| {
+        route_cmd(
+            "TransitionScreen",
+            id,
+            &[("Direction", "out"), ("Target", target)],
+            None,
+        )
+    };
+    let mut cmds = vec![out(1, &s.next)];
+    let mut done = vec!["1".to_owned()];
+    let mut id = 1;
+    for slice in slices {
+        cmds.push(out(id + 1, slice));
+        cmds.push(route_cmd(
+            "CloseScreen",
+            id + 2,
+            &[("Target", slice)],
+            Some(&(id + 1).to_string()),
+        ));
+        done.push((id + 2).to_string());
+        id += 2;
+    }
+    let migrate = (id + 1).to_string();
+    cmds.push(route_cmd(
+        "Migrate",
+        id + 1,
+        &[("Flow", "options_flow"), ("SkipActivator", "true")],
+        Some(&done.join(",")),
+    ));
+    let open = (id + 2).to_string();
+    cmds.push(route_cmd(
+        "TriggerSubRoute",
+        id + 2,
+        &[
+            ("SubRoute", "open"),
+            ("Target", &s.home),
+            ("From", &s.next),
+            ("Message", ""),
+        ],
+        Some(&migrate),
+    ));
+    cmds.push(route_cmd(
+        "FrontendSceneSwitch",
+        id + 3,
+        &SETUP_SCENE,
+        Some(&migrate),
+    ));
+    let mut r = route(&s.back_route, cmds, &open, 2, Some(&s.home));
+    no_auto_focus(&mut r);
+    r
+}
+
+fn slices_of(g: &Node) -> Vec<String> {
+    g.as_obj()
+        .and_then(|o| o.get("Attributes"))
+        .and_then(Node::as_arr)
+        .into_iter()
+        .flat_map(|a| &a.items)
+        .filter_map(Node::as_obj)
+        .filter(|a| a.str_at("Id").ok() == Some("Slices"))
+        .filter_map(|a| a.str_at("Value").ok())
+        .flat_map(|v| v.split(','))
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
+fn add_route(g: &mut Node, r: Node) -> Result<()> {
+    let gid = id_of(g).unwrap_or_default().to_owned();
+    let rid = id_of(&r).unwrap_or_default().to_owned();
+    let routes = g.o_mut()?.at_mut("Routes")?.a_mut()?;
+    if routes.iter().any(|x| id_of(x) == Some(&rid)) {
+        return Err(err(format!("{gid} has a route {rid} already")));
+    }
+    routes.push(r);
+    Ok(())
+}
+
+#[derive(Debug, Default)]
+pub struct Placed {
+    /// Each route added, as `<group>.<route>`.
+    pub routes: Vec<String>,
+    /// The game screens the added routes name: the slices of each `next` screen's group.
+    pub screens: Vec<String>,
+}
+
+/// Adds each career setup's entry route to the content select's route group and its back route to the group of
+/// its `next` screen, for the groups these routes hold.
+pub fn setup_routes(data: &[u8], setups: &[SetupRoutes], placed: &mut Placed) -> Result<Vec<u8>> {
+    edit(data, |p| {
+        let gs = root_obj(p)?.at_mut("RouteGroupings")?.a_mut()?;
+        for s in setups {
+            if let Some(g) = gs.iter_mut().find(|g| id_of(g) == Some(&s.back)) {
+                let r = entry_route(g, s)?;
+                add_route(g, r)?;
+                placed.routes.push(format!("{}.{}", s.back, s.route));
+            }
+            if let Some(g) = gs.iter_mut().find(|g| id_of(g) == Some(&s.next)) {
+                let slices = slices_of(g);
+                let names: Vec<&str> = slices.iter().map(String::as_str).collect();
+                add_route(g, wizard_exit_route(s, &names))?;
+                placed.routes.push(format!("{}.{}", s.next, s.back_route));
+                placed.screens.extend(slices);
             }
         }
         Ok(())
@@ -1228,5 +1465,292 @@ mod tests {
         );
         assert_eq!(route_ids(group(&p, "settings_container").unwrap()), ["open_ai"]);
         assert!(group(&p, "no_such_anchor").is_none());
+    }
+
+    fn setup() -> SetupRoutes {
+        SetupRoutes {
+            route: "career_wizard_driver_career_pg".into(),
+            home: "swofty_setup_career_wizard_driver_career_pg".into(),
+            rows: "swofty_addon_career_wizard_driver_career_pg_2".into(),
+            next: "career_wizard_season_length_select".into(),
+            next_flow: "career_season_setup_flow".into(),
+            back: "fe_career_dlc_select".into(),
+            back_flow: "frontend_flow".into(),
+            back_route: "back_career_wizard_driver_career_pg".into(),
+        }
+    }
+
+    fn attr_pairs(list: &Node) -> Vec<(String, String)> {
+        list.a()
+            .unwrap()
+            .iter()
+            .map(|a| {
+                let a = a.o().unwrap();
+                (
+                    a.str_at("Id").unwrap().to_owned(),
+                    a.str_at("Value").unwrap().to_owned(),
+                )
+            })
+            .filter(|(k, _)| k != "Id")
+            .collect()
+    }
+
+    fn command_attrs(r: &Node) -> Vec<(String, Vec<(String, String)>)> {
+        r.o()
+            .unwrap()
+            .at("Commands")
+            .unwrap()
+            .a()
+            .unwrap()
+            .iter()
+            .map(|c| {
+                let o = c.o().unwrap();
+                (
+                    o.str_at("Type").unwrap().to_owned(),
+                    attr_pairs(o.at("Attributes").unwrap()),
+                )
+            })
+            .collect()
+    }
+
+    fn route_by_id<'a>(g: &'a Node, id: &str) -> &'a Node {
+        g.o()
+            .unwrap()
+            .at("Routes")
+            .unwrap()
+            .a()
+            .unwrap()
+            .iter()
+            .find(|r| id_of(r) == Some(id))
+            .unwrap()
+    }
+
+    fn pairs(v: &[(&str, &str)]) -> Vec<(String, String)> {
+        v.iter()
+            .map(|(a, b)| ((*a).to_owned(), (*b).to_owned()))
+            .collect()
+    }
+
+    fn file(groups: Vec<Node>) -> Vec<u8> {
+        Pkg {
+            name: [0; 4],
+            root: obj(vec![("RouteGroupings", arr(groups))]),
+            vca: Vec::new(),
+            layout: None,
+        }
+        .to_bytes()
+        .unwrap()
+    }
+
+    #[test]
+    fn a_career_setup_gets_an_entry_route_a_page_pair_and_a_way_back_from_the_wizard() {
+        let s = setup();
+        let to_f1 = route(
+            SETUP_ENTRY_SOURCE,
+            vec![
+                route_cmd("InputState", 1, &[], None),
+                route_cmd(
+                    "TriggerSubRoute",
+                    2,
+                    &[("SubRoute", "close"), ("Target", &s.back), ("To", &s.next)],
+                    Some("1"),
+                ),
+                route_cmd(
+                    "Migrate",
+                    3,
+                    &[("Flow", "career_season_setup_flow"), ("SkipActivator", "true")],
+                    Some("2"),
+                ),
+                route_cmd(
+                    "TriggerSubRoute",
+                    4,
+                    &[
+                        ("SubRoute", "open_no_input"),
+                        ("Target", &s.next),
+                        ("From", &s.back),
+                    ],
+                    Some("3"),
+                ),
+            ],
+            "1,4",
+            1,
+            Some(&s.next),
+        );
+        let frontend = file(vec![route_group(&s.back, vec![to_f1.clone()])]);
+        let mut next_group = route_group(&s.next, screen_routes(&s.next));
+        next_group
+            .o_mut()
+            .unwrap()
+            .at_mut("Attributes")
+            .unwrap()
+            .a_mut()
+            .unwrap()
+            .push(obj(vec![
+                ("Id", super::s("Slices")),
+                ("Value", super::s("career_wizard_summary,slice_gen_screen_title")),
+            ]));
+        let wizard = file(vec![next_group]);
+        let mut placed = Placed::default();
+        let frontend = setup_routes(&frontend, &[setup()], &mut placed).unwrap();
+        let wizard = setup_routes(&wizard, &[setup()], &mut placed).unwrap();
+        assert_eq!(
+            placed.routes,
+            [
+                format!("{}.{}", s.back, s.route),
+                format!("{}.{}", s.next, s.back_route)
+            ]
+        );
+        assert_eq!(
+            placed.screens,
+            ["career_wizard_summary", "slice_gen_screen_title"]
+        );
+        let scene = pairs(&SETUP_SCENE);
+
+        let p = Pkg::parse(&frontend).unwrap();
+        let dlc = group(&p, &s.back).unwrap();
+        assert_eq!(route_ids(dlc), [SETUP_ENTRY_SOURCE, s.route.as_str()]);
+        assert_eq!(canonical(route_by_id(dlc, SETUP_ENTRY_SOURCE)), canonical(&to_f1));
+        let entry = route_by_id(dlc, &s.route);
+        assert_eq!(
+            command_attrs(entry),
+            [
+                ("InputState".to_owned(), vec![]),
+                (
+                    "TriggerSubRoute".to_owned(),
+                    pairs(&[("SubRoute", "close"), ("Target", &s.back), ("To", &s.home)])
+                ),
+                (
+                    "Migrate".to_owned(),
+                    pairs(&[("Flow", "options_flow"), ("SkipActivator", "true")])
+                ),
+                (
+                    "TriggerSubRoute".to_owned(),
+                    pairs(&[("SubRoute", "open"), ("Target", &s.home), ("From", &s.back)])
+                ),
+                ("FrontendSceneSwitch".to_owned(), scene.clone()),
+            ]
+        );
+        let switch = &entry.o().unwrap().at("Commands").unwrap().a().unwrap()[4];
+        assert_eq!(switch.o().unwrap().str_at("Dependencies").unwrap(), "1");
+        assert_eq!(
+            attr_pairs(entry.o().unwrap().at("Attributes").unwrap()),
+            pairs(&[("Destination", &s.home)])
+        );
+
+        let p = Pkg::parse(&wizard).unwrap();
+        let back = route_by_id(group(&p, &s.next).unwrap(), &s.back_route);
+        let out = |t: &str| {
+            (
+                "TransitionScreen".to_owned(),
+                pairs(&[("Direction", "out"), ("Target", t)]),
+            )
+        };
+        let close = |t: &str| ("CloseScreen".to_owned(), pairs(&[("Target", t)]));
+        assert_eq!(
+            command_attrs(back),
+            [
+                out(&s.next),
+                out("career_wizard_summary"),
+                close("career_wizard_summary"),
+                out("slice_gen_screen_title"),
+                close("slice_gen_screen_title"),
+                (
+                    "Migrate".to_owned(),
+                    pairs(&[("Flow", "options_flow"), ("SkipActivator", "true")])
+                ),
+                (
+                    "TriggerSubRoute".to_owned(),
+                    pairs(&[
+                        ("SubRoute", "open"),
+                        ("Target", &s.home),
+                        ("From", &s.next),
+                        ("Message", "")
+                    ])
+                ),
+                ("FrontendSceneSwitch".to_owned(), scene.clone()),
+            ]
+        );
+        let deps: Vec<&str> = back
+            .o()
+            .unwrap()
+            .at("Commands")
+            .unwrap()
+            .a()
+            .unwrap()
+            .iter()
+            .map(|c| c.o().unwrap().str_at("Dependencies").unwrap_or(""))
+            .collect();
+        assert_eq!(deps, ["", "", "2", "", "4", "1,3,5", "6", "6"]);
+        let back = back.o().unwrap();
+        assert_eq!(back.str_at("Dependencies").unwrap(), "7");
+        assert_eq!(
+            attr_pairs(back.at("Attributes").unwrap()),
+            pairs(&[("Destination", &s.home), ("AutoFocus", "false")])
+        );
+
+        let groups = setup_route_groups(&s);
+        assert_eq!(
+            groups.iter().map(|g| id_of(g).unwrap()).collect::<Vec<_>>(),
+            [s.home.as_str(), s.rows.as_str()]
+        );
+        assert_eq!(
+            route_ids(&groups[0]),
+            [
+                "open",
+                "open_no_input",
+                "close",
+                "back",
+                "confirm",
+                "open_options"
+            ]
+        );
+        assert_eq!(route_ids(&groups[1]), ["open", "open_no_input", "close", "back"]);
+        assert_eq!(
+            attr_pairs(
+                route_by_id(&groups[0], "back")
+                    .o()
+                    .unwrap()
+                    .at("Attributes")
+                    .unwrap()
+            ),
+            pairs(&[("Destination", &s.back), ("AutoFocus", "false")])
+        );
+        let back = command_attrs(route_by_id(&groups[0], "back"));
+        assert_eq!(
+            back[1],
+            (
+                "Migrate".to_owned(),
+                pairs(&[("Flow", "frontend_flow"), ("SkipActivator", "true")])
+            )
+        );
+        assert_eq!(
+            back[2].1,
+            pairs(&[
+                ("SubRoute", "open"),
+                ("Target", &s.back),
+                ("From", &s.home),
+                ("Message", DRIVER_CAREER)
+            ])
+        );
+        let confirm = command_attrs(route_by_id(&groups[0], "confirm"));
+        assert_eq!(
+            confirm[1].1,
+            pairs(&[("Flow", "career_season_setup_flow"), ("SkipActivator", "true")])
+        );
+        assert_eq!(confirm[2].1[1], ("Target".to_owned(), s.next.clone()));
+        assert_eq!(
+            canonical(route_by_id(&groups[1], "back")),
+            canonical(&subpage_route("back", &s.rows, &s.home, 2))
+        );
+
+        let e = setup_routes(&frontend, &[setup()], &mut Placed::default()).unwrap_err();
+        assert!(
+            e.to_string()
+                .contains(&format!("{} has a route {} already", s.back, s.route)),
+            "{e}"
+        );
+        let bare = file(vec![route_group(&s.back, vec![])]);
+        let e = setup_routes(&bare, &[setup()], &mut Placed::default()).unwrap_err();
+        assert!(e.to_string().contains(SETUP_ENTRY_SOURCE), "{e}");
     }
 }

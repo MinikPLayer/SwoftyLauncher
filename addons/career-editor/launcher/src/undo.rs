@@ -43,6 +43,26 @@ pub fn inverse(e: &Entry) -> Undo {
     match e.op.as_str() {
         "economy.cash.set" | "economy.cash.add" => set_op("economy.cash.set", &b["cash"], &a["cash"]),
         "economy.rp.set" | "economy.rp.add" => set_op("economy.rp.set", &b["rp"], &a["rp"]),
+        // An experimental My Team free agent signing undoes as one too; each driver's team after the
+        // swap is found by id, since a replace lists the free agent first.
+        "drivers.swap" if e.args["experimentalFreeAgent"] == true => {
+            let (Some(x), Some(y)) = (e.args["a"].as_i64(), e.args["b"].as_i64()) else {
+                return Undo::None("the drivers are missing");
+            };
+            let team = |id: i64| {
+                [&a["a"], &a["b"]]
+                    .into_iter()
+                    .find(|d| d["driverStatId"].as_i64() == Some(id))
+                    .map(|d| d["teamStatId"].clone())
+            };
+            let (Some(tx), Some(ty)) = (team(x), team(y)) else {
+                return Undo::None("the seats after the swap are missing");
+            };
+            Undo::Op(
+                json!({ "op": "drivers.swap", "args": { "a": x, "b": y, "experimentalFreeAgent": true,
+                "expect": { "aTeamStatId": tx, "bTeamStatId": ty } } }),
+            )
+        }
         "drivers.ratings.set" => {
             let Some(id) = b["driverStatId"]
                 .as_i64()
@@ -251,7 +271,9 @@ pub fn inverse(e: &Entry) -> Undo {
         | "facilities.set_level"
         | "economy.sponsor.loyalty.add"
         | "economy.costcap.refund"
-        | "drivers.contracts.repair" => Undo::BackupOnly,
+        | "drivers.contracts.repair"
+        | "season.calendar.repair"
+        | "drivers.freeAgent.add" => Undo::BackupOnly,
         "bridge.ping" => Undo::None("nothing to undo"),
         _ => Undo::None("no undo is defined for this edit"),
     }
@@ -260,6 +282,23 @@ pub fn inverse(e: &Entry) -> Undo {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_experimental_free_agent_signing_undoes_as_one() {
+        let mut e = entry(
+            "drivers.swap",
+            json!({ "a": 150, "b": 174, "experimentalFreeAgent": true, "expect": { "aTeamStatId": 2, "bTeamStatId": null } }),
+            Value::Null,
+        );
+        e.after = json!({ "a": { "driverStatId": 174, "teamStatId": 2 }, "b": { "driverStatId": 150, "teamStatId": null } });
+        let Undo::Op(op) = inverse(&e) else {
+            panic!("no undo")
+        };
+        assert_eq!(
+            op["args"],
+            json!({ "a": 150, "b": 174, "experimentalFreeAgent": true, "expect": { "aTeamStatId": null, "bTeamStatId": 2 } })
+        );
+    }
 
     fn entry(op: &str, args: Value, before: Value) -> Entry {
         Entry {
@@ -307,6 +346,10 @@ mod tests {
         assert!(matches!(inverse(&e), Undo::None(_)));
         assert!(matches!(
             inverse(&entry("drivers.contracts.repair", json!({}), Value::Null)),
+            Undo::BackupOnly
+        ));
+        assert!(matches!(
+            inverse(&entry("season.calendar.repair", json!({}), Value::Null)),
             Undo::BackupOnly
         ));
     }

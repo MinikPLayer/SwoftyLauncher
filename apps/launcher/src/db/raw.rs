@@ -15,7 +15,7 @@ use super::{ADDABLE, Nav, hex, type_name};
 use crate::library::plural;
 use crate::pages::label;
 use crate::shell::Shell;
-use crate::theme::{Palette, ScrollArea, palette};
+use crate::theme::{Palette, palette, scrollbar_x};
 
 const LIST_H: f32 = 44.;
 const GRID_COL: f32 = 150.;
@@ -514,9 +514,27 @@ impl Shell {
             .overflow_hidden()
             .child(
                 div()
+                    .id("db-grid-scroll")
                     .size_full()
-                    .scroll_x("db-grid-scroll")
-                    .child(v_flex().w(px(width)).h_full().child(header).child(list)),
+                    .flex()
+                    .overflow_x_scroll()
+                    .restrict_scroll_to_axis()
+                    .track_scroll(&self.db.grid_scroll)
+                    .child(
+                        v_flex()
+                            .flex_none()
+                            .w(px(width))
+                            .h_full()
+                            .child(header)
+                            .child(list),
+                    ),
+            )
+            .child(
+                div().absolute().inset_0().child(
+                    scrollbar_x(&self.db.grid_scroll)
+                        .id("db-grid-scrollbar")
+                        .viewport_from_layout(),
+                ),
             )
             .child(
                 div()
@@ -1213,6 +1231,7 @@ impl Shell {
                             true
                         }
                         Err(e) => {
+                            crate::app_log::action("db editor: add a key").failed(&e);
                             window.push_notification(
                                 gpui_kit::component::notification::Notification::error(e).title("Could not add the key"),
                                 cx,

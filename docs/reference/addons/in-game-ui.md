@@ -11,6 +11,8 @@ You can use your addon to change the game's menus in three ways:
 |---|---|
 | Settings for your addon | [`options`](/reference/addons/settings). swofty_core builds the addon's page in ADDON SETTINGS |
 | A new screen | `operations.screens`. swofty_core registers it with the game's UI system |
+| Settings before the new-career wizard | [`career_setup`](#add-a-career-setup-page). The launcher builds a page in the CUSTOM SETTINGS look |
+| Settings in Team HQ | [`hub_tab`](#add-a-team-hq-tab). The launcher builds the page of a laptop tab; your plugin adds the tab |
 | A tile on the home screen | A [site mixin](/reference/addons/hooking#run-code-at-an-instruction) on the home-tile builder |
 | A change to an existing screen | [UI patches](/reference/ops/ui-patches) |
 | A change to a screen's layout | An edited [scene](/reference/ui/editing-menus), made in [Swofty UI](/reference/ui/swofty-ui) |
@@ -67,7 +69,7 @@ settings_container.Action.route { key: open_ai_liveries }
 Back on the page returns to the anchor. The screen needs your addon on in the profile and works only in `flow_options`.
 
 ::: warning Reserved names
-`swofty_settings`, `swofty_addon_<n>`, `swofty_map_<n>` and `swofty_mod_<n>` belong to ADDON SETTINGS.
+`swofty_settings`, `swofty_addon_<n>`, `swofty_map_<n>` and `swofty_mod_<n>` belong to ADDON SETTINGS, and `swofty_setup_<route>` to [career setup pages](#add-a-career-setup-page).
 :::
 
 ### View models
@@ -81,6 +83,77 @@ Set `"view_model": true` to request a native view model. Your screen gets one if
 | `swofty_set:<addon>:<option>:<index>` | Value number `index` |
 
 You'll find every view-model property and command in the [UI reference](/reference/std/ui).
+
+## Add a career setup page
+
+A career setup page shows some of your addon's options between a career content tile and the new-career wizard, in the look of the game's CUSTOM SETTINGS. Its home has a CONFIRM tile on the left and a category tile with the page's title. The category tile opens the rows page: one row per option, **Left** and **Right** change the value, and the panel on the right shows the focused option's description. Back on the rows page returns to the home. CONFIRM opens the wizard's season length step, and Back on the home returns to the career content select.
+
+### 1. Declare it
+
+List the options in `career_setup` ([manifest](./manifest#career-setup)):
+
+```json [swofty.json]
+"options": [
+  { "id": "start_season", "type": "choice", "label": "Starting season", "default": "2016",
+    "values": ["2016", "2017", "2018"], "binds": "native" },
+  { "id": "rnd_mode", "type": "choice", "label": "R&D", "default": "real_life",
+    "values": [{ "value": "real_life", "label": "Real life" }, "base", "hybrid"], "binds": "native" }
+],
+"career_setup": {
+  "route": "career_wizard_driver_career_progressive",
+  "title": "Progressive Career",
+  "options": ["start_season", "rnd_mode"]
+}
+```
+
+### 2. Point the tile at it
+
+The build adds `route` to the career content select's route group, `fe_career_dlc_select`. The route is a copy of `career_wizard_driver_career_to_f1`, the route a Driver Career tile takes to the season length step, and opens the page instead. Point your career content tile at it with the [career wizard library](/reference/std/career-wizard):
+
+```cpp
+wz::tile_route(group, "career_wizard_driver_career_progressive");
+```
+
+### What the build makes
+
+| Name | Does |
+|---|---|
+| `swofty_setup_<route>` | The home, a screen in `flow_options` |
+| `swofty_addon_<route>_<n>` | The rows page, a screen in `flow_options` with the `swofty_addon_` [view model](#view-models). `<n>` is the addon's index, as in `swofty_addon_<n>` |
+| `fe_career_dlc_select.<route>` | Closes the content select, moves to `options_flow`, opens the home and switches the backdrop to the CUSTOM settings scene (`Customisation`, `Generic`, `Main`) |
+| `swofty_setup_<route>.confirm` | CONFIRM: closes the home, moves to `career_season_setup_flow` and opens `next` |
+| `swofty_setup_<route>.back` | Back: closes the home, moves to `frontend_flow` and opens the content select with the `driver_career` message, as the career menu opens it for Driver Career. `AutoFocus` is `false`: the content select focuses its own tiles |
+| `swofty_setup_<route>.open_options` | The category tile: closes the home and opens the rows page |
+| `<next>.back_<route>` | As the wizard's own routes leave its flow: `next` and the slices of its route group (`career_wizard_summary`, `slice_gen_screen_title`) transition out and the slices close. Then it moves to `options_flow`, opens the home and switches the backdrop as the entry route does. `AutoFocus` is `false` |
+
+The home focuses its category tile each time it opens. Back on `next` takes the game's own back route for that step. Fire `back_<route>` there to return to the page, for example from your plugin's wizard back-route site for your data group. The build log has a line for each page: `ui: <addon> has a career setup page swofty_setup_<route>: ...`. The build stops when the content select already has a route named `route`, or when `next` is not a screen in `flow_career_season_setup.erp`.
+
+The rows change the options live, as ADDON SETTINGS does: a `native` option's value reaches your plugin through [settings](/reference/std/settings), and the launcher stores it in the profile. The options also show on your addon's page in ADDON SETTINGS, except `hidden` ones. Their values belong to the profile, not to a career; copy them into the career's [storage](/reference/std/storage) when the career is created. The description panel shows the option's `description`; a choice has no description per value.
+
+## Add a Team HQ tab
+
+Team HQ is the career hub's laptop, the screen `laptop_container` in `career_hub_flow`. Its tabs come from the laptop's view model, which the game fills when the hub loads (`Career_Build_HubLaptop`); a `.ui` edit can't add one. The launcher builds the tab's page from `hub_tab` ([manifest](./manifest#hub-tab)), and your plugin adds the tab, publishes the page's data and handles its commands.
+
+### What the build makes
+
+The template `swofty_hub_<name>`, added to the templates of `screens/laptop_overview.ui` in `flow_career_hub.erp` and `flow_team_hq.erp`. It is the game's settings rows page on the laptop: its scene is the settings page scene `art/screens/options/options_edit_screen.idf`, and its parts are the settings screen templates from `flow_options.erp` (`screens/settings_container.ui`). Its root, with the fade-in and the button prompts, comes from the inbox page `tab_content_emails_panel`; none of the inbox's parts are kept.
+
+| Part | Shows |
+|---|---|
+| One settings row per option, in `options` order (at most 6), on the left | the option's label `#view_model_data.hud_swofty_hub_<name>.o<i>.label`, and its value `….o<i>.value` between left and right arrows; the focused row is highlighted as on the game's settings pages |
+| Category box, top right | the page title `….title` |
+| Description panel, under it | the focused option's `label` in capitals as the heading and its `description` from the manifest as the body |
+| Button prompts | **Adjust** for Left and Right |
+
+The settings screen title, category filter and scroll bar are hidden. The scenes the page uses, with their animations, meshes, material bindings, materials and textures, are copied from `flow_options.erp` into each archive that lacks them, byte for byte and under their own names; no stock resource changes. The build fails when a copied resource refers to a resource that the archive, the copies and the shared archives (`persistent.erp`, `flow_persistent.erp`) all lack, but `flow_options.erp` has. The build log has a line for each archive: `ui: hub tabs copy <n> settings screen resources from flow_options.erp into <archive>`.
+
+Up and Down move between the options. Right on option `i` raises the command `swofty_next:<addon id>:<option id>` on the template, and Left raises `swofty_prev:<addon id>:<option id>`, as on ADDON SETTINGS pages. The template's `shown` and `enabled` events focus the first option. The build checks the template against the game's UI loader rules. The build log has a line for each page: `ui: <addon> has a hub tab template swofty_hub_<name> for <data_group> careers in 2 archive(s); …`.
+
+### What your plugin does
+
+- Add a primary tab to the laptop for careers of `data_group`, with a sub-tab whose content template is `swofty_hub_<name>`. The laptop builder adds each of its own tabs the same way (STANDINGS: content `tabbing_secondary_controller`, header `tabbing_secondary_tab`).
+- Publish `title`, and `label` and `value` for each option, under `view_model_data.hud_swofty_hub_<name>`.
+- Handle `swofty_next` and `swofty_prev` raised on the sub-tab and change the option.
 
 ## Add a home tile
 

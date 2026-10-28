@@ -1,6 +1,6 @@
 # Career Mode Editor protocol
 
-The launcher page and the in-game plugin talk through files in `<game>/swofty/addons/swofty.career-editor/`. Each area documents its ops and its snapshot section in its own file.
+The launcher page and the in-game plugin talk through files in `<game>/swofty/addons/swofty.career-editor/`, or in `$DATA/addon-storage/swofty.career-editor/` in a session where the game can't create files in its folder (the folder `addon_game_dir` names). Each area documents its ops and its snapshot section in its own file.
 
 | area | file | owner |
 |---|---|---|

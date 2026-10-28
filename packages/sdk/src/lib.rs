@@ -8,6 +8,7 @@ pub const MIXIN_HEADER: &str = include_str!("../include/swofty/mixin.hpp");
 pub const ASSETS_HEADER: &str = include_str!("../include/swofty/assets.hpp");
 pub const EVENTS_HEADER: &str = include_str!("../include/swofty/events.hpp");
 pub const OVERLAY_HEADER: &str = include_str!("../include/swofty/overlay.hpp");
+pub const OVERLAY_UI_HEADER: &str = include_str!("../include/swofty/overlay_ui.hpp");
 pub const TELEMETRY_HEADER: &str = include_str!("../include/swofty/telemetry.hpp");
 pub const DB_HEADER: &str = include_str!("../include/swofty/db.hpp");
 pub const STORAGE_HEADER: &str = include_str!("../include/swofty/storage.hpp");
@@ -453,6 +454,8 @@ pub struct SwoftyLang {
 pub const EVENT_CAREER_CONTENT_PRESSED: &str = "career.content.pressed";
 pub const CAREER_CONTENT_MODEL_2026: u32 = 0;
 pub const CAREER_CONTENT_MODEL_2025: u32 = 1;
+pub const CAREER_CONTENT_DRIVER: u32 = 1;
+pub const CAREER_CONTENT_MY_TEAM: u32 = 2;
 pub const CAREER_CONTENT_QUEUED: u32 = 0;
 pub const CAREER_CONTENT_LIVE: u32 = 1;
 pub const CAREER_CONTENT_OFF: u32 = 2;
@@ -472,6 +475,7 @@ pub struct SwoftyCareerContentDesc {
     pub entitlement: *const c_char,
     pub car_group: i32,
     pub badge: u32,
+    pub careers: u32,
 }
 
 #[repr(C)]
@@ -714,8 +718,9 @@ mod tests {
         assert_eq!(std::mem::size_of::<SwoftyPopup>(), 16);
         assert_eq!(std::mem::size_of::<SwoftyHud>(), 32);
         assert_eq!(std::mem::offset_of!(SwoftyHud, toast), 16);
-        assert_eq!(std::mem::size_of::<SwoftyCareerContentDesc>(), 72);
+        assert_eq!(std::mem::size_of::<SwoftyCareerContentDesc>(), 80);
         assert_eq!(std::mem::offset_of!(SwoftyCareerContentDesc, car_group), 64);
+        assert_eq!(std::mem::offset_of!(SwoftyCareerContentDesc, careers), 72);
         assert_eq!(std::mem::size_of::<SwoftyCareerContentInfo>(), 352);
         assert_eq!(std::mem::offset_of!(SwoftyCareerContentInfo, id), 32);
         assert_eq!(std::mem::size_of::<SwoftyCareerContent>(), 40);
@@ -792,6 +797,9 @@ mod tests {
             "} SwoftyCareerState;",
             "#define SWOFTY_EVENT_SESSION_START \"session.start\"",
             "#define SWOFTY_TELEMETRY_VERSION 1",
+            "#define SWOFTY_OVERLAY_VERSION 3",
+            "} SwoftyInput;",
+            "} SwoftyTextStyle;",
             "SWOFTY_DB_BOOL = 5",
             "} SwoftyTelemetryFeed;",
         ] {
@@ -829,6 +837,10 @@ mod tests {
         assert_eq!(
             include_str!("../../../templates/addon/native/include/swofty/overlay.hpp"),
             OVERLAY_HEADER
+        );
+        assert_eq!(
+            include_str!("../../../templates/addon/native/include/swofty/overlay_ui.hpp"),
+            OVERLAY_UI_HEADER
         );
         assert_eq!(
             include_str!("../../../templates/addon/native/include/swofty/telemetry.hpp"),
@@ -942,8 +954,32 @@ mod tests {
             "void text(",
             "Result load_image(",
             "Result image(",
+            "inline bool v2()",
+            "void rect_rounded(",
+            "void arc(",
+            "void polyline(",
+            "struct TextStyle",
+            "Result image_nine(",
+            "void push_clip(",
+            "Rect safe_area(",
+            "float ui_scale(",
+            "inline bool v3()",
+            "inline Input input(",
+            "inline Result focus(",
         ] {
             assert!(OVERLAY_HEADER.contains(name), "{name}");
+        }
+        for name in [
+            "namespace swofty::overlay::ui {",
+            "inline Rect panel(",
+            "inline bool button(",
+            "inline bool toggle(",
+            "inline bool slider(",
+            "bool list(",
+            "inline void draw_toasts(",
+            "inline bool text_field(",
+        ] {
+            assert!(OVERLAY_UI_HEADER.contains(name), "{name}");
         }
         for name in [
             "namespace swofty::telemetry {",

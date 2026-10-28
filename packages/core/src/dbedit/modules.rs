@@ -6,6 +6,7 @@ use serde::Deserialize;
 use super::catalog::plain;
 use super::driver_manager::{self, Driver};
 use super::{Catalog, Edits, NodeId, rows};
+use crate::heads::ProfileHead;
 use crate::ops::first_segment;
 use crate::tracks::PlanTrack;
 use crate::{Error, Result};
@@ -348,6 +349,15 @@ fn name_edited(
     }
 }
 
+/// The name a head an addon puts shows: `Rio Haryanto (Rio Haryanto facemod)`.
+fn head_title(h: &ProfileHead) -> String {
+    let name = title_case(&h.label);
+    match &h.addon_name {
+        Some(addon) => format!("{name} ({addon})"),
+        None => name,
+    }
+}
+
 fn title_case(label: &str) -> String {
     label
         .split(['_', '-'])
@@ -667,12 +677,13 @@ impl Module {
 
     /// Like `choices`, for the rows of one scope.
     pub fn choices_in(&self, catalog: &Catalog, field: usize, scope: Option<&str>) -> Vec<(String, String)> {
-        self.choices_with(catalog, field, scope, &[], &[])
+        self.choices_with(catalog, field, scope, &[], &[], &[])
     }
 
     /// Like `choices_in`, where the field picks a track also offering the
     /// tracks track addons add, and naming a stock slot after the addon that fills it;
-    /// where it picks a driver or entrant, also offering the drivers Driver Manager adds.
+    /// where it picks a driver or entrant, also offering the drivers Driver Manager adds;
+    /// where it picks a head, also offering the heads addons put.
     pub fn choices_with(
         &self,
         catalog: &Catalog,
@@ -680,6 +691,7 @@ impl Module {
         scope: Option<&str>,
         tracks: &[PlanTrack],
         drivers: &[Driver],
+        heads: &[ProfileHead],
     ) -> Vec<(String, String)> {
         let Some(f) = self.fields.get(field) else {
             return Vec::new();
@@ -694,6 +706,13 @@ impl Module {
                     for d in drivers {
                         if !names.iter().any(|(l, _)| *l == d.label) {
                             names.push((d.label.clone(), d.title()));
+                        }
+                    }
+                }
+                if spec.rows == crate::heads::ROWS {
+                    for h in heads {
+                        if !names.iter().any(|(l, _)| *l == h.label) {
+                            names.push((h.label.clone(), head_title(h)));
                         }
                     }
                 }
@@ -883,14 +902,18 @@ mod tests {
                 addon: Some("mod.okayama".into()),
             },
         ];
-        let with = weekends.choices_with(&cat, track, None, &added, &[]);
+        let with = weekends.choices_with(&cat, track, None, &added, &[], &[]);
         let named = |v: &str| with.iter().find(|(c, _)| c == v).map(|(_, n)| n.as_str());
         assert_eq!(named("bahrain24"), Some("Sepang"));
         assert_eq!(named("okayama"), Some("okayama"));
         assert_eq!(with.len(), 4);
         let calendar = module("calendar").unwrap();
         let event = calendar.fields.iter().position(|f| f.id == "event_name").unwrap();
-        assert!(calendar.choices_with(&cat, event, None, &added, &[]).is_empty());
+        assert!(
+            calendar
+                .choices_with(&cat, event, None, &added, &[], &[])
+                .is_empty()
+        );
     }
 
     #[test]
@@ -904,7 +927,7 @@ mod tests {
         let at = |m: &Module, id: &str| m.fields.iter().position(|f| f.id == id).unwrap();
         let seat = at(lineups, "entrant_reference");
         assert_eq!(
-            lineups.choices_with(&cat, seat, Some("f1_2026"), &[], &drivers),
+            lineups.choices_with(&cat, seat, Some("f1_2026"), &[], &drivers, &[]),
             [
                 ("max_verstappen".to_owned(), "max_verstappen".to_owned()),
                 ("dm_208".to_owned(), "Jacob Swofty (Driver Manager)".to_owned()),
@@ -923,7 +946,7 @@ mod tests {
             ("retirements-2025", "driver"),
         ] {
             let m = module(m).unwrap();
-            let choices = m.choices_with(&cat, at(m, field), None, &[], &drivers);
+            let choices = m.choices_with(&cat, at(m, field), None, &[], &drivers, &[]);
             assert!(
                 choices.iter().any(|(v, _)| v == "dm_208"),
                 "{}.{field}: {choices:?}",
@@ -932,7 +955,7 @@ mod tests {
         }
         for (m, field) in [("drivers", "nationality"), ("race-weekends", "track")] {
             let m = module(m).unwrap();
-            let choices = m.choices_with(&cat, at(m, field), None, &[], &drivers);
+            let choices = m.choices_with(&cat, at(m, field), None, &[], &drivers, &[]);
             assert!(
                 !choices.iter().any(|(v, _)| v.starts_with("dm_")),
                 "{}.{field}",
@@ -948,6 +971,40 @@ mod tests {
         assert_eq!(after.rows[0].cells[seat].value, "dm_208");
         assert_eq!(driver_manager::picks(&edits), ["dm_208"]);
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn head_choices_offer_the_heads_addons_put_beside_the_stock_ones() {
+        use crate::dbedit::driver_manager::tests;
+        let cat = Catalog::from_gvdb(tests::database(), String::new());
+        let head = |label: &str, addon: &str| ProfileHead {
+            label: label.into(),
+            addon: Some(format!("mod.{label}")),
+            addon_name: Some(addon.into()),
+            female: false,
+        };
+        let heads = [
+            head("rio_haryanto", "Rio Haryanto facemod"),
+            head("male_ls144", "Face pack"),
+        ];
+        let drivers = module("drivers").unwrap();
+        let field = drivers.fields.iter().position(|f| f.id == "head").unwrap();
+        let choices = drivers.choices_with(&cat, field, None, &[], &[], &heads);
+        assert_eq!(
+            choices.iter().filter(|(v, _)| v == "male_ls144").count(),
+            1,
+            "{choices:?}"
+        );
+        assert!(
+            choices.contains(&(
+                "rio_haryanto".to_owned(),
+                "Rio Haryanto (Rio Haryanto facemod)".to_owned()
+            )),
+            "{choices:?}"
+        );
+        let nationality = drivers.fields.iter().position(|f| f.id == "nationality").unwrap();
+        let other = drivers.choices_with(&cat, nationality, None, &[], &[], &heads);
+        assert!(!other.iter().any(|(v, _)| v == "rio_haryanto"));
     }
 
     #[test]

@@ -112,7 +112,9 @@ struct CareerEntity {
     EntrantRecord *entrants_end; // L2 experimental
     uint8_t _pad_0x2f0[0x8];
     uint8_t entrant_update_busy; // L2 experimental
-    uint8_t _pad_0x2f9[0xd37];
+    uint8_t _pad_0x2f9[0xc5f];
+    TrackDataSystem *track_data; // L2 experimental
+    uint8_t _pad_0xf60[0xd0];
     void **component_registry; // L2 experimental
     uint8_t _pad_0x1038[0x8];
     void *championships_begin; // L2 experimental
@@ -127,6 +129,7 @@ static_assert(offsetof(CareerEntity, vtable) == 0x0);
 static_assert(offsetof(CareerEntity, entrants_begin) == 0x2e0);
 static_assert(offsetof(CareerEntity, entrants_end) == 0x2e8);
 static_assert(offsetof(CareerEntity, entrant_update_busy) == 0x2f8);
+static_assert(offsetof(CareerEntity, track_data) == 0xf58);
 static_assert(offsetof(CareerEntity, component_registry) == 0x1030);
 static_assert(offsetof(CareerEntity, championships_begin) == 0x1040);
 static_assert(offsetof(CareerEntity, championships_end) == 0x1048);
@@ -298,12 +301,19 @@ struct DriverCareerContractsManagerComponent {
     CareerTimeComponent *career_time; // L2 experimental
     uint8_t _pad_0x360[0x8];
     CarNumberComponent *car_numbers; // L2 experimental
+    ScheduleComponent *schedule; // L2 experimental
+    uint8_t _pad_0x378[0x30];
+    void *secret_meetings_begin; // L2 experimental
+    void *secret_meetings_end; // L2 experimental
 };
 static_assert(offsetof(DriverCareerContractsManagerComponent, weekend_source) == 0x270);
 static_assert(offsetof(DriverCareerContractsManagerComponent, entity) == 0x278);
 static_assert(offsetof(DriverCareerContractsManagerComponent, contract_owner) == 0x350);
 static_assert(offsetof(DriverCareerContractsManagerComponent, career_time) == 0x358);
 static_assert(offsetof(DriverCareerContractsManagerComponent, car_numbers) == 0x368);
+static_assert(offsetof(DriverCareerContractsManagerComponent, schedule) == 0x370);
+static_assert(offsetof(DriverCareerContractsManagerComponent, secret_meetings_begin) == 0x3a8);
+static_assert(offsetof(DriverCareerContractsManagerComponent, secret_meetings_end) == 0x3b0);
 
 struct DriverContract {
     uint32_t team; // L2 experimental
@@ -706,15 +716,19 @@ struct Session {
     uint32_t session_id; // L2 experimental
     uint8_t _pad_0xc[0x4];
     uint32_t completion; // L2 experimental
-    uint8_t _pad_0x14[0xc];
+    uint8_t _pad_0x14[0x4];
+    NeAllocator *participants_allocator; // L2 experimental
     EntrantRecord *participants_begin; // L2 experimental
     EntrantRecord *participants_end; // L2 experimental
-    uint8_t _pad_0x30[0x70];
+    uint64_t participants_capacity; // L2 experimental
+    uint8_t _pad_0x38[0x68];
 };
 static_assert(offsetof(Session, session_id) == 0x8);
 static_assert(offsetof(Session, completion) == 0x10);
+static_assert(offsetof(Session, participants_allocator) == 0x18);
 static_assert(offsetof(Session, participants_begin) == 0x20);
 static_assert(offsetof(Session, participants_end) == 0x28);
+static_assert(offsetof(Session, participants_capacity) == 0x30);
 static_assert(sizeof(Session) == 0xa0);
 
 struct SponsorEntry {
@@ -953,7 +967,8 @@ struct Weekend {
     uint8_t _pad_0x30[0x1f0];
     Session *sessions_begin; // L2 experimental
     Session *sessions_end; // L2 experimental
-    uint8_t _pad_0x230[0xc];
+    uint8_t _pad_0x230[0x8];
+    uint32_t current_session; // L2 experimental
     uint32_t progress_state; // L2 experimental
     uint8_t _pad_0x240[0x38];
     uint8_t track_stat_id; // L2 experimental
@@ -963,6 +978,7 @@ static_assert(offsetof(Weekend, vtable) == 0x0);
 static_assert(offsetof(Weekend, name) == 0x28);
 static_assert(offsetof(Weekend, sessions_begin) == 0x220);
 static_assert(offsetof(Weekend, sessions_end) == 0x228);
+static_assert(offsetof(Weekend, current_session) == 0x238);
 static_assert(offsetof(Weekend, progress_state) == 0x23c);
 static_assert(offsetof(Weekend, track_stat_id) == 0x278);
 static_assert(sizeof(Weekend) == 0x4f0);

@@ -57,6 +57,13 @@
 // unresolved) and Career_Add_SeasonWeekend, then the pointer is moved from the end to
 // its round.
 //
+// The round count stays at the season's race weekends: the career clock stops at the
+// RaceWeekend activities the ScheduleComponent builds from the gamedb event list (not
+// saved, rebuilt at load) and races Season.weekends[current_weekend] at each one, and
+// the season completes only after its last weekend (calendar_rules.hpp). add_round and
+// remove_round refuse to move the count away from that number; season.calendar.repair
+// brings an edited season back to it.
+//
 // Every pointer is region-checked through ce::comp::read; objects are accepted only
 // with the expected vtable. Nothing game-side is cached across frames: each section,
 // op and rebuild resolves the season again through the component registry.
@@ -77,6 +84,7 @@
 #include <swofty/mixin.hpp>
 #include <swofty/storage.hpp>
 
+#include "calendar_rules.hpp"
 #include "ce.hpp"
 #include "components.hpp"
 
@@ -130,6 +138,14 @@ constexpr size_t kStResultRec = sizeof(StandingsResult);
 
 constexpr uintptr_t kCareerTimeMinutes = offsetof(CareerTimeComponent, current_minutes);
 
+constexpr uintptr_t kSchedSeasons = offsetof(ScheduleComponent, seasons_begin);
+constexpr size_t kSchedSeasonStride = sizeof(ScheduleSeason);
+constexpr uintptr_t kSchedDrivers = offsetof(ScheduleSeason, driver_calendars_begin);
+constexpr size_t kCalendarStride = sizeof(DriverCalendar);
+constexpr uintptr_t kCalendarActivities = offsetof(DriverCalendar, activities_begin);
+constexpr uintptr_t kActivityDef = offsetof(CalendarActivity, activity);
+constexpr uintptr_t kDefType = offsetof(ActivityDef, type);
+
 constexpr uintptr_t kAllocVtable = offsetof(NeAllocator, vtable);
 constexpr uintptr_t kAllocFnAlloc = offsetof(NeAllocatorVtbl, alloc);
 constexpr uintptr_t kAllocFnFree = offsetof(NeAllocatorVtbl, free);
@@ -146,6 +162,9 @@ constexpr size_t kMaxRounds = 64;
 constexpr size_t kMaxSessions = 16;
 constexpr size_t kMaxRecs = 64;
 constexpr int kMaxPos = 28;
+constexpr size_t kMaxCalendars = 256;
+constexpr size_t kMaxActivities = 2048;
+constexpr size_t kActivitySlot = 2 * sizeof(void *); // calendar activity slots: {allocator, CalendarActivity *}
 
 template <class T> bool rd(uintptr_t a, T &out)
 {
@@ -294,6 +313,36 @@ bool rounds(uintptr_t season, std::vector<Round> &out, uint32_t &current)
         out.push_back(r);
     }
     return true;
+}
+
+// The race-weekend activities of this season on the game's career calendars: the ScheduleComponent's
+// per-season record holds every driver's calendar, which the daily tick refills with the whole season's
+// event-list activities (0x14126a1a0). -1 when none can be read.
+int race_weekends(uint32_t season_index)
+{
+    uintptr_t sched = ce::comp::get(ce::comp::Id::Schedule);
+    uintptr_t sb = 0, cb = 0;
+    size_t sn = 0, cn = 0;
+    if (!sched || !vec(sched + kSchedSeasons, kSchedSeasonStride, kMaxSeasons, sb, sn) || season_index >= sn ||
+        !vec(sb + season_index * kSchedSeasonStride + kSchedDrivers, kCalendarStride, kMaxCalendars, cb, cn))
+        return -1;
+    int best = 0;
+    for (size_t c = 0; c < cn; ++c) {
+        uintptr_t ab = 0;
+        size_t an = 0;
+        if (!vec(cb + c * kCalendarStride + kCalendarActivities, kActivitySlot, kMaxActivities, ab, an))
+            continue;
+        int count = 0;
+        for (size_t i = 0; i < an; ++i) {
+            uintptr_t act = 0, def = 0;
+            uint8_t type = 0;
+            if (rd(ab + i * kActivitySlot + sizeof(void *), act) && rd(act + kActivityDef, def) &&
+                rd(def + kDefType, type) && type == ce::cal::kRaceWeekend)
+                ++count;
+        }
+        best = std::max(best, count);
+    }
+    return best > 0 ? best : -1;
 }
 
 std::string track_of(const std::string &weekend)
@@ -905,6 +954,12 @@ void section_season(ce::Writer &w)
     w.integer(static_cast<int64_t>(rs.size()));
     w.key("weekend");
     w.str(cur < rs.size() ? rs[cur].name : std::string());
+    int stops = race_weekends(wh.index);
+    w.key("race_weekends");
+    if (stops > 0)
+        w.integer(stops);
+    else
+        w.null();
     w.key("completion");
     w.integer(champ_completion);
     w.key("season_completion");
@@ -1067,6 +1122,17 @@ void section_calendar(ce::Writer &w)
     w.key("editable_from");
     if (static_cast<size_t>(cur) + 1 < rs.size())
         w.integer(static_cast<int64_t>(cur) + 2);
+    else
+        w.null();
+    int stops = race_weekends(wh.index);
+    w.key("race_weekends");
+    if (stops > 0)
+        w.integer(stops);
+    else
+        w.null();
+    w.key("round_count_ok");
+    if (stops > 0)
+        w.boolean(static_cast<size_t>(stops) == rs.size());
     else
         w.null();
     w.key("rounds");
@@ -1406,6 +1472,59 @@ ce::OpResult cal_done(const char *op, const CalCtx &c, const std::string &before
     return r;
 }
 
+ce::OpResult count_refused(const char *op, const CalCtx &c, int stops, const std::string &rule)
+{
+    ce::OpResult r;
+    r.error = rule;
+    size_t colon = rule.find(':');
+    std::string detail = colon == std::string::npos ? std::string() : rule.substr(colon + 2);
+    ce::Writer w;
+    w.begin_object();
+    w.key("rounds");
+    w.integer(static_cast<int64_t>(c.rs.size()));
+    w.key("race_weekends");
+    if (stops > 0)
+        w.integer(stops);
+    else
+        w.null();
+    w.key("detail");
+    w.str(detail);
+    w.end_object();
+    r.after = w.text();
+    ce::log("%s refused: %s (season %u, %zu rounds, %d race weekend(s) on the game's calendar)", op, rule.c_str(),
+            c.wh.index + 1, c.rs.size(), stops);
+    return r;
+}
+
+std::vector<ce::cal::Candidate> known_weekends(uintptr_t champ, uint32_t index)
+{
+    std::vector<ce::cal::Candidate> out;
+    uintptr_t b = 0;
+    size_t n = 0;
+    if (!champ || !vec(champ + kChampSeasons, kChampSeasonStride, kMaxSeasons, b, n))
+        return out;
+    std::vector<size_t> order;
+    for (size_t i = index; i-- > 0;)
+        order.push_back(i);
+    for (size_t i = static_cast<size_t>(index) + 1; i < n; ++i)
+        order.push_back(i);
+    for (size_t i : order) {
+        uintptr_t season = 0;
+        if (!rd(b + i * kChampSeasonStride + kChampSeasonPtr, season) || !has_vtable(season, vt_Career_Season.get()))
+            continue;
+        std::vector<Round> rs;
+        uint32_t cur = 0;
+        if (!rounds(season, rs, cur))
+            continue;
+        for (auto &r : rs) {
+            uint8_t t = kNoTrack;
+            if (rd(r.weekend + kWeekendTrack, t) && t != kNoTrack && valid_weekend_name(r.name))
+                out.push_back({r.name, t});
+        }
+    }
+    return out;
+}
+
 ce::OpResult op_calendar_add_round(const ce::Json &args)
 {
     CalCtx c;
@@ -1423,6 +1542,10 @@ ce::OpResult op_calendar_add_round(const ce::Json &args)
         if (!rd(c.rs[idx].weekend + kWeekendState, state) || state != 0)
             return fail("not_future");
     }
+    int stops = race_weekends(c.wh.index);
+    std::string rule = ce::cal::count_change(static_cast<int>(c.rs.size()), static_cast<int>(c.rs.size()) + 1, stops);
+    if (!rule.empty())
+        return count_refused("season.calendar.add_round", c, stops, rule);
     uint8_t track = kNoTrack;
     if (const char *e = check_weekend(args, c.wh.champ, name, c.rs, track))
         return fail(e);
@@ -1449,6 +1572,10 @@ ce::OpResult op_calendar_remove_round(const ce::Json &args)
     size_t idx = static_cast<size_t>(round - 1);
     if (!future_round(c.rs, c.cur, idx))
         return fail("not_future");
+    int stops = race_weekends(c.wh.index);
+    std::string rule = ce::cal::count_change(static_cast<int>(c.rs.size()), static_cast<int>(c.rs.size()) - 1, stops);
+    if (!rule.empty())
+        return count_refused("season.calendar.remove_round", c, stops, rule);
     std::string before = rounds_json(c.rs);
     std::string name = c.rs[idx].name;
     uint8_t track = kNoTrack;
@@ -1497,6 +1624,75 @@ ce::OpResult op_calendar_set_round(const ce::Json &args)
     std::snprintf(what, sizeof what, "round %lld \"%s\" (track %u) -> \"%s\" (track %u)", round, old.c_str(), old_track,
                   name.c_str(), track);
     return cal_done("season.calendar.set_round", c, before, what);
+}
+
+// season.calendar.repair: brings the round count back to the race weekends on the game's calendar, for
+// careers edited before add_round / remove_round kept it. Extra rounds: the last future, not-started
+// ones go. Missing rounds: the given weekends, or tracks of this championship's other seasons that are
+// not on this calendar, become new last rounds.
+ce::OpResult op_calendar_repair(const ce::Json &args)
+{
+    CalCtx c;
+    if (const char *e = cal_ctx(c))
+        return fail(e);
+    int stops = race_weekends(c.wh.index);
+    std::vector<ce::cal::RoundState> states;
+    for (auto &r : c.rs) {
+        ce::cal::RoundState st;
+        st.name = r.name;
+        rd(r.weekend + kWeekendTrack, st.track);
+        uint32_t state = 0;
+        st.not_started = rd(r.weekend + kWeekendState, state) && state == 0;
+        states.push_back(st);
+    }
+    std::vector<ce::cal::Candidate> given;
+    const ce::Json &list = args["weekends"];
+    if (list.type == ce::Json::Arr) {
+        for (auto &v : list.a) {
+            std::string name = v["weekend"].str();
+            uint8_t track = kNoTrack;
+            if (const char *e = check_weekend(v, c.wh.champ, name, c.rs, track))
+                return fail(e);
+            given.push_back({name, track});
+        }
+    } else if (list.type != ce::Json::Null) {
+        return fail("bad_args");
+    }
+    ce::cal::Repair plan = ce::cal::repair(states, c.cur, stops, given, known_weekends(c.wh.champ, c.wh.index));
+    if (!plan.error.empty())
+        return count_refused("season.calendar.repair", c, stops, plan.error);
+    std::string before = rounds_json(c.rs);
+    if (plan.unchanged) {
+        char what[96];
+        std::snprintf(what, sizeof what, "%zu rounds match %d race weekend(s), nothing to do", c.rs.size(), stops);
+        return cal_done("season.calendar.repair", c, before, what);
+    }
+    std::string done;
+    for (size_t idx : plan.remove) {
+        std::string name = c.rs[idx].name;
+        if (!remove_at(c.wh.season, idx)) {
+            ce::log("season.calendar.repair: removing round %zu \"%s\" refused by the game%s", idx + 1, name.c_str(),
+                    done.c_str());
+            return fail("game_refused");
+        }
+        done += " removed round " + std::to_string(idx + 1) + " \"" + name + "\";";
+    }
+    for (auto &a : plan.add) {
+        uintptr_t b = 0;
+        size_t n = 0;
+        uint64_t rc = 0;
+        if (!vec(c.wh.season + kSeasonWeekends, kWeekendPtr, kMaxRounds, b, n) ||
+            !insert_at(c.wh.season, n, a.name, a.track, rc)) {
+            ce::log("season.calendar.repair: adding \"%s\" (track %u) refused by the game (code 0x%llx);%s",
+                    a.name.c_str(), a.track, (unsigned long long)rc, done.c_str());
+            return fail("game_refused");
+        }
+        done += " added \"" + a.name + "\" (track " + std::to_string(a.track) + ") as round " + std::to_string(n + 1) +
+                ";";
+    }
+    std::string what = std::to_string(c.rs.size()) + " rounds -> " + std::to_string(stops) + " (race weekends on the " +
+                       "game's calendar):" + done;
+    return cal_done("season.calendar.repair", c, before, what.c_str());
 }
 
 ce::OpResult op_calendar_toggle_sprint(const ce::Json &)
@@ -1723,6 +1919,7 @@ CE_OP("season.calendar.set_round", op_calendar_set_round);
 CE_OP("season.calendar.toggle_sprint", op_calendar_toggle_sprint);
 CE_OP("season.calendar.add_round", op_calendar_add_round);
 CE_OP("season.calendar.remove_round", op_calendar_remove_round);
+CE_OP("season.calendar.repair", op_calendar_repair);
 CE_OP("season.points.adjust", op_points_adjust);
 CE_OP("season.points.clear", op_points_clear);
 CE_OP("season.result.set", op_result_set);

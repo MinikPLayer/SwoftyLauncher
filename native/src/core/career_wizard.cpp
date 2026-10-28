@@ -454,6 +454,34 @@ void wizard_commit()
                     state(0), state(1), state(2), state(3), state(4));
 }
 
+// A tile route whose `from` is a route the game runs later, after the tile press, applies when that
+// route runs (Vm_Run_Route, career_start.cpp): with saves for the content the tile opens the
+// save-slot list (career_continue_driver), whose New Career runs career_wizard_season_length_select
+// in its own route group; an entry for the group with that `from` renames the route to `to`, which
+// the addon adds to the same group. Entries with the default `from` match only the tile's own route,
+// which wizard_tile_routed has renamed before it runs, so they never apply here.
+bool wizard_route_running(const std::string &route, void *name)
+{
+    std::string g;
+    {
+        std::lock_guard<std::mutex> lk(lock);
+        g = last_tile;
+    }
+    if (g.empty() || route.empty() || !name)
+        return false;
+    std::string to;
+    if (!find(TILE_ROUTE, g, [&](const Entry &e) {
+            if (e.from != route || e.from == "career_wizard_driver_career_to_f1")
+                return false;
+            to = e.to;
+            return true;
+        }))
+        return false;
+    swofty::game::Ne_Make_StrFromCStr(static_cast<swofty::game::NeStr **>(name), to.c_str(), 0, 0);
+    swofty::log("[wizard] %s: route %s runs as %s", g.c_str(), route.c_str(), to.c_str());
+    return true;
+}
+
 void wizard_tile_routed(const std::string &g, void *o)
 {
     auto *out = static_cast<Action *>(o);

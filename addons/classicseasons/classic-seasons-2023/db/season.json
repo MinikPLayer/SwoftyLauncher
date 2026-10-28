@@ -573,9 +573,2633 @@
    "player.max_speed.brake_bd_factor_front",
    "player.max_speed.brake_bd_factor_rear",
    "player.max_speed.brake_bm_input_end"
+  ],
+  "audio.audio_bundle_settings.audio_bundle_settings": [
+   "_metadata_",
+   "bundle_name",
+   "era",
+   "engine",
+   "exhaust",
+   "cabin"
   ]
  },
  "ops": [
+  {
+   "op": "add-row",
+   "table": "audio.audio_bundle_settings",
+   "from": "audio.audio_bundle_settings.audio_bundle_settings[_metadata_=ferrari_2025]",
+   "set": {
+    "_metadata_": "cs23_ferrari",
+    "bundle_name": "cs23_ferrari"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "audio.audio_bundle_settings",
+   "from": "audio.audio_bundle_settings.audio_bundle_settings[_metadata_=honda_2025]",
+   "set": {
+    "_metadata_": "cs23_honda",
+    "bundle_name": "cs23_honda"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "audio.audio_bundle_settings",
+   "from": "audio.audio_bundle_settings.audio_bundle_settings[_metadata_=mercedes_2025]",
+   "set": {
+    "_metadata_": "cs23_mercedes",
+    "bundle_name": "cs23_mercedes"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "audio.audio_bundle_settings",
+   "from": "audio.audio_bundle_settings.audio_bundle_settings[_metadata_=renault_2025]",
+   "set": {
+    "_metadata_": "cs23_renault",
+    "bundle_name": "cs23_renault"
+   }
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull._metadata_",
+   "type": 2,
+   "value": "66315f6d5f7245645f62756c6c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.bundle_name",
+   "type": 2,
+   "value": "637332335f686f6e64612e62646c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.detonations_category",
+   "type": 2,
+   "value": "66315f6d5f7265645f62756c6c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.safety_car",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.cabin_radio",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.left_right_panning",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.frontwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.frontwing_offset_y",
+   "type": 1,
+   "value": "2d302e3133"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.frontwing_offset_z",
+   "type": 1,
+   "value": "332e3035"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.rearwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.rearwing_offset_y",
+   "type": 1,
+   "value": "302e3632"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.rearwing_offset_z",
+   "type": 1,
+   "value": "2d322e3332"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.windscreen_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.windscreen_offset_y",
+   "type": 1,
+   "value": "302e38"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.windscreen_offset_z",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.engine_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.engine_offset_y",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.engine_offset_z",
+   "type": 1,
+   "value": "2d302e37"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.engine_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.exhaust_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.exhaust_offset_y",
+   "type": 1,
+   "value": "302e32"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.exhaust_offset_z",
+   "type": 1,
+   "value": "2d322e3331"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.exhaust_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.cabin_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.cabin_offset_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.cabin_offset_z",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.cabin_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.gearbox_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.gearbox_offset_y",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.gearbox_offset_z",
+   "type": 1,
+   "value": "2d312e3635"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.gearbox_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.braking_slowdown",
+   "type": 1,
+   "value": "302e3735"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.engine_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.exhaust_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.engine_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.exhaust_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.engine_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.exhaust_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.judder_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.surface_load_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.off_load_decell_attenuation_idle",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.off_load_decell_attenuation_redline",
+   "type": 1,
+   "value": "2d362e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rEd_bull.throttle_blend_power_base",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes._metadata_",
+   "type": 2,
+   "value": "66315f6d5f6d45726365646573"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.bundle_name",
+   "type": 2,
+   "value": "637332335f6d657263656465732e62646c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.detonations_category",
+   "type": 2,
+   "value": "66315f6d5f67656e65726963"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.safety_car",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.cabin_radio",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.left_right_panning",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.frontwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.frontwing_offset_y",
+   "type": 1,
+   "value": "2d302e3132"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.frontwing_offset_z",
+   "type": 1,
+   "value": "322e3932"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.rearwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.rearwing_offset_y",
+   "type": 1,
+   "value": "302e3535"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.rearwing_offset_z",
+   "type": 1,
+   "value": "2d322e3332"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.windscreen_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.windscreen_offset_y",
+   "type": 1,
+   "value": "302e38"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.windscreen_offset_z",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.engine_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.engine_offset_y",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.engine_offset_z",
+   "type": 1,
+   "value": "2d302e36"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.engine_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.exhaust_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.exhaust_offset_y",
+   "type": 1,
+   "value": "302e3138"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.exhaust_offset_z",
+   "type": 1,
+   "value": "2d322e3333"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.exhaust_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.cabin_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.cabin_offset_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.cabin_offset_z",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.cabin_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.gearbox_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.gearbox_offset_y",
+   "type": 1,
+   "value": "302e31"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.gearbox_offset_z",
+   "type": 1,
+   "value": "2d312e3635"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.gearbox_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.braking_slowdown",
+   "type": 1,
+   "value": "302e3735"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.engine_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.exhaust_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.engine_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.exhaust_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.engine_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.exhaust_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.judder_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.surface_load_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.off_load_decell_attenuation_idle",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.off_load_decell_attenuation_redline",
+   "type": 1,
+   "value": "2d362e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mErcedes.throttle_blend_power_base",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari._metadata_",
+   "type": 2,
+   "value": "66315f6d5f66457272617269"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.bundle_name",
+   "type": 2,
+   "value": "637332335f666572726172692e62646c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.detonations_category",
+   "type": 2,
+   "value": "66315f6d5f67656e65726963"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.safety_car",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.cabin_radio",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.left_right_panning",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.frontwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.frontwing_offset_y",
+   "type": 1,
+   "value": "2d302e31"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.frontwing_offset_z",
+   "type": 1,
+   "value": "322e39"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.rearwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.rearwing_offset_y",
+   "type": 1,
+   "value": "302e36"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.rearwing_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.windscreen_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.windscreen_offset_y",
+   "type": 1,
+   "value": "302e38"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.windscreen_offset_z",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.engine_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.engine_offset_y",
+   "type": 1,
+   "value": "302e3332"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.engine_offset_z",
+   "type": 1,
+   "value": "2d302e3535"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.engine_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.exhaust_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.exhaust_offset_y",
+   "type": 1,
+   "value": "302e3231"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.exhaust_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.exhaust_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.cabin_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.cabin_offset_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.cabin_offset_z",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.cabin_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.gearbox_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.gearbox_offset_y",
+   "type": 1,
+   "value": "302e3035"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.gearbox_offset_z",
+   "type": 1,
+   "value": "2d312e36"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.gearbox_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.braking_slowdown",
+   "type": 1,
+   "value": "302e3735"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.engine_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.exhaust_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.engine_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.exhaust_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.engine_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.exhaust_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.judder_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.surface_load_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.off_load_decell_attenuation_idle",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.off_load_decell_attenuation_redline",
+   "type": 1,
+   "value": "2d362e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_fErrari.throttle_blend_power_base",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren._metadata_",
+   "type": 2,
+   "value": "66315f6d5f6d436c6172656e"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.bundle_name",
+   "type": 2,
+   "value": "637332335f6d657263656465732e62646c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.detonations_category",
+   "type": 2,
+   "value": "66315f6d5f67656e65726963"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.safety_car",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.cabin_radio",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.left_right_panning",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.frontwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.frontwing_offset_y",
+   "type": 1,
+   "value": "2d302e31"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.frontwing_offset_z",
+   "type": 1,
+   "value": "322e39"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.rearwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.rearwing_offset_y",
+   "type": 1,
+   "value": "302e36"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.rearwing_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.windscreen_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.windscreen_offset_y",
+   "type": 1,
+   "value": "302e38"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.windscreen_offset_z",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.engine_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.engine_offset_y",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.engine_offset_z",
+   "type": 1,
+   "value": "2d302e36"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.engine_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.exhaust_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.exhaust_offset_y",
+   "type": 1,
+   "value": "302e3137"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.exhaust_offset_z",
+   "type": 1,
+   "value": "2d322e3331"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.exhaust_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.cabin_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.cabin_offset_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.cabin_offset_z",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.cabin_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.gearbox_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.gearbox_offset_y",
+   "type": 1,
+   "value": "302e3035"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.gearbox_offset_z",
+   "type": 1,
+   "value": "2d312e3635"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.gearbox_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.braking_slowdown",
+   "type": 1,
+   "value": "302e3735"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.engine_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.exhaust_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.engine_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.exhaust_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.engine_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.exhaust_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.judder_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.surface_load_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.off_load_decell_attenuation_idle",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.off_load_decell_attenuation_redline",
+   "type": 1,
+   "value": "2d362e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_mClaren.throttle_blend_power_base",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin._metadata_",
+   "type": 2,
+   "value": "66315f6d5f6153746f6e5f6d617274696e"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.bundle_name",
+   "type": 2,
+   "value": "637332335f6d657263656465732e62646c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.detonations_category",
+   "type": 2,
+   "value": "66315f6d5f67656e65726963"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.safety_car",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.cabin_radio",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.left_right_panning",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.frontwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.frontwing_offset_y",
+   "type": 1,
+   "value": "2d302e31"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.frontwing_offset_z",
+   "type": 1,
+   "value": "33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.rearwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.rearwing_offset_y",
+   "type": 1,
+   "value": "302e36"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.rearwing_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.windscreen_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.windscreen_offset_y",
+   "type": 1,
+   "value": "302e38"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.windscreen_offset_z",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.engine_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.engine_offset_y",
+   "type": 1,
+   "value": "302e3336"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.engine_offset_z",
+   "type": 1,
+   "value": "2d302e36"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.engine_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.exhaust_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.exhaust_offset_y",
+   "type": 1,
+   "value": "302e32"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.exhaust_offset_z",
+   "type": 1,
+   "value": "2d322e3235"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.exhaust_rotation_y",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.cabin_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.cabin_offset_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.cabin_offset_z",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.cabin_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.gearbox_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.gearbox_offset_y",
+   "type": 1,
+   "value": "302e3035"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.gearbox_offset_z",
+   "type": 1,
+   "value": "2d312e37"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.gearbox_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.braking_slowdown",
+   "type": 1,
+   "value": "302e3735"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.engine_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.exhaust_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.engine_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.exhaust_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.engine_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.exhaust_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.judder_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.surface_load_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.off_load_decell_attenuation_idle",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.off_load_decell_attenuation_redline",
+   "type": 1,
+   "value": "2d362e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aSton_martin.throttle_blend_power_base",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine._metadata_",
+   "type": 2,
+   "value": "66315f6d5f614c70696e65"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.bundle_name",
+   "type": 2,
+   "value": "637332335f72656e61756c742e62646c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.detonations_category",
+   "type": 2,
+   "value": "66315f6d5f616c70696e65"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.safety_car",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.cabin_radio",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.left_right_panning",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.frontwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.frontwing_offset_y",
+   "type": 1,
+   "value": "2d302e31"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.frontwing_offset_z",
+   "type": 1,
+   "value": "322e3932"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.rearwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.rearwing_offset_y",
+   "type": 1,
+   "value": "302e3535"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.rearwing_offset_z",
+   "type": 1,
+   "value": "2d322e3335"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.windscreen_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.windscreen_offset_y",
+   "type": 1,
+   "value": "302e38"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.windscreen_offset_z",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.engine_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.engine_offset_y",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.engine_offset_z",
+   "type": 1,
+   "value": "2d302e35"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.engine_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.exhaust_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.exhaust_offset_y",
+   "type": 1,
+   "value": "302e3138"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.exhaust_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.exhaust_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.cabin_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.cabin_offset_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.cabin_offset_z",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.cabin_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.gearbox_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.gearbox_offset_y",
+   "type": 1,
+   "value": "302e3035"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.gearbox_offset_z",
+   "type": 1,
+   "value": "2d312e3637"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.gearbox_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.braking_slowdown",
+   "type": 1,
+   "value": "302e3735"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.engine_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.exhaust_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.engine_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.exhaust_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.engine_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.exhaust_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.judder_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.surface_load_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.off_load_decell_attenuation_idle",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.off_load_decell_attenuation_redline",
+   "type": 1,
+   "value": "2d362e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_aLpine.throttle_blend_power_base",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams._metadata_",
+   "type": 2,
+   "value": "66315f6d5f77496c6c69616d73"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.bundle_name",
+   "type": 2,
+   "value": "637332335f6d657263656465732e62646c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.detonations_category",
+   "type": 2,
+   "value": "66315f6d5f67656e65726963"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.safety_car",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.cabin_radio",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.left_right_panning",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.frontwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.frontwing_offset_y",
+   "type": 1,
+   "value": "2d302e31"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.frontwing_offset_z",
+   "type": 1,
+   "value": "322e3935"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.rearwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.rearwing_offset_y",
+   "type": 1,
+   "value": "302e3535"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.rearwing_offset_z",
+   "type": 1,
+   "value": "2d322e3235"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.windscreen_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.windscreen_offset_y",
+   "type": 1,
+   "value": "302e38"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.windscreen_offset_z",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.engine_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.engine_offset_y",
+   "type": 1,
+   "value": "302e3235"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.engine_offset_z",
+   "type": 1,
+   "value": "2d302e3535"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.engine_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.exhaust_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.exhaust_offset_y",
+   "type": 1,
+   "value": "302e3138"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.exhaust_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.exhaust_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.cabin_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.cabin_offset_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.cabin_offset_z",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.cabin_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.gearbox_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.gearbox_offset_y",
+   "type": 1,
+   "value": "302e31"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.gearbox_offset_z",
+   "type": 1,
+   "value": "2d312e36"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.gearbox_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.braking_slowdown",
+   "type": 1,
+   "value": "302e3735"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.engine_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.exhaust_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.engine_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.exhaust_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.engine_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.exhaust_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.judder_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.surface_load_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.off_load_decell_attenuation_idle",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.off_load_decell_attenuation_redline",
+   "type": 1,
+   "value": "2d362e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_wIlliams.throttle_blend_power_base",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB._metadata_",
+   "type": 2,
+   "value": "66315f6d5f7242"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.bundle_name",
+   "type": 2,
+   "value": "637332335f686f6e64612e62646c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.detonations_category",
+   "type": 2,
+   "value": "66315f6d5f67656e65726963"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.safety_car",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.cabin_radio",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.left_right_panning",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.frontwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.frontwing_offset_y",
+   "type": 1,
+   "value": "2d302e3135"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.frontwing_offset_z",
+   "type": 1,
+   "value": "332e3035"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.rearwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.rearwing_offset_y",
+   "type": 1,
+   "value": "302e3535"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.rearwing_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.windscreen_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.windscreen_offset_y",
+   "type": 1,
+   "value": "302e38"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.windscreen_offset_z",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.engine_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.engine_offset_y",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.engine_offset_z",
+   "type": 1,
+   "value": "2d302e36"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.engine_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.exhaust_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.exhaust_offset_y",
+   "type": 1,
+   "value": "302e3138"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.exhaust_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.exhaust_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.cabin_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.cabin_offset_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.cabin_offset_z",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.cabin_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.gearbox_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.gearbox_offset_y",
+   "type": 1,
+   "value": "302e3035"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.gearbox_offset_z",
+   "type": 1,
+   "value": "2d312e3635"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.gearbox_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.braking_slowdown",
+   "type": 1,
+   "value": "302e3735"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.engine_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.exhaust_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.engine_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.exhaust_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.engine_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.exhaust_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.judder_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.surface_load_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.off_load_decell_attenuation_idle",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.off_load_decell_attenuation_redline",
+   "type": 1,
+   "value": "2d362e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_rB.throttle_blend_power_base",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber._metadata_",
+   "type": 2,
+   "value": "66315f6d5f734175626572"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.bundle_name",
+   "type": 2,
+   "value": "637332335f666572726172692e62646c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.detonations_category",
+   "type": 2,
+   "value": "66315f6d5f67656e65726963"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.safety_car",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.cabin_radio",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.left_right_panning",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.frontwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.frontwing_offset_y",
+   "type": 1,
+   "value": "2d302e31"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.frontwing_offset_z",
+   "type": 1,
+   "value": "33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.rearwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.rearwing_offset_y",
+   "type": 1,
+   "value": "302e36"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.rearwing_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.windscreen_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.windscreen_offset_y",
+   "type": 1,
+   "value": "302e38"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.windscreen_offset_z",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.engine_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.engine_offset_y",
+   "type": 1,
+   "value": "302e3337"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.engine_offset_z",
+   "type": 1,
+   "value": "2d302e3635"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.engine_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.exhaust_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.exhaust_offset_y",
+   "type": 1,
+   "value": "302e3232"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.exhaust_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.exhaust_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.cabin_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.cabin_offset_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.cabin_offset_z",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.cabin_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.gearbox_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.gearbox_offset_y",
+   "type": 1,
+   "value": "302e3035"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.gearbox_offset_z",
+   "type": 1,
+   "value": "2d312e3635"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.gearbox_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.braking_slowdown",
+   "type": 1,
+   "value": "302e3735"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.engine_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.exhaust_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.engine_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.exhaust_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.engine_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.exhaust_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.judder_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.surface_load_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.off_load_decell_attenuation_idle",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.off_load_decell_attenuation_redline",
+   "type": 1,
+   "value": "2d362e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_sAuber.throttle_blend_power_base",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas._metadata_",
+   "type": 2,
+   "value": "66315f6d5f68416173"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.bundle_name",
+   "type": 2,
+   "value": "637332335f666572726172692e62646c"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.detonations_category",
+   "type": 2,
+   "value": "66315f6d5f67656e65726963"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.safety_car",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.cabin_radio",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.left_right_panning",
+   "type": 5,
+   "value": "46616c7365"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.frontwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.frontwing_offset_y",
+   "type": 1,
+   "value": "2d302e31"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.frontwing_offset_z",
+   "type": 1,
+   "value": "332e3035"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.rearwing_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.rearwing_offset_y",
+   "type": 1,
+   "value": "302e36"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.rearwing_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.windscreen_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.windscreen_offset_y",
+   "type": 1,
+   "value": "302e38"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.windscreen_offset_z",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.engine_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.engine_offset_y",
+   "type": 1,
+   "value": "302e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.engine_offset_z",
+   "type": 1,
+   "value": "2d302e3535"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.engine_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.exhaust_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.exhaust_offset_y",
+   "type": 1,
+   "value": "302e32"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.exhaust_offset_z",
+   "type": 1,
+   "value": "2d322e33"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.exhaust_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.cabin_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.cabin_offset_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.cabin_offset_z",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.cabin_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.gearbox_offset_x",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.gearbox_offset_y",
+   "type": 1,
+   "value": "302e3035"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.gearbox_offset_z",
+   "type": 1,
+   "value": "2d312e3635"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.gearbox_rotation_y",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.braking_slowdown",
+   "type": 1,
+   "value": "302e3735"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.engine_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.exhaust_braking_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.engine_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.exhaust_downshift_load_lag",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.engine_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.exhaust_torque_throttle_mixer",
+   "type": 1,
+   "value": "30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.judder_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.surface_load_wobble_scale",
+   "type": 1,
+   "value": "312e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.off_load_decell_attenuation_idle",
+   "type": 1,
+   "value": "302e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.off_load_decell_attenuation_redline",
+   "type": 1,
+   "value": "2d362e30"
+  },
+  {
+   "op": "put-record",
+   "key": "audio.audio_car_data.f1_m_hAas.throttle_blend_power_base",
+   "type": 1,
+   "value": "302e33"
+  },
   {
    "op": "add-row",
    "table": "entrants.vehicles.vehicle_packages",
@@ -631,6 +3255,8 @@
    "from": "entrants.vehicles.vehicle[_metadata_=redbull_2025]",
    "set": {
     "_metadata_": "cs23_redbull",
+    "performance_tier": "0",
+    "tyre_wear_scale": "1.04",
     "vehicle_package": "cs_2023"
    }
   },
@@ -715,11 +3341,34 @@
   },
   {
    "op": "add-row",
+   "table": "entrants.vehicles.vehicle_packages",
+   "from": "entrants.vehicles.vehicle_packages.vehicle_package[_metadata_=f1_2025]",
+   "set": {
+    "_metadata_": "cs_2023_mercedes",
+    "resource_path": "cs_2023_vehicle_package/teams/mercedes/wep/mercedes",
+    "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+    "driver_animation_set": "f1_2025",
+    "has_cockpit_halo": "True"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "car_setup.presets",
+   "from": "car_setup.presets.vehicle_package_setups[_metadata_=f1_2025_vehicle_package]",
+   "set": {
+    "_metadata_": "cs_2023_mercedes_vehicle_package"
+   }
+  },
+  {
+   "op": "add-row",
    "table": "entrants.vehicles",
    "from": "entrants.vehicles.vehicle[_metadata_=mercedes_2025]",
    "set": {
     "_metadata_": "cs23_mercedes",
-    "vehicle_package": "cs_2023"
+    "performance_tier": "0",
+    "tyre_wear_scale": "1.02",
+    "vehicle_package": "cs_2023_mercedes",
+    "asset_filename": "ferrari"
    }
   },
   {
@@ -803,11 +3452,34 @@
   },
   {
    "op": "add-row",
+   "table": "entrants.vehicles.vehicle_packages",
+   "from": "entrants.vehicles.vehicle_packages.vehicle_package[_metadata_=f1_2025]",
+   "set": {
+    "_metadata_": "cs_2023_ferrari",
+    "resource_path": "cs_2023_vehicle_package/teams/ferrari/wep/ferrari",
+    "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+    "driver_animation_set": "f1_2025",
+    "has_cockpit_halo": "True"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "car_setup.presets",
+   "from": "car_setup.presets.vehicle_package_setups[_metadata_=f1_2025_vehicle_package]",
+   "set": {
+    "_metadata_": "cs_2023_ferrari_vehicle_package"
+   }
+  },
+  {
+   "op": "add-row",
    "table": "entrants.vehicles",
    "from": "entrants.vehicles.vehicle[_metadata_=ferrari_2025]",
    "set": {
     "_metadata_": "cs23_ferrari",
-    "vehicle_package": "cs_2023"
+    "performance_tier": "0",
+    "tyre_wear_scale": "1.03",
+    "vehicle_package": "cs_2023_ferrari",
+    "asset_filename": "mclaren"
    }
   },
   {
@@ -891,11 +3563,34 @@
   },
   {
    "op": "add-row",
+   "table": "entrants.vehicles.vehicle_packages",
+   "from": "entrants.vehicles.vehicle_packages.vehicle_package[_metadata_=f1_2025]",
+   "set": {
+    "_metadata_": "cs_2023_mclaren",
+    "resource_path": "cs_2023_vehicle_package/teams/mclaren/wep/mclaren",
+    "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+    "driver_animation_set": "f1_2025",
+    "has_cockpit_halo": "True"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "car_setup.presets",
+   "from": "car_setup.presets.vehicle_package_setups[_metadata_=f1_2025_vehicle_package]",
+   "set": {
+    "_metadata_": "cs_2023_mclaren_vehicle_package"
+   }
+  },
+  {
+   "op": "add-row",
    "table": "entrants.vehicles",
    "from": "entrants.vehicles.vehicle[_metadata_=mclaren_2025]",
    "set": {
     "_metadata_": "cs23_mclaren",
-    "vehicle_package": "cs_2023"
+    "performance_tier": "0",
+    "tyre_wear_scale": "1.01",
+    "vehicle_package": "cs_2023_mclaren",
+    "asset_filename": "mercedes"
    }
   },
   {
@@ -979,11 +3674,34 @@
   },
   {
    "op": "add-row",
+   "table": "entrants.vehicles.vehicle_packages",
+   "from": "entrants.vehicles.vehicle_packages.vehicle_package[_metadata_=f1_2025]",
+   "set": {
+    "_metadata_": "cs_2023_force_india",
+    "resource_path": "cs_2023_vehicle_package/teams/force_india/wep/force_india",
+    "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+    "driver_animation_set": "f1_2025",
+    "has_cockpit_halo": "True"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "car_setup.presets",
+   "from": "car_setup.presets.vehicle_package_setups[_metadata_=f1_2025_vehicle_package]",
+   "set": {
+    "_metadata_": "cs_2023_force_india_vehicle_package"
+   }
+  },
+  {
+   "op": "add-row",
    "table": "entrants.vehicles",
    "from": "entrants.vehicles.vehicle[_metadata_=force_india_2025]",
    "set": {
     "_metadata_": "cs23_force_india",
-    "vehicle_package": "cs_2023"
+    "performance_tier": "1",
+    "tyre_wear_scale": "1.00",
+    "vehicle_package": "cs_2023_force_india",
+    "asset_filename": "haas"
    }
   },
   {
@@ -1067,11 +3785,34 @@
   },
   {
    "op": "add-row",
+   "table": "entrants.vehicles.vehicle_packages",
+   "from": "entrants.vehicles.vehicle_packages.vehicle_package[_metadata_=f1_2025]",
+   "set": {
+    "_metadata_": "cs_2023_lotus",
+    "resource_path": "cs_2023_vehicle_package/teams/lotus/wep/lotus",
+    "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+    "driver_animation_set": "f1_2025",
+    "has_cockpit_halo": "True"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "car_setup.presets",
+   "from": "car_setup.presets.vehicle_package_setups[_metadata_=f1_2025_vehicle_package]",
+   "set": {
+    "_metadata_": "cs_2023_lotus_vehicle_package"
+   }
+  },
+  {
+   "op": "add-row",
    "table": "entrants.vehicles",
    "from": "entrants.vehicles.vehicle[_metadata_=lotus_2025]",
    "set": {
     "_metadata_": "cs23_lotus",
-    "vehicle_package": "cs_2023"
+    "performance_tier": "1",
+    "tyre_wear_scale": "0.99",
+    "vehicle_package": "cs_2023_lotus",
+    "asset_filename": "williams"
    }
   },
   {
@@ -1155,11 +3896,34 @@
   },
   {
    "op": "add-row",
+   "table": "entrants.vehicles.vehicle_packages",
+   "from": "entrants.vehicles.vehicle_packages.vehicle_package[_metadata_=f1_2025]",
+   "set": {
+    "_metadata_": "cs_2023_williams",
+    "resource_path": "cs_2023_vehicle_package/teams/williams/wep/williams",
+    "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+    "driver_animation_set": "f1_2025",
+    "has_cockpit_halo": "True"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "car_setup.presets",
+   "from": "car_setup.presets.vehicle_package_setups[_metadata_=f1_2025_vehicle_package]",
+   "set": {
+    "_metadata_": "cs_2023_williams_vehicle_package"
+   }
+  },
+  {
+   "op": "add-row",
    "table": "entrants.vehicles",
    "from": "entrants.vehicles.vehicle[_metadata_=williams_2025]",
    "set": {
     "_metadata_": "cs23_williams",
-    "vehicle_package": "cs_2023"
+    "performance_tier": "2",
+    "tyre_wear_scale": "0.97",
+    "vehicle_package": "cs_2023_williams",
+    "asset_filename": "sauber"
    }
   },
   {
@@ -1243,11 +4007,34 @@
   },
   {
    "op": "add-row",
+   "table": "entrants.vehicles.vehicle_packages",
+   "from": "entrants.vehicles.vehicle_packages.vehicle_package[_metadata_=f1_2025]",
+   "set": {
+    "_metadata_": "cs_2023_toro_rosso",
+    "resource_path": "cs_2023_vehicle_package/teams/toro_rosso/wep/toro_rosso",
+    "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+    "driver_animation_set": "f1_2025",
+    "has_cockpit_halo": "True"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "car_setup.presets",
+   "from": "car_setup.presets.vehicle_package_setups[_metadata_=f1_2025_vehicle_package]",
+   "set": {
+    "_metadata_": "cs_2023_toro_rosso_vehicle_package"
+   }
+  },
+  {
+   "op": "add-row",
    "table": "entrants.vehicles",
    "from": "entrants.vehicles.vehicle[_metadata_=toro_rosso_2025]",
    "set": {
     "_metadata_": "cs23_toro_rosso",
-    "vehicle_package": "cs_2023"
+    "performance_tier": "2",
+    "tyre_wear_scale": "0.96",
+    "vehicle_package": "cs_2023_toro_rosso",
+    "asset_filename": "lotus"
    }
   },
   {
@@ -1331,11 +4118,34 @@
   },
   {
    "op": "add-row",
+   "table": "entrants.vehicles.vehicle_packages",
+   "from": "entrants.vehicles.vehicle_packages.vehicle_package[_metadata_=f1_2025]",
+   "set": {
+    "_metadata_": "cs_2023_sauber",
+    "resource_path": "cs_2023_vehicle_package/teams/sauber/wep/sauber",
+    "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+    "driver_animation_set": "f1_2025",
+    "has_cockpit_halo": "True"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "car_setup.presets",
+   "from": "car_setup.presets.vehicle_package_setups[_metadata_=f1_2025_vehicle_package]",
+   "set": {
+    "_metadata_": "cs_2023_sauber_vehicle_package"
+   }
+  },
+  {
+   "op": "add-row",
    "table": "entrants.vehicles",
    "from": "entrants.vehicles.vehicle[_metadata_=sauber_2025]",
    "set": {
     "_metadata_": "cs23_sauber",
-    "vehicle_package": "cs_2023"
+    "performance_tier": "2",
+    "tyre_wear_scale": "0.95",
+    "vehicle_package": "cs_2023_sauber",
+    "asset_filename": "toro_rosso"
    }
   },
   {
@@ -1419,11 +4229,34 @@
   },
   {
    "op": "add-row",
+   "table": "entrants.vehicles.vehicle_packages",
+   "from": "entrants.vehicles.vehicle_packages.vehicle_package[_metadata_=f1_2025]",
+   "set": {
+    "_metadata_": "cs_2023_haas",
+    "resource_path": "cs_2023_vehicle_package/teams/haas/wep/haas",
+    "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+    "driver_animation_set": "f1_2025",
+    "has_cockpit_halo": "True"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "car_setup.presets",
+   "from": "car_setup.presets.vehicle_package_setups[_metadata_=f1_2025_vehicle_package]",
+   "set": {
+    "_metadata_": "cs_2023_haas_vehicle_package"
+   }
+  },
+  {
+   "op": "add-row",
    "table": "entrants.vehicles",
    "from": "entrants.vehicles.vehicle[_metadata_=haas_2025]",
    "set": {
     "_metadata_": "cs23_haas",
-    "vehicle_package": "cs_2023"
+    "performance_tier": "1",
+    "tyre_wear_scale": "0.98",
+    "vehicle_package": "cs_2023_haas",
+    "asset_filename": "force_india"
    }
   },
   {
@@ -1552,7 +4385,8 @@
     "_metadata_": "cs_f1_2023",
     "display_name": "lng_cs_f1_2023",
     "previous_season_team_standings": "cs_f1_teams_2023",
-    "previous_season_driver_standings": ""
+    "previous_season_driver_standings": "",
+    "leaderboard": "classic"
    }
   },
   {

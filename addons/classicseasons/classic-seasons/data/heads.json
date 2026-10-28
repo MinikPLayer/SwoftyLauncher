@@ -13,6 +13,56 @@
    "title": "F1 25 Kubica Face Mod",
    "version": "Cap On",
    "author": "unknown"
+  },
+  "rio_haryanto_face_mod": {
+   "zip": "Rio_Haryanto_facemod.zip",
+   "root": "F1 25",
+   "title": "Rio Haryanto face mod",
+   "version": null,
+   "author": null
+  },
+  "brendon_hartley_face_mod": {
+   "zip": "Brendon Hartley.zip",
+   "root": "F1 25",
+   "title": "Brendon Hartley face mod",
+   "version": null,
+   "author": null
+  },
+  "sergey_sirotkin_face_mod": {
+   "zip": "Sergey Sirotkin.zip",
+   "root": "F1 25",
+   "title": "Sergey Sirotkin face mod",
+   "version": null,
+   "author": null
+  },
+  "stoffel_vandoorne_face_mod": {
+   "zip": "Stoffel_Vandoorne.zip",
+   "root": "F1 25",
+   "title": "Stoffel Vandoorne face mod",
+   "version": null,
+   "author": null
+  },
+  "f1_2016_career": {
+   "zip": "tails.f1-2016.swoftyaddon",
+   "root": "",
+   "title": "F1 2016 Driver Career",
+   "version": "0.1.44",
+   "author": null
+  },
+  "pascal_wehrlein_f1_2016": {
+   "zip": "pascal_wehrlein_head_F1_2016.zip",
+   "root": "",
+   "title": "Pascal Wehrlein head, F1 2016",
+   "version": null,
+   "author": null
+  },
+  "f1_2012_season": {
+   "zip": "F1_2012_Season_v1.0.1_ByDaniX(1).zip",
+   "inner": "F1 2012 Temporada.zip",
+   "root": "F1 25",
+   "title": "F1 2012 Season",
+   "version": "v1.0.1",
+   "author": null
   }
  },
  "heads": {
@@ -25,12 +75,61 @@
   "mick_schumacher": "more_driver_models",
   "nikita_mazepin": "more_driver_models",
   "nyck_de-vries": "more_driver_models",
-  "robert_kubica": "kubica_face_mod"
+  "robert_kubica": "kubica_face_mod",
+  "rio_haryanto": "rio_haryanto_face_mod",
+  "brendon_hartley": "brendon_hartley_face_mod",
+  "sergey_sirotkin": "sergey_sirotkin_face_mod",
+  "stoffel_vandoorne": "stoffel_vandoorne_face_mod",
+  "nico_rosberg": "f1_2012_season"
  },
  "repair_from": {
   "sebastian_vettel": "kimi_raikkonen",
   "mick_schumacher": "kimi_raikkonen",
   "nicholas_latifi": "kimi_raikkonen",
   "nyck_de-vries": "kimi_raikkonen"
- }
+ },
+ "faces": {
+  "jolyon_palmer": {
+   "source": "f1_2016_career",
+   "archive": "heads/male_ls356.erp",
+   "face": "male_ls356",
+   "base": "oliver_goethe",
+   "code": "cs_jolyon_pal"
+  },
+  "marcus_ericsson": {
+   "source": "f1_2016_career",
+   "archive": "heads/male_ls197.erp",
+   "face": "male_ls197",
+   "base": "richard_verschoor",
+   "code": "cs_marcus_ericsso"
+  },
+  "felipe_nasr": {
+   "source": "f1_2016_career",
+   "archive": "heads/male_ls526.erp",
+   "face": "male_ls526",
+   "base": "enzo_fittipaldi",
+   "code": "cs_felipe_nasr_"
+  },
+  "esteban_gutierrez": {
+   "source": "f1_2016_career",
+   "archive": "heads/male_ls533.erp",
+   "face": "male_ls533",
+   "base": "rafael_villagomez",
+   "code": "cs_esteban_gutier"
+  },
+  "pascal_wehrlein": {
+   "source": "pascal_wehrlein_f1_2016",
+   "mipmaps": "character_package/heads/male_driver/pascal_wehrlein/textures/pascal_wehrlein_head_d.tga.mipmaps",
+   "base": "sami_meguetounif",
+   "code": "cs_pascal_wehrle"
+  }
+ },
+ "row_from": {
+  "rio_haryanto": "male_ls222",
+  "brendon_hartley": "male_ls222",
+  "sergey_sirotkin": "male_ls222",
+  "stoffel_vandoorne": "male_ls222",
+  "nico_rosberg": "male_ls222"
+ },
+ "off": {}
 }

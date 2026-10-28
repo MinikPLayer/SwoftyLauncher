@@ -20,6 +20,7 @@ namespace runtime {
 std::string load_stage();
 void on_stage(void (*fn)(int));
 void hud_fatal();
+void netplay_exit();
 }
 
 // Crash log and crash reports. The crash log writes each fatal-class exception, the top-level filter
@@ -52,6 +53,7 @@ constexpr DWORD CODE_EXIT = 0xE5F10001, CODE_GAME_FATAL = 0xE5F10002;
 
 constexpr uint32_t KB_STAMP = 1789118616;
 constexpr uint32_t RVA_REPORT_MEMORY_ERROR = 0x395f6e0, RVA_HEAP_ERROR = 0x39657d0;
+constexpr uint32_t EA_STAMP = 1789128892, EA_RVA_REPORT_MEMORY_ERROR = 0x394c770;
 constexpr const char *PATTERN_REPORT_MEMORY_ERROR =
     "41 57 41 56 41 55 41 54 56 57 55 53 48 81 EC B8 02 00 00 C5 78 29 8C 24 A0 02 00 00 C5 79 29 84 24 90 02 00 00 "
     "C5 F9 29 BC 24 80 02 00 00";
@@ -145,6 +147,7 @@ void (*loader_log)(const char *, ...);
 HMODULE exe, self;
 uintptr_t exe_base;
 size_t exe_size;
+uint32_t exe_stamp;
 DWORD start_tick;
 ULONGLONG start_ms;
 std::vector<Symbol> symbols;
@@ -731,6 +734,7 @@ void window_stage(int)
 void on_exit(const char *fn, UINT code)
 {
     perf::flush(fn);
+    runtime::netplay_exit();
     if (InterlockedExchange(&exited, 1) || !enter())
         return;
     bool early = !window_reached, stack = code || early;
@@ -1758,17 +1762,21 @@ void prune(const wchar_t *pattern, int keep)
         DeleteFileW((swofty_dir + names[i]).c_str());
 }
 
-uintptr_t kb_function(uint32_t rva, const uint8_t *expect, size_t n)
+uintptr_t function_at(uint32_t rva, const uint8_t *expect, size_t n)
 {
     uintptr_t a = exe_base + rva;
-    return kb_build && rva < exe_size && readable(a, n) && !memcmp(reinterpret_cast<const void *>(a), expect, n)
-               ? a
-               : 0;
+    return rva < exe_size && readable(a, n) && !memcmp(reinterpret_cast<const void *>(a), expect, n) ? a : 0;
+}
+
+uintptr_t kb_function(uint32_t rva, const uint8_t *expect, size_t n)
+{
+    return kb_build ? function_at(rva, expect, n) : 0;
 }
 
 // A fixed-byte scan of the exe's executable sections, used only to find Ne_ReportMemoryError on a
-// build that is not the analysed KB one. It stays in the crash code and does not go through the
-// loader's scan (whose cache and log lines are the binding resolver's).
+// build with no known address for it. It stays in the crash code and does not go through the
+// loader's scan (whose cache and log lines are the binding resolver's). It asks Windows about each
+// memory region once rather than about every page.
 uintptr_t scan_exe(const uint8_t *pat, size_t n)
 {
     auto dos = reinterpret_cast<const IMAGE_DOS_HEADER *>(exe_base);
@@ -1780,16 +1788,26 @@ uintptr_t scan_exe(const uint8_t *pat, size_t n)
         if (!(s->Characteristics & IMAGE_SCN_MEM_EXECUTE))
             continue;
         uintptr_t start = exe_base + s->VirtualAddress, end = start + (s->Misc.VirtualSize ? s->Misc.VirtualSize : s->SizeOfRawData);
-        for (uintptr_t page = start & ~0xfffull; page < end; page += 0x1000) {
-            if (!readable(page, 1))
-                continue;
-            uintptr_t lo = std::max(page, start), hi = std::min(page + 0x1000, end);
-            for (uintptr_t a = lo; a + n <= hi; a++)
-                if (*reinterpret_cast<const uint8_t *>(a) == pat[0] && !memcmp(reinterpret_cast<const void *>(a), pat, n)) {
-                    found = a;
+        for (uintptr_t p = start; p < end;) {
+            MEMORY_BASIC_INFORMATION m;
+            if (!VirtualQuery(reinterpret_cast<void *>(p), &m, sizeof m))
+                break;
+            uintptr_t next = std::min(reinterpret_cast<uintptr_t>(m.BaseAddress) + m.RegionSize, end);
+            if (next <= p)
+                break;
+            bool ok = m.State == MEM_COMMIT && !(m.Protect & (PAGE_GUARD | PAGE_NOACCESS)) && (m.Protect & 0xEE);
+            auto *a = reinterpret_cast<const uint8_t *>(p), *hi = reinterpret_cast<const uint8_t *>(next);
+            for (; ok && size_t(hi - a) >= n; a++) {
+                a = static_cast<const uint8_t *>(memchr(a, pat[0], size_t(hi - a) - n + 1));
+                if (!a)
+                    break;
+                if (!memcmp(a, pat, n)) {
+                    found = reinterpret_cast<uintptr_t>(a);
                     if (++hits >= 2)
                         return 0;
                 }
+            }
+            p = next;
         }
     }
     return hits == 1 ? found : 0;
@@ -1806,10 +1824,14 @@ void hook_heap_errors()
         p = *end ? end + 1 : end;
     }
     report_memory_error = kb_function(RVA_REPORT_MEMORY_ERROR, expect, n);
-    bool scanned = false;
+    const char *how = "KB address";
+    if (!report_memory_error && exe_stamp == EA_STAMP) {
+        report_memory_error = function_at(EA_RVA_REPORT_MEMORY_ERROR, expect, n);
+        how = "EA app build address";
+    }
     if (!report_memory_error) {
         report_memory_error = scan_exe(expect, n);
-        scanned = true;
+        how = "found by its prologue";
     }
     if (!report_memory_error) {
         cl("[crash] Ne_ReportMemoryError: its prologue matched 0 or several times; a fatal heap error is reported at "
@@ -1822,7 +1844,7 @@ void hook_heap_errors()
         heap_error_hook = std::move(*h);
     cl("[crash] Ne_ReportMemoryError at base+0x%llx %s (%s); heap objects are recognised by %s",
        (unsigned long long)(report_memory_error - exe_base), h ? "hooked" : "NOT hooked",
-       scanned ? "found by its prologue" : "KB address", heap_error_fn ? "their error method at the KB address" : "the error method's prologue");
+       how, heap_error_fn ? "their error method at the KB address" : "the error method's prologue");
 }
 
 }
@@ -1856,6 +1878,7 @@ void crash_attach(SwoftyApi *a, const std::wstring &dir)
     auto nt = reinterpret_cast<const IMAGE_NT_HEADERS *>(base + reinterpret_cast<const IMAGE_DOS_HEADER *>(base)->e_lfanew);
     exe_base = base;
     exe_size = nt->OptionalHeader.SizeOfImage;
+    exe_stamp = nt->FileHeader.TimeDateStamp;
     char v[16] = {0};
     ea_build = GetEnvironmentVariableA("SWOFTY_EA_DIAG", v, sizeof v) && v[0] == '1';
     diag_path = ea_build ? dir + L"..\\..\\ea-diagnostics.log" : std::wstring();

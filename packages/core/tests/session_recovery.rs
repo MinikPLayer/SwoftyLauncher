@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use swofty_core::baseline::{Identity, sha256_bytes};
+use swofty_core::busy;
 use swofty_core::install::{Drift, Game, Installer, OVERRIDE_HEADER, Plan};
 use swofty_core::journal::Journal;
 use swofty_core::placed::Placed;
@@ -446,4 +447,87 @@ fn placed_paths_compare_like_the_game_folder() {
     p.insert("Swofty\\Addons/core/x.dll", "ab".into(), false);
     assert!(p.wrote("Swofty/Addons/core/x.dll", "ab"));
     assert_eq!(p.wrote("swofty/addons/core/x.dll", "ab"), cfg!(windows));
+}
+
+#[test]
+fn a_build_cancelled_mid_copy_leaves_the_game_folder_as_it_was() {
+    let f = Fixture::new("cancel");
+    let original = f.snapshot();
+    let game = f.game();
+    let wrapper = SessionLock::try_acquire(&f.data).unwrap().unwrap();
+    let seen = std::cell::RefCell::new(Vec::new());
+    let progress = |done: usize, total: usize| {
+        seen.borrow_mut().push((done, total));
+        if done == 2 {
+            busy::request_cancel(&f.data).unwrap();
+        }
+    };
+    let inst = Installer {
+        session: true,
+        progress: &progress,
+        ..Installer::new(&f.data, &game)
+    };
+    let Err(swofty_core::Error::Cancelled) = inst.apply(&f.plan()) else {
+        panic!("the cancel must stop the copy");
+    };
+    let seen = seen.into_inner();
+    assert_eq!(seen.last(), Some(&(2, 7)), "{seen:?}");
+    assert_eq!(f.read(GVDB), "db-modded", "the copy stopped between files");
+    assert_ne!(f.snapshot(), original);
+
+    let done = Installer::new(&f.data, &game).roll_back(false).unwrap();
+    assert_eq!(done.len(), 1);
+    drop(wrapper);
+    assert_eq!(f.snapshot(), original);
+    assert!(Journal::open(&f.data).unwrap().is_empty());
+    assert!(!SessionLock::held_elsewhere(&f.data));
+}
+
+#[test]
+fn a_build_whose_process_died_is_cleaned_up_by_the_next_session() {
+    let f = Fixture::new("died");
+    let original = f.snapshot();
+    let game = f.game();
+    let wrapper = SessionLock::try_acquire(&f.data).unwrap().unwrap();
+    let mut b = busy::Busy::new("MODDED", vec!["mod.a".into()]);
+    b.pid = b.pid.wrapping_add(1);
+    b.step = busy::Step::Copying;
+    b.done = 3;
+    b.total = 7;
+    b.since = 1_793_154_000.5;
+    b.write(&f.data).unwrap();
+    let inst = Installer {
+        session: true,
+        stop_after: Some(4),
+        ..Installer::new(&f.data, &game)
+    };
+    inst.apply(&f.plan()).unwrap_err();
+    assert_eq!(
+        busy::Busy::live(&f.data).as_ref(),
+        Some(&b),
+        "busy while its process holds the lock"
+    );
+    drop(wrapper);
+    assert_eq!(busy::Busy::live(&f.data), None, "its process is gone");
+    busy::request_cancel(&f.data).unwrap();
+
+    let lock = SessionLock::try_acquire(&f.data)
+        .unwrap()
+        .expect("no session is live");
+    let r = recovery::recover(&lock, &f.data, &game, Scope::Sessions).unwrap();
+    assert!(r.recovered());
+    assert!(
+        r.lines().contains(
+            &"the last Play stopped while copying the mods into the game folder (3 of 7 files); Play starts the build again"
+                .to_owned()
+        ),
+        "{:?}",
+        r.lines()
+    );
+    assert_eq!(f.snapshot(), original);
+    assert_eq!(busy::Busy::read(&f.data), None);
+    assert!(
+        !busy::cancel_requested(&f.data),
+        "an old cancel never stops the next build"
+    );
 }

@@ -1,0 +1,7 @@
+; Second ws2_32 import descriptor for fake_net.c, imported by ordinal like the game's .data1 table. The
+; placeholder name keeps lld from merging it into WS2_32.dll; run_net_trace_test.sh renames it after linking.
+LIBRARY ws2_32.dlx
+EXPORTS
+t2_bind @2 NONAME
+t2_closesocket @3 NONAME
+t2_sendto @20 NONAME

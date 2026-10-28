@@ -127,6 +127,19 @@ The engine loads content by asset group, so you use `group.register` to add a gr
 - The core skips groups already in the stock manifest. If a database field points at a stock group whose archive is missing, the session load hangs.
 - Refer to the group through database fields such as a track's `worldAssetGroup`. Tracks use this route: each track's archive goes to `2025_asset_groups/environment_package/tracks/<code>/<code>.erp`, with one group per world, bake and probe set ([How tracks are installed](/reference/installing-tracks)).
 
+### Driver heads
+
+A `file.put` of `2025_asset_groups/animation_package/scenes/cinematics/drivers/heads/<label>.erp` adds a driver head when no `entrants.animation.driver_heads.driver_head` row has the label `<label>`, in the stock database or from an addon's `add-row`. The build then adds, with your addon as the origin:
+
+- an `add-row` copied from `male_ls222`, or from `female_ls112` for a female head, that sets `_metadata_` to `<label>`, `model_path` and `model_path_female_rig` from the head model in your archive, `has_morph_data` to whether you put `morph_poses/<label>.erp`, `available_for_customisation` to `False`, and a new `stat_id`;
+- a `group.register` for each archive you put among `heads/<label>.erp`, `heads/<label>_malerig.erp`, `morph_poses/<label>.erp` and `morph_poses/<label>_malerig.erp`, with `lando_norris`'s groups as templates, or `female_ls493`'s for a female head.
+
+A head is female when its model sits under `heads/female_*` or you put `heads/<label>_malerig.erp`. The male-rig archive's model becomes `model_path`, and without one `model_path` is empty. An archive without a head model gets no row, and the build warns. Add your own row with `add-row` to set other values; the build then adds no row and no groups for that head.
+
+A driver or character whose `head` an addon changes to a label with no driver head row keeps the game's head, and the build names the addon in a warning.
+
+Helpers list the heads that the profile's addons put with the `profile_heads` host call, from launcher 1.5.12.
+
 ## From an engine plugin {#from-a-native-plugin}
 
 You can add the same entries from an [engine plugin](./native-plugins) at plugin init, using `swofty/assets.hpp`. File paths refer to files in your addon's folder, `swofty/addons/<id>/`:

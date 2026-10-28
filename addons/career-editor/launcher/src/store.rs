@@ -242,8 +242,9 @@ impl Store {
         &self.snap
     }
 
-    /// Point the mailbox at `dir`, this addon's folder in the game copy the
-    /// launcher names, and forget what was read from the one before.
+    /// Point the mailbox at `dir`, the folder the launcher names for this
+    /// addon (in the game copy, or in its data folder when the game can't
+    /// write there), and forget what was read from the one before.
     pub fn set_mailbox(&mut self, dir: PathBuf) {
         if self.mailbox.as_ref() == Some(&dir) {
             return;

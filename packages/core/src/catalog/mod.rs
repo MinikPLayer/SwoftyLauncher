@@ -28,6 +28,8 @@ pub const LOG_FILE: &str = "state/registry.log";
 pub const TIMEOUT: Duration = Duration::from_secs(10);
 pub const DOWNLOAD_LIMIT: u64 = 4 * 1024 * 1024 * 1024;
 const CATALOG_LIMIT: u64 = 16 * 1024 * 1024;
+/// The least time the catalog's body gets.
+const CATALOG_FLOOR: Duration = Duration::from_secs(60);
 /// The least time a download's body gets.
 const DOWNLOAD_FLOOR: Duration = Duration::from_secs(30 * 60);
 /// The slowest average a download may run at, in bytes a second (1 Mbit/s).
@@ -266,6 +268,29 @@ pub fn store_updates(store: &Store, catalog: &[Addon], launcher: &semver::Versio
     Ok(updates(installed, catalog, launcher))
 }
 
+/// The Addon Browser download an installed addon came from.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Installed {
+    pub version: semver::Version,
+    pub sha256: String,
+}
+
+/// Records that `id` was just installed from `v`'s download.
+pub fn record_install(store: &Store, id: &str, v: &Version) -> Result<()> {
+    let installed = Installed {
+        version: v.version.clone(),
+        sha256: v.sha256.trim().to_ascii_lowercase(),
+    };
+    crate::write_json_shared(&store.registry_install_path(id), &installed)
+}
+
+/// The SHA-256 of the Addon Browser download `m` was installed from, while the installed
+/// version is still the one that download had.
+pub fn installed_from(store: &Store, m: &AddonManifest) -> Option<String> {
+    let installed: Installed = crate::read_json(&store.registry_install_path(&m.id)).ok()?;
+    (installed.version == m.version).then_some(installed.sha256)
+}
+
 pub fn base_url() -> String {
     std::env::var(URL_ENV)
         .ok()
@@ -323,13 +348,21 @@ pub(crate) fn agent_name() -> &'static str {
 }
 
 fn get(url: &str, timeout: Duration) -> std::result::Result<ureq::Body, Trouble> {
-    let response = ureq::get(url)
+    let request = ureq::get(url)
         .header("User-Agent", agent_name())
         .config()
         .timeout_global(Some(timeout))
         .timeout_connect(Some(Duration::from_secs(15)))
         .http_status_as_error(false)
-        .build()
+        .build();
+    answer(url, request)
+}
+
+fn answer(
+    url: &str,
+    request: ureq::RequestBuilder<ureq::typestate::WithoutBody>,
+) -> std::result::Result<ureq::Body, Trouble> {
+    let response = request
         .call()
         .map_err(|e| Trouble::Offline(format!("{url}: {e}")))?;
     let status = response.status().as_u16();
@@ -339,14 +372,63 @@ fn get(url: &str, timeout: Duration) -> std::result::Result<ureq::Body, Trouble>
     Ok(response.into_body())
 }
 
-/// The catalog from the registry, saved for the next start.
-pub fn fetch(root: &Path) -> std::result::Result<Vec<Addon>, Trouble> {
-    let url = catalog_url();
-    let text = get(&url, TIMEOUT)?
+/// How long each part of a catalog fetch may take.
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct Waits {
+    connect: Duration,
+    response: Duration,
+    body: Duration,
+}
+
+impl Waits {
+    fn catalog(root: &Path) -> Self {
+        let saved = std::fs::metadata(cache_path(root)).map_or(0, |m| m.len());
+        Self {
+            connect: Duration::from_secs(15),
+            response: Duration::from_secs(30),
+            body: catalog_timeout(saved),
+        }
+    }
+}
+
+/// How long the body of a `size`-byte catalog may take: [`DOWNLOAD_RATE`] on
+/// average, and never less than [`CATALOG_FLOOR`].
+fn catalog_timeout(size: u64) -> Duration {
+    CATALOG_FLOOR.max(Duration::from_secs(size.div_ceil(DOWNLOAD_RATE)))
+}
+
+fn read_catalog(url: &str, waits: Waits) -> std::result::Result<String, Trouble> {
+    let request = ureq::get(url)
+        .header("User-Agent", agent_name())
+        .config()
+        .timeout_resolve(Some(waits.connect))
+        .timeout_connect(Some(waits.connect))
+        .timeout_send_request(Some(waits.response))
+        .timeout_recv_response(Some(waits.response))
+        .timeout_recv_body(Some(waits.body))
+        .http_status_as_error(false)
+        .build();
+    answer(url, request)?
         .with_config()
         .limit(CATALOG_LIMIT)
         .read_to_string()
-        .map_err(|e| Trouble::Failed(format!("{url}: {e}")))?;
+        .map_err(|e| match e {
+            ureq::Error::Timeout(_) | ureq::Error::Io(_) => Trouble::Offline(format!("{url}: {e}")),
+            _ => Trouble::Failed(format!("{url}: {e}")),
+        })
+}
+
+/// The catalog from the registry, saved for the next start. A fetch that
+/// can't reach the registry is tried once more.
+pub fn fetch(root: &Path) -> std::result::Result<Vec<Addon>, Trouble> {
+    fetch_from(root, &catalog_url(), Waits::catalog(root))
+}
+
+fn fetch_from(root: &Path, url: &str, waits: Waits) -> std::result::Result<Vec<Addon>, Trouble> {
+    let text = match read_catalog(url, waits) {
+        Err(Trouble::Offline(_)) => read_catalog(url, waits)?,
+        read => read?,
+    };
     let addons = parse(&text).ok_or_else(|| Trouble::Failed(format!("{url}: not an addon catalog")))?;
     let path = cache_path(root);
     if let Some(dir) = path.parent() {
@@ -727,18 +809,60 @@ mod tests {
                 let Ok((mut stream, _)) = listener.accept() else {
                     return;
                 };
-                let mut head = Vec::new();
-                let mut byte = [0u8; 1];
-                while !head.ends_with(b"\r\n\r\n") && stream.read(&mut byte).is_ok_and(|n| n == 1) {
-                    head.push(byte[0]);
-                }
-                seen.lock()
-                    .unwrap()
-                    .push(String::from_utf8_lossy(&head).into_owned());
+                seen.lock().unwrap().push(read_head(&mut stream));
                 stream.write_all(&answer).ok();
             }
         });
         Served { url, requests }
+    }
+
+    fn read_head(stream: &mut std::net::TcpStream) -> String {
+        let mut head = Vec::new();
+        let mut byte = [0u8; 1];
+        while !head.ends_with(b"\r\n\r\n") && stream.read(&mut byte).is_ok_and(|n| n == 1) {
+            head.push(byte[0]);
+        }
+        String::from_utf8_lossy(&head).into_owned()
+    }
+
+    /// Like [`serve`], but each connection waits its `Duration` before
+    /// answering, then writes 1 KiB every 50 ms.
+    fn serve_slowly(answers: Vec<(Duration, Vec<u8>)>) -> Served {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}", listener.local_addr().unwrap());
+        let requests = std::sync::Arc::new(Mutex::new(Vec::new()));
+        let seen = requests.clone();
+        std::thread::spawn(move || {
+            for (wait, answer) in answers {
+                let Ok((mut stream, _)) = listener.accept() else {
+                    return;
+                };
+                let seen = seen.clone();
+                std::thread::spawn(move || {
+                    seen.lock().unwrap().push(read_head(&mut stream));
+                    std::thread::sleep(wait);
+                    for piece in answer.chunks(1024) {
+                        if stream.write_all(piece).and_then(|_| stream.flush()).is_err() {
+                            return;
+                        }
+                        std::thread::sleep(Duration::from_millis(50));
+                    }
+                });
+            }
+        });
+        Served { url, requests }
+    }
+
+    fn catalog_json(padding: usize) -> Vec<u8> {
+        format!(r#"{{"addons":[{{"id":"x","name":"X"}}{}]}}"#, " ".repeat(padding)).into_bytes()
+    }
+
+    fn waits(response_ms: u64, body_ms: u64) -> Waits {
+        Waits {
+            connect: Duration::from_secs(5),
+            response: Duration::from_millis(response_ms),
+            body: Duration::from_millis(body_ms),
+        }
     }
 
     fn ok(body: &[u8], length: bool) -> Vec<u8> {
@@ -840,6 +964,66 @@ mod tests {
         assert_eq!(body_timeout(200 * 1024 * 1024), DOWNLOAD_FLOOR);
         assert_eq!(body_timeout(1024 * 1024 * 1024), Duration::from_secs(8192));
         assert_eq!(body_timeout(DOWNLOAD_LIMIT), Duration::from_secs(32768));
+    }
+
+    #[test]
+    fn gives_the_catalog_time_by_size() {
+        assert_eq!(catalog_timeout(0), CATALOG_FLOOR);
+        assert_eq!(catalog_timeout(200 * 1024), CATALOG_FLOOR);
+        assert_eq!(catalog_timeout(CATALOG_LIMIT), Duration::from_secs(128));
+        let dir = scratch("waits");
+        assert_eq!(Waits::catalog(&dir).body, CATALOG_FLOOR);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn reads_a_slow_catalog_body_past_the_response_wait() {
+        let body = catalog_json(8 * 1024);
+        let registry = serve_slowly(vec![(Duration::ZERO, ok(&body, true))]);
+        let dir = scratch("slow");
+        let url = format!("{}/v1/addons", registry.url);
+        let addons = fetch_from(&dir, &url, waits(200, 10_000)).unwrap();
+        assert_eq!(addons[0].id, "x");
+        assert_eq!(cached(&dir).unwrap(), addons);
+        assert_eq!(registry.requests.lock().unwrap().len(), 1);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn tries_the_catalog_once_more_when_the_registry_is_unreachable() {
+        let body = catalog_json(0);
+        let registry = serve_slowly(vec![
+            (Duration::from_secs(5), ok(&body, true)),
+            (Duration::ZERO, ok(&body, true)),
+        ]);
+        let dir = scratch("retry");
+        let url = format!("{}/v1/addons", registry.url);
+        let addons = fetch_from(&dir, &url, waits(500, 5_000)).unwrap();
+        assert_eq!(addons[0].id, "x");
+        assert_eq!(registry.requests.lock().unwrap().len(), 2);
+
+        let body = catalog_json(8 * 1024);
+        let stalled = serve_slowly(vec![
+            (Duration::ZERO, ok(&body, true)),
+            (Duration::ZERO, ok(&body, true)),
+            (Duration::ZERO, ok(&body, true)),
+        ]);
+        let url = format!("{}/v1/addons", stalled.url);
+        let e = fetch_from(&dir, &url, waits(500, 150)).unwrap_err();
+        assert!(
+            matches!(&e, Trouble::Offline(t) if t.contains("timeout")),
+            "{e:?}"
+        );
+        assert_eq!(stalled.requests.lock().unwrap().len(), 2);
+
+        let missing = serve(vec![
+            b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".to_vec(),
+        ]);
+        let url = format!("{}/v1/addons", missing.url);
+        let e = fetch_from(&dir, &url, waits(500, 5_000)).unwrap_err();
+        assert_eq!(e, Trouble::Failed(format!("{url}: HTTP 404")));
+        assert_eq!(missing.requests.lock().unwrap().len(), 1);
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

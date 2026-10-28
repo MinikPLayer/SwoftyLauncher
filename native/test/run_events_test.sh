@@ -24,3 +24,15 @@ mkdir -p "$OUT"
 "${PIN[@]}" zig c++ -std=c++23 -O2 -Wall -Wextra -Wno-nullability-completeness -I../../packages/sdk/include \
     -o "$OUT/era_logic_test" era_logic_test.cpp
 "$OUT/era_logic_test"
+"${PIN[@]}" zig c++ -std=c++23 -O2 -Wall -Wextra -Wno-nullability-completeness -I../../packages/sdk/include \
+    -o "$OUT/car_category_test" car_category_test.cpp
+"$OUT/car_category_test"
+"${PIN[@]}" zig c++ -std=c++23 -O2 -Wall -Wextra -Wno-nullability-completeness -I../../packages/sdk/include \
+    -o "$OUT/save_splice_test" save_splice_test.cpp
+"$OUT/save_splice_test"
+"${PIN[@]}" zig c++ -std=c++23 -O2 -Wall -Wextra -Wno-nullability-completeness -I../../packages/sdk/include \
+    -o "$OUT/netplay_drive_test" netplay_drive_test.cpp
+"$OUT/netplay_drive_test"
+"${PIN[@]}" zig c++ -std=c++23 -O2 -Wall -Wextra -Wno-nullability-completeness -I../../packages/sdk/include \
+    -o "$OUT/storage_logic_test" storage_logic_test.cpp
+"$OUT/storage_logic_test"

@@ -35,11 +35,22 @@ The game's getter (`Career_Get_DriverStatValue`, component vtable +0x280) comput
 - Clamp bounds come from the component (vtable +0x268 / +0x270).
 - The op computes every non-curve term as the game getter's raw value minus the curve value, so the
   team attribute term is included, and it reads the result back through the getter.
+- The Driver Career player: `DriverCareerPlayerDriverStatisticsComponent` overrides vtable +0x280
+  (0x14113e260). The override takes the value above unclamped and unrounded for each driver in its
+  0xf8-byte list at +0x458 (driver key at +8), turns it into points through the 8-byte table at +0x3c8
+  (one entry per rating, linear between entries), adds that driver's points for the statistic (a map
+  in the list entry, float at +4 of its 0x18-byte slot), clamps the sum to the entries of the rating
+  bounds (+0x3a8 / +0x3ac) and turns it back into a rating. Drivers outside the list get the value
+  above. In a reported career, raising the player's experience curve value by 27 raised his
+  experience by 19, and a curve value of 14 still read 51.
 
 `drivers.ratings.set` edits the curve the getter is using right now (or `dynamicLevel` for a dynamic
 statistic): it rewrites the curve's point values in place, keeps the point count and x positions,
 and rebuilds the curve's 65-entry lookup table and cached end value with the game's own curve
-evaluator (`Career_Eval_Curve`), exactly as the game's curve loader (`Career_Parse_CurveString`) does. Nothing else changes: no checksum, no patch state. The save
+evaluator (`Career_Eval_Curve`), exactly as the game's curve loader (`Career_Parse_CurveString`) does. When the read-back after that write is more than 0.5 from
+the target (the Driver Career player), the op bisects the edit with the getter: the flat curve value
+(0..1), the shift (-1..1) or the `dynamicLevel` (0..100), every set written at each step, until the
+value is within 0.5 of the target. Nothing else changes: no checksum, no patch state. The save
 already stores both curves and `dynamicLevel`, so the edit persists with the next save. A later EA
 ratings patch replaces it only if the player accepts that patch.
 
@@ -73,7 +84,7 @@ ratings patch replaces it only if the player accepts that patch.
     }
   ],
   "otherDrivers": [
-    { "driverStatId": 120, "name": "some_f2_driver", "overall": 71, "values": [60, 70, 65, 72, 80] }
+    { "driverStatId": 120, "name": "some_f2_driver", "initials": "SFD", "overall": 71, "values": [60, 70, 65, 72, 80] }
   ],
   "progress": 0.31,
   "contracts": null,
@@ -87,7 +98,8 @@ ratings patch replaces it only if the player accepts that patch.
 - `drivers` lists the drivers in the championship line-up (every driver with an entrant row: race
   seats and reserves). `otherDrivers` lists the rest of the career's statistics table (free agents,
   F2 and other drivers) compactly: `values` holds the shown value of each statistic in `stats` order
-  (null when the driver has none). `drivers.ratings.set` accepts any driver from either list.
+  (null when the driver has none). `drivers.ratings.set` accepts any driver from either list, and
+  `drivers.freeAgent.add` gives a driver of `otherDrivers` an entrant row in Driver Career.
 - `seat.hasCar` is false for a reserve; `seat.position` is the seat order in the team (null when
   unset). `team` is null for a row with no team. `onGrid` is `seat.hasCar`; `player` is the human
   entrant.
@@ -162,9 +174,10 @@ Args:
 - `expect` (object, optional): statistic → the `value` the launcher showed. If the live value differs
   the op fails with `stale` and changes nothing.
 - The player's own driver: allowed. In Driver Career the player's statistics go through the subclass
-  getter (vtable +0x280 override), which may read the player's attribute sets (`playerAttributeSets`,
-  XP perks) instead of the curve. If the read-back does not show the target the op rolls back and
-  fails with `write_failed`, so the player's driver is never left half-edited.
+  getter (vtable +0x280 override, see How a rating is made), so the op searches the curve value or
+  level that reads back as the target. A target below the value a zero curve gives (or above the value
+  a full curve gives) fails with `out_of_range`, which names the lowest (or highest) value that can be
+  set; the op rolls back first, so the player's driver is never left half-edited.
 - Safety: before writing, the op records every other driver's value for the touched statistics; after
   writing, any change on another driver rolls the edit back and fails with `write_failed`. Every
   statistic set of the driver is written (the default set and each context-aware set), so the value
@@ -177,9 +190,10 @@ Result `before` / `after`:
 ```
 
 Errors (`error` is `"<code>: <detail>"`): `no_component`, `bad_args`, `unknown_driver`,
-`unknown_stat`, `bad_value`, `stale`, `write_failed` (the curve is empty or not writable, the
-read-back did not show the target, or another driver's value moved; every write of the op is rolled
-back first).
+`unknown_stat`, `bad_value`, `stale`, `out_of_range` (no curve value or level reads back as the
+target; the detail names the nearest value that can be set), `write_failed` (the curve is empty or not
+writable, the read-back did not show the target, or another driver's value moved). Every write of the
+op is rolled back first.
 
 Undo: yes. Undo is `drivers.ratings.set` with the `before` values and `"mode": "restore"`, which writes
 back the exact point values from before the edit (the plugin keeps the old points of the last 64 curve
@@ -417,7 +431,7 @@ team, or two reserves of one team), `no_seat` (neither has a car), `no_entrant` 
 in the line-up: listed under `otherDrivers`, with no entrant row and so no seat; the error text says
 so and points to the `drivers` list. The game's entrant writer only
 rewrites existing rows and never adds one; no row-creating path was found in the game's signing
-code), `refused` (the game has `disableDriverMoves` set), `busy` (the game is mid entrant
+code. In Driver Career `drivers.freeAgent.add` gives such a driver a row first), `refused` (the game has `disableDriverMoves` set), `busy` (the game is mid entrant
 update), `no_component` (no championship entity, or no component to move drivers with; the detail
 names the mode and the components it looked for), `bad_args`, `stale`.
 
@@ -485,46 +499,161 @@ no number) into Hadjar's VCARB seat; the snapshot and the race number line must 
 that no other driver holds, Hadjar keeps his. Save, reload and check again, then undo and check that
 Martins has no number and Hadjar has his seat and number back.
 
-### Free agents in My Team (not supported)
+### Free agents in My Team (experimental, `experimentalFreeAgent`)
 
-In My Team the op refuses a teamless driver (`no_team`), and the page leaves free agents, including
-Driver Manager's drivers, out of the Swap Seats lists. A My Team free-agent signing needs these, and
-none of them is traced:
+By default the op refuses a teamless driver in My Team (`no_team`). With `"experimentalFreeAgent": true`
+(default false) a free agent (a teamless entrant row) takes a race seat, as in a Driver Career replace,
+and takes over the seat's contract records. Untested in game; the launcher offers it only on the My Team
+**Free agent into a seat** card, marked experimental.
 
-- **Contract records.** My Team seats come from `DriverContractsMyTeamComponent`: a signing goes
-  from `pendingDriverContracts` (+0x790) and `decidedDriverContracts` (+0x7b0) into
-  `pendingDriverMoves` (+0x7d8), and `Career_Process_PendingDriverMoves` (0x140db18e0, vtable
-  +0x188) moves the processed moves into `lastSeasonsSignings` (+0x7f0). A reported My Team career
-  shows the player's team's career-start signings there (`oldTeamStatId` 16383, `accepted`). A free
-  agent written into a seat has no record, and the driver he replaces keeps his. No path that writes
-  these records is known.
-- **The processor rebuilds the grid from the records.** Read from its decompile, not traced in game:
-  it takes each team's car from the current rows, writes every entrant row teamless (team, vehicle,
-  registry value, livery and badge 0x3fff0000, seat value 0xffff0012, at 0x140db39f0), then seats
-  only the drivers in `pendingDriverMoves` through `Career_Assign_EntrantTeamSlot` (a team's third
-  driver gets no car) and then `reserve_drivers` (+0x850, "Creating contract for reserve driver %s on
-  team %s"). For the player's team it counts the signed drivers and can force a purchase ("Player has
-  %i drivers signed", "Searching for a driver to force the player to purchase"). A seat the editor
-  gives a free agent without a record would not survive its next run, and where the released driver
-  goes then depends on his record.
-- **Racing number.** `Career_Assign_EntrantTeamSlot` calls `Career_DriverNumbers_CheckExisting`
-  (0x140c01c30) with `DriverContractsMyTeamComponent.car_numbers` when the incoming row's car number
-  (+0x83) is 0xff. The op does the same after its writes (Race numbers, above).
-- **When a signing applies.** The processor's slot is likely the season-change hook (L0). Whether
-  Team HQ's driver market seats a free agent at once or at the season change is unknown.
+What the game does (static RE, 2026-10-25):
+- **No mid-season signing writes seats in My Team.** The only My Team code that writes entrant rows is
+  `Career_Process_PendingDriverMoves` (0x140db18e0, `DriverContractsMyTeamComponent` vtable +0x188).
+  That slot is the season-change hook in the four components that override it; the Driver Career one
+  (0x140d76570) runs the season's queued signings and clears the auctions. The processor writes every
+  row teamless and then seats only the drivers named in `pendingDriverMoves` (+0x7d0),
+  then `reserve_drivers`.
+- **Signings are records.** The contract window (0x140daec40, `my_team_contract_window_opened`) and the
+  forced signing (0x140dbd0a0, "Forcing driver %s onto the player's team, as the player didn't sign 2
+  drivers") build a 0x70-byte `ContractRecord`, post its messages (0x140db7660: vtables 0x145697010
+  and, for the player's team, 0x145697040) and push it onto `pendingDriverMoves` (0x140dabfb0). Nothing
+  is seated until the processor runs.
+- **The racing number.** `Career_Assign_EntrantTeamSlot` calls `Career_DriverNumbers_CheckExisting`
+  (0x140c01c30) when the incoming row's number (+0x83) is 0xff; a row that has a number keeps it.
 
-The in-game check that settles it, on a backed-up My Team save with
-`SWOFTY_GAME_LOG_CHANNELS=default,DRIVERMOVES*,DRIVER_NUMBERS`:
-1. Sign an F2 free agent for the player's team through Team HQ's driver market. Note when he takes
-   the seat (at once, at the next weekend or at the season change). Keep the editor snapshot from
-   before and after (`drivers` rows of both drivers, and `contracts`: `pending`, `decided`,
-   `pendingMoves`, `lastSeasonSignings`) and every `processPendingDriverMoves` and `DRIVER_NUMBERS`
-   line.
-2. Repeat with an AI team's seat if the market offers one, then advance through a season change and
-   keep the same.
+What the op does with the flag:
+1. One driver must be a free agent and the other a race driver (`no_seat` otherwise). The rows are
+   written as in a Driver Career replace: the free agent gets the seat's team, car, seat value and
+   position, the seat's driver becomes teamless (team, car, registry value, livery and badge 0x3fff0000,
+   seat value 0xffff0012). No move message is posted (My Team's processor posts none); the moves are
+   finalised against the line-up from before the op, as for other My Team swaps.
+2. Every record of the seat's driver with that team in `pendingDriverMoves`, `decidedDriverContracts`
+   and `lastSeasonsSignings` gets the free agent's driver key (`ContractRecord.driver`, +0x50), so the
+   records name the driver the rows seat and the processor seats him, not the released driver, at the
+   season change. Salary, days and clauses stay as signed. `pendingDriverContracts` (negotiations in
+   progress) is left alone. The op adds no record: when the seat's driver has no record for next season
+   yet, the free agent has none either, as the released driver would not have.
+3. Undo is the same op with the same `a`, `b` and the flag: the rows go back and the records are
+   renamed back.
 
-That gives the record shapes and the order a My Team replace has to follow, or shows that it has to
-queue a contract and wait for the season change.
+Log lines: `... (My Team, experimental free agent signing: 2 rows written, the seat's contract records
+taken over, moves finalised against the line-up before the swap; ...)` and
+`[career-editor] drivers.swap experimental: driver <free agent> took over <n> contract record(s) of driver <released> for team <t> (pendingDriverMoves, decidedDriverContracts, lastSeasonsSignings)`.
+
+In-game test, on a backed-up My Team save with
+`SWOFTY_GAME_LOG_CHANNELS=default,DRIVERMOVES*,DRIVER_NUMBERS` (keep the editor's `snapshot.json`
+`drivers` section, with `contracts`, before and after each step):
+1. In Team HQ, sign an F2 free agent into an AI team's race seat with **Free agent into a seat**. The
+   editor shows him in the seat and the old driver as a free agent; `contracts` shows the moved records
+   under his id. Check the Team HQ standings, driver list and driver market.
+2. Save, quit to the menu, reload the career. Both rows and records must be as after step 1.
+3. Load the next weekend's session: the free agent drives the car (check his number on the HUD).
+4. Undo from History on a copy: both drivers and the records go back.
+5. Play or simulate to the season change, keeping every `processPendingDriverMoves`,
+   `Creating contract for reserve driver` and `DRIVER_NUMBERS` line. After it, check who holds the seat.
+   If the free agent lost it, keep the logs: the processor then reads something other than these
+   records.
+6. Repeat step 1 with the player's own team's second seat, then go through a season change (the
+   "Player has %i drivers signed" and forced-purchase lines).
+
+## Op `drivers.freeAgent.add`
+
+Driver Career only. A driver in the career's statistics table with no entrant row (`otherDrivers`, for
+example a Driver Manager driver made after the career started) gets a teamless free-agent entrant row
+and a `DriverContract` object, laid out as the career setup makes them for a pool free agent. The save
+keeps both, and `drivers.swap` can then seat him.
+
+What the game does (static RE, 2026-10-26):
+- **Rows.** The game's entrant writer (`Career_Set_EntrantData_Thunk`) only rewrites existing rows. The
+  career setup (`Game_CareerSetup_ResetEntrants` 0x140c34960, the line-up builder 0x140c2a870 and the
+  CareerEntity loader 0x1407a00d0) posts the entrant begin message (vtable 0x14578d4e8), sets
+  `entrant_update_busy` (+0x2f8), fills the entity's entrant vector object and posts the end message
+  (vtable 0x14578d510, payload the vector object at entity +0x2d8). The vector object is
+  {allocator +0x2d8, begin +0x2e0, end +0x2e8, capacity +0x2f0}; the capacity is an element count.
+  0x140bd5100 (the setup's copy into it) grows it through the allocator's vtable +0x18
+  (`alloc(allocator, bytes, 8)`), copies each 0x88-byte row and frees the old buffer through +0x38
+  (`free(allocator, old begin)`, 0x140bd520d..0x140bd521c).
+- **A pool row** (`Sess_Parse_Entrant` 0x142452e60; Driver Manager pool rows have `team_position` -1
+  and `car_number` 255): vtable 0x145612e20, the id block +0x08..+0x47 from 0x1441207d0 (kind byte 1,
+  then three random 64-bit values, each stored twice at +0x10/+0x18, +0x20/+0x28, +0x30/+0x38, and a
+  zero u16 at +0x40), +0x48 the parser's running index (`ordinal_flags`), +0x50 the driver key, +0x54
+  the packed driver look (0x3fff0000 without one), team, car, registry value, livery and badge
+  0x3fff0000, +0x70 vtable 0x145612ed0, +0x78 0xffff0012, +0x80 0 (no position), +0x82 0xff, +0x83 the
+  number (0xff). The game's identity compare (0x1431146d0) matches AI rows by the +0x48 dword alone.
+- **Contracts.** The contract rebuild (0x140d78fa0, from `DriverCareerContractsManagerComponent`
+  0x140d78980) gives every row of the owner registry's vtable +0x1c8 list (every row of entity +0x2e0)
+  a 0x58-byte `DriverContract` (align 0x10) from the contract owner's allocator (+0x210): zeroed, that
+  allocator at +0x30 (the history's allocator), the driver key at +0x50. It pushes the slot
+  {allocator, contract} onto the owner's slot vector object {allocator +0x290, begin +0x298, end
+  +0x2a0, capacity +0x2a8} with 0x140d9dca0 (x1.5 growth through the slot allocator's vtable +0x18,
+  old buffer freed through +0x38). The contract loader (0x140d9e020) builds the same object for every
+  saved contract and fills the record (+0x00..+0x2b) and `active` only when `has_contract` was saved;
+  the saver (0x140d9ecd0) writes the driver, `has_contract`, the record when active, and the history
+  of every slot.
+- **The rows' save.** `Ent_Deserialise_EntrantVector` (0x142458f20) resizes the vector object to the
+  saved count, so an added row loads back. The vector's saver was not found statically.
+
+Args: `{ "driverStatId": 208, "dryRun": false }`: a driver of `otherDrivers` (in the statistics table,
+no entrant row). `dryRun` (optional, default false) runs every check, logs the template, and writes
+nothing (`after` equals `before`).
+
+Steps:
+1. Checks, before anything is written: Driver Career, the championship entity, the contracts manager
+   and its contract owner, not mid entrant update, the driver in the statistics table and without an
+   entrant row, both vector objects readable (count within the capacity, allocator vtables in the
+   image), and the driver's existing contract (if any) inactive.
+2. The template: the first untouched pool free agent of the line-up, a teamless AI row with no car,
+   registry value, livery or badge (0x3fff0000), seat value 0xffff0012, position 0, +0x82 0xff, no
+   number, the line-up's vtables, whose contract is inactive with a zero record (+0x00..+0x2f) and an
+   empty history. His contract's +0x30 and its slot's allocator must be the owner's +0x210 allocator
+   and his contract's +0x50 his driver key. Without such a driver the op refuses (`refused`).
+3. The contract (skipped when the driver already has an inactive one): 0x58 bytes, align 0x10, from
+   the owner's +0x210 allocator, zeroed, the allocator at +0x30 and the driver key at +0x50, pushed as
+   the slot {allocator, contract}, in place while the capacity allows, otherwise into a buffer of 1.5x
+   the count from the slot allocator, the old buffer freed, as 0x140d9dca0 does.
+4. The row: the template row with a new id block (as 0x1441207d0 lays it out), `ordinal_flags` = the
+   template's high byte and the highest running index of the line-up plus one (refused when another row
+   has it), the driver key at +0x50 and the driver's look at +0x54, appended the same way to the entity's
+   vector object. The look is the stat_id of the `entrants.driver_customisations` row that his
+   `entrants.entrant_lists.entrants` row's `driver_customisation` names, in the high word (look 229 is
+   0x00e50000, as every pool row of a new career has it; a Driver Manager driver's row `dm_<id>` names
+   `dm_<id>_look`). Without one the op refuses. A seated driver whose row has no look (0x3fff0000) stops
+   the next session at its loading screen (T008 run 1).
+5. `Career_Set_EntrantData_Thunk` with the new row's identity, its own data, position and number. It
+   rewrites the row unchanged and brackets the write with the entrant begin and end messages, the end
+   message carrying the vector object, as the setup brackets its rebuild.
+6. Verify: the line-up has one more row, every old row is byte-identical, the new row is the last row
+   and reads back as written, the contract list has one more contract (none when kept), the driver's
+   contract is the new one and reads back as created, and the entity is not mid update. Otherwise the
+   op drops the row and the contract again (the contract's memory goes back to its allocator), rewrites
+   the template row with its own data so the end message carries the restored line-up, and fails with
+   `write_failed`.
+
+Result `before` / `after`:
+
+```json
+{ "driverStatId": 208, "seat": { "hasCar": false, "position": null }, "contract": { "teamStatId": 0, "active": false } }
+```
+
+`seat` is null without an entrant row; `contract` is null without a contract object. The empty
+record's team is 0.
+
+Errors: `bad_args`, `wrong_mode`, `no_component`, `busy`, `unknown_driver` (not in the statistics
+table), `already_listed` (the driver has an entrant row), `refused` (no look for the driver, no untouched free agent to copy,
+a contract layout other than the rebuild's, an active contract without a row, the line-up full or no
+free running index), `write_failed`.
+
+Undo: backup only (the History tab's save backups). No game path removes a row mid-career.
+
+Not set: the current weekend's copy of the line-up (weekend +0x18), which the end message's listeners
+or the next weekend rebuild. Test T008 (`re/tests/T008.md`) covers it.
+
+Log lines: first `[career-editor] drivers.freeAgent.add driver <id>: template free agent <id> ordinal_flags 0x<8 hex> driver_customisation 0x<8 hex> contract <0x58 bytes as hex>` (the template's +0x48, +0x54 and contract object as read), then with `dryRun` `... dry run, entrant index <n>, look 0x<8 hex>, contract kept|to create; nothing written`, otherwise
+`[career-editor] drivers.freeAgent.add driver <id>: entrant row added [team 16383 car 0x3fff0000 pos -1, entrant index <n>, look 0x<8 hex>, copied from free agent <id>], contract created|kept (inactive, zero record); <n> -> <n+1> rows, <c> -> <c+1> contracts, <n> other rows unchanged (Career_Set_EntrantData_Thunk announced the line-up)`.
+
+Modes: Driver Career. Runs only while `ce::safe()`.
+
+Status: implemented; needs in-game proof (T008).
 
 ## Bindings
 
@@ -534,10 +663,13 @@ queue a contract and wait for the season change.
 | `Career_Eval_Curve` | 0x1445075d0 | L2, sig `career.eval_curve` | curve value at `progress`, lookup-table rebuild |
 | `Career_Get_CareerLengthDays_Thunk` | 0x14111dd30 | L2, sig `career.get_career_length_days_thunk` | career length in minutes, divisor of the clock for `progress` |
 | `Career_Get_DriverStatValue` | 0x141140ee0 | L2, no sig | called through the component vtable +0x280 (never by address) |
+| `Career_Get_PlayerDriverStatValue` | 0x14113e260 | L1, no sig | the Driver Career player's override of vtable +0x280, called through the vtable (never by address) |
 | `Career_Get_DriverStatBase_Thunk` | 0x1411471f0 | L2, no sig | evidence for the curve choice and the dynamic-stat rule |
 | `Career_Parse_CurveString` | 0x141157100 | L2, no sig | evidence for the lookup-table rebuild |
 | `Career_Serialise_DriverContractList` | 0x140da5610 | L2, no sig | evidence for the contract record layout |
-| `Career_Set_EntrantData_Thunk` | 0x1407b72e0 | L2, sig `career.set_entrant_data_thunk` | `drivers.swap`: rewrites one entrant row; `drivers.number.set`: rewrites a row with its new number |
+| `Career_Set_EntrantData_Thunk` | 0x1407b72e0 | L2, sig `career.set_entrant_data_thunk` | `drivers.swap`: rewrites one entrant row; `drivers.number.set`: rewrites a row with its new number; `drivers.freeAgent.add`: announces the added row |
+| `NeAllocatorVtbl` alloc / free | vtable +0x18 / +0x38 | L2 (struct) | `drivers.freeAgent.add`: the entrant vector's, the contract slots' and the contracts' allocators, called through their vtables |
+| `Game_CareerSetup_ResetEntrants`, 0x140bd5100, 0x140d78fa0, 0x140d9dca0, 0x140d9e020, 0x140d9ecd0, 0x1441207d0, 0x1431146d0 | | see the KB | evidence for `drivers.freeAgent.add`; not called |
 | `Career_DriverNumbers_CheckExisting` | 0x140c01c30 | L2, sig `career.driver_numbers_check_existing` | `drivers.swap`: gives a swapped driver whose row has a team and no number a free one |
 | `Career_DriverNumbers_AssignFree`, `Career_DriverNumbers_ApplyPlayerNumber`, `Career_Weekend_SetEntrantNumber` | 0x140c01280 / 0x140c00830 / 0x140af6800 | L1, no sig | evidence for `drivers.number.set`'s order; not called |
 | `Ent_Deserialise_EntrantVector`, `Ent_Serialise_EntrantRecord` | 0x142458f20 / 0x142458890 | L1, no sig | evidence that the save keeps +0x83 |

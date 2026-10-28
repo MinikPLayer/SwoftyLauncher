@@ -136,10 +136,6 @@ pub trait ScrollArea: ScrollableElement + Sized {
     fn scroll_y(self, id: impl Into<ElementId>) -> Scrollable<Self> {
         self.overflow_y_scrollbar().id(id)
     }
-
-    fn scroll_x(self, id: impl Into<ElementId>) -> Scrollable<Self> {
-        self.overflow_x_scrollbar().id(id)
-    }
 }
 
 impl<E: ScrollableElement> ScrollArea for E {}

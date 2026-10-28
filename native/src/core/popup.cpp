@@ -32,6 +32,9 @@
 // Every construct passes through the wrap below, which records the system pointer (the game
 // constructs messages from boot on, the online-services wait box first). Requests queue from any
 // thread and are shown from the flow tick.
+// While a launcher netplay command drives the LAN menus, the wrap hands it the LAN Game dialog and
+// the Join via IP prompt instead of queueing them (runtime::netplay_popup): the caller gets an empty
+// handle, which the handle setter and release accept, and netplay answers the response callback.
 //
 // Toasts go through the same system as hud_main messages, the queue the race HUD's central
 // notification (hud_notifications_dynamic, F1HM bound to #ui_messages.hud_main_queue.hud_main) draws.
@@ -135,6 +138,13 @@ Handle *construct_hook(void *s, Handle *out, FixedId *id, Callback *cb, const ch
                     id && swofty::mem::readable(id, sizeof(FixedId)) && id->data && swofty::mem::readable(id->data, 1)
                         ? id->data
                         : "?");
+    const char *name = id && swofty::mem::readable(id, sizeof(FixedId)) && id->data && swofty::mem::readable(id->data, 1)
+                           ? id->data
+                           : nullptr;
+    if (name && out && cb && swofty::mem::readable(cb, sizeof *cb) && runtime::netplay_popup(name, cb->fn, cb->ctx)) {
+        *out = Handle{s, nullptr};
+        return out;
+    }
     return h_construct.call<Handle *>(s, out, id, cb, a5, a6);
 }
 
@@ -386,6 +396,22 @@ void set_test_tick()
     if (now < set_test_next)
         return;
     set_test_next = now + 5000;
+    if (set_test_text.size() > 2 && set_test_text[1] == ':') {
+        size_t at = 0;
+        while (at < set_test_text.size()) {
+            size_t end = set_test_text.find(';', at);
+            std::string item = set_test_text.substr(at, end == std::string::npos ? std::string::npos : end - at);
+            at = end == std::string::npos ? set_test_text.size() : end + 1;
+            size_t eq = item.find('=');
+            if (item.size() < 3 || item[1] != ':' || eq == std::string::npos)
+                continue;
+            int type = item[0] == 'b' ? 1 : item[0] == 'i' ? 2 : 0;
+            std::string value = item.substr(eq + 1);
+            set_enqueue(item.substr(2, eq - 2), type, value, type ? int32_t(atoi(value.c_str())) : 0,
+                        "SWOFTY_HUD_SET_TEST");
+        }
+        return;
+    }
     int32_t off = 0;
     set_enqueue("ui_menu_data.hud_lap_number_visible", 1, "", off, "SWOFTY_HUD_SET_TEST");
     set_enqueue("ui_menu_data.hud_lap_description_loc_tag", 1, "", off, "SWOFTY_HUD_SET_TEST");
@@ -493,7 +519,12 @@ void popup_setup()
     char lap[128] = {};
     if (GetEnvironmentVariableA("SWOFTY_HUD_SET_TEST", lap, sizeof lap) && lap[0]) {
         set_test_text = lap;
-        swofty::log("[hud] SWOFTY_HUD_SET_TEST: the lap counter shows \"%s\", lap totals and the top-left position tower hide (set every 5 s)", lap);
+        if (lap[1] == ':')
+            swofty::log("[hud] SWOFTY_HUD_SET_TEST: writes %s through set every 5 s", lap);
+        else
+            swofty::log("[hud] SWOFTY_HUD_SET_TEST: the lap counter shows \"%s\", lap totals and the top-left position "
+                        "tower hide (set every 5 s)",
+                        lap);
     }
     swofty::log("[popup] setup: live; construct base+0x%llx, set attribute base+0x%llx, release base+0x%llx, id vtable "
                 "base+0x%llx",

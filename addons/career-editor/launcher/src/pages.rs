@@ -1132,17 +1132,24 @@ fn swap_card(live: &Live) -> Value {
         opts.push(json!({ "value": d["driverStatId"].to_string(), "label": label }));
     }
     let help = if my_team {
-        "Applies now, mid-season: each driver takes the other's team, car and seat through the game's own driver-move path. Contracts keep the team they were signed with. Free agents, such as drivers made with Driver Manager, can't take a seat in My Team yet. Your own seat is locked."
+        "Applies now, mid-season: each driver takes the other's team, car and seat through the game's own driver-move path. Contracts keep the team they were signed with. Free agents, such as drivers made with Driver Manager, aren't listed here: the experimental Free agent into a seat card below signs one. Your own seat is locked."
     } else {
         "Applies now, mid-season, through the game's own Driver Career signing path. Two race drivers trade seats. A free agent takes a race seat the way the game signs one: the seat's driver is released (contract ended) and becomes a free agent, and the game re-assigns the team's R&D. Each driver who takes a seat signs that seat's contract, and one without a race number gets a free one. Your own seat is locked."
     };
-    let blocks = vec![
+    let mut blocks = vec![
         json!({ "form": { "id": "swap", "columns": 2, "apply": "Swap seats", "disabled": !live.can(op), "fields": [
             { "select": { "id": "a", "label": "Driver", "value": "", "options": opts } },
             { "select": { "id": "b", "label": "Swaps seats with", "value": "", "options": opts } }
         ] } }),
         text(&form_help(live, op).unwrap_or_else(|| help.into()), "muted"),
     ];
+    if !my_team {
+        blocks.push(text(
+            "Drivers with no place in this championship's line-up (the Ratings table leaves them out) aren't listed: the game gives a driver a line-up place only when it builds a season's line-up.",
+            "muted",
+        ));
+        blocks.extend(late_free_agent_blocks(live));
+    }
     card_full(
         "Swap seats",
         None,
@@ -1150,6 +1157,50 @@ fn swap_card(live: &Live) -> Value {
         vec![],
         blocks,
     )
+}
+
+// Driver Career: Driver Manager drivers made after the career started are in the statistics table
+// (`otherDrivers`, label `dm_<id>`) but have no line-up row; drivers.freeAgent.add gives one a
+// teamless row and a contract, as the career setup makes them for a pool free agent.
+fn late_free_agent_blocks(live: &Live) -> Vec<Value> {
+    let op = "drivers.freeAgent.add";
+    let late: Vec<Value> = live
+        .section("drivers")
+        .and_then(|d| d["otherDrivers"].as_array())
+        .map(|a| {
+            a.iter()
+                .filter(|d| d["name"].as_str().is_some_and(|n| n.starts_with("dm_")))
+                .cloned()
+                .collect()
+        })
+        .unwrap_or_default();
+    if late.is_empty() || !live.has_op(op) {
+        return vec![];
+    }
+    let mut opts = vec![json!({ "value": "", "label": "Choose a Driver Manager driver…" })];
+    for d in &late {
+        let label = d["name"].as_str().unwrap_or("driver");
+        let initials = d["initials"]
+            .as_str()
+            .map_or_else(String::new, |i| format!("{i} · "));
+        let overall = int(&d["overall"]).map_or_else(String::new, |o| format!(" · overall {o}"));
+        opts.push(
+            json!({ "value": d["driverStatId"].to_string(), "label": format!("{initials}{label}{overall}") }),
+        );
+    }
+    let mut blocks = vec![
+        json!({ "form": { "id": "free_agent_add", "columns": 1, "apply": "Add to line-up as free agent", "disabled": !live.can(op), "fields": [
+            { "select": { "id": "driver", "label": "Driver Manager driver without a line-up place", "value": "", "options": opts } }
+        ] } }),
+        text(
+            "Experimental: back up your save first. The driver joins the line-up as a free agent with his Driver Manager look, no team, no car and no race number, and gets an empty contract, as the game makes them for the free agents of a new career. He then shows in the Driver list above and can take a race seat. There is no undo apart from the save backups.",
+            "muted",
+        ),
+    ];
+    if let Some(h) = form_help(live, op) {
+        blocks.push(text(&h, "muted"));
+    }
+    blocks
 }
 
 // Driver Career: a race driver needs an active contract for the team he races for. The snapshot's
@@ -1329,6 +1380,54 @@ fn moves_card(live: &Live) -> Value {
         json!({ "table": { "id": "moves", "columns": [ { "key": "when", "title": "When", "width": 100, "sort": true }, "Driver", "From", "To", "Why" ], "rows": rows, "compact": true } })
     };
     card("Driver moves", vec![body])
+}
+
+// My Team only: the experimental free agent signing (drivers.swap with experimentalFreeAgent).
+fn free_agent_card(live: &Live) -> Option<Value> {
+    if !live.my_team() {
+        return None;
+    }
+    let op = "drivers.swap";
+    let drivers = live.section("drivers")?["drivers"].as_array()?.clone();
+    let label = |d: &Value, role: &str| {
+        let team = d["team"]["name"]
+            .as_str()
+            .map_or_else(|| "no team".into(), pretty_team);
+        format!(
+            "{} · {team}{role}",
+            title_case(d["name"].as_str().unwrap_or("driver"))
+        )
+    };
+    let mut free = vec![json!({ "value": "", "label": "Choose a free agent…" })];
+    let mut seats = vec![json!({ "value": "", "label": "Choose a race seat…" })];
+    for d in drivers
+        .iter()
+        .filter(|d| !d["seat"].is_null() && d["player"] != true)
+    {
+        let id = d["driverStatId"].to_string();
+        if d["team"].is_null() {
+            free.push(json!({ "value": id, "label": label(d, "") }));
+        } else if d["seat"]["hasCar"] == true {
+            seats.push(json!({ "value": id, "label": label(d, " · race seat") }));
+        }
+    }
+    let blocks = vec![
+        json!({ "form": { "id": "free_agent", "columns": 2, "apply": "Sign into the seat", "disabled": !live.can(op), "fields": [
+            { "select": { "id": "free", "label": "Free agent", "value": "", "options": free } },
+            { "select": { "id": "seat", "label": "Takes the seat of", "value": "", "options": seats } }
+        ] } }),
+        text(
+            "Experimental, not tested in game yet: back up your save first. The free agent takes the seat now, and the seat's driver becomes a free agent. The free agent also takes over that driver's contract records with the team (next season's move, the decided contract and this season's signing), so the season change keeps him in the seat. Undo puts both back.",
+            "muted",
+        ),
+    ];
+    Some(card_full(
+        "Free agent into a seat",
+        Some("My Team"),
+        vec![pill("Experimental", "warn"), pill("Undo available", "good")],
+        vec![],
+        blocks,
+    ))
 }
 
 fn points_card(live: &Live, names: &[(i64, String, String, bool)]) -> Value {
@@ -1612,6 +1711,49 @@ fn move_card(app: &App, live: &Live, cal: &Value) -> Value {
     )
 }
 
+fn count_note(stops: Option<i64>, rounds: usize) -> String {
+    match stops {
+        Some(n) if n == rounds as i64 => format!(
+            "The game keeps {n} race weekends in this season, so it keeps {n} rounds. To change the calendar, replace or move a round."
+        ),
+        Some(n) => format!(
+            "The game keeps {n} race weekends in this season but the calendar has {rounds} rounds. Repair the round count before you race on."
+        ),
+        None => "Rounds can't be added or removed until the game's race dates for this season are readable. Replace or move a round instead.".into(),
+    }
+}
+
+fn calendar_count_card(live: &Live, cal: &Value) -> Option<Value> {
+    let rounds = cal["rounds"].as_array().map_or(0, Vec::len);
+    let stops = int(&cal["race_weekends"])?;
+    if stops == rounds as i64 {
+        return None;
+    }
+    let op = "season.calendar.repair";
+    let what = if stops > rounds as i64 {
+        format!(
+            "This season has {rounds} rounds, but the game still has {stops} race weekends on its calendar. After round {rounds} the game would go to a race weekend that no longer exists and crash. Repairing adds {} round(s) at the end, using tracks from this career's other seasons. Replace them afterwards if you want other tracks.",
+            stops - rounds as i64
+        )
+    } else {
+        format!(
+            "This season has {rounds} rounds, but the game only has {stops} race weekends on its calendar, so the season can't finish. Repairing removes the last {} round(s) that haven't started.",
+            rounds as i64 - stops
+        )
+    };
+    Some(card_full(
+        "Round count",
+        Some("The calendar doesn't match the game's race weekends"),
+        vec![pill("Backup-only undo", "warn")],
+        if live.can(op) {
+            vec![button("repair_calendar", "Repair the round count", "", "primary")]
+        } else {
+            vec![]
+        },
+        vec![text(&what, "warn")],
+    ))
+}
+
 fn calendar_ops_card(app: &App, live: &Live, cal: &Value) -> Value {
     let rounds = cal["rounds"].as_array().cloned().unwrap_or_default();
     let in_season = season_weekends(cal);
@@ -1672,14 +1814,19 @@ fn calendar_ops_card(app: &App, live: &Live, cal: &Value) -> Value {
     let first = int(&cal["editable_from"]).unwrap_or(1);
     let last = rounds.len() as i64 + 1;
     let can_edit = !editable.is_empty();
+    let stops = int(&cal["race_weekends"]);
+    let (can_add, can_remove) = match stops {
+        Some(n) => (n > rounds.len() as i64, n < rounds.len() as i64),
+        None => (false, false),
+    };
     let mut blocks = vec![
-        json!({ "form": { "id": "cal_add", "columns": 2, "apply": "Add round", "disabled": !any || !live.can("season.calendar.add_round"), "fields": [
+        json!({ "form": { "id": "cal_add", "columns": 2, "apply": "Add round", "disabled": !can_add || !any || !live.can("season.calendar.add_round"), "fields": [
             { "select": { "id": "weekend", "label": "Add a round: track", "value": "", "options": spare_opts } },
             { "number": { "id": "at", "label": "As round", "value": last, "min": first, "max": last, "step": 1, "help": format!("{first} to {last}; later rounds move back one") } } ] } }),
         json!({ "form": { "id": "cal_set", "columns": 2, "apply": "Replace track", "disabled": !(can_edit && any && live.can("season.calendar.set_round")), "fields": [
             { "select": { "id": "round", "label": "Replace the track of", "value": "", "options": round_opts } },
             { "select": { "id": "weekend", "label": "With", "value": "", "options": spare_opts } } ] } }),
-        json!({ "form": { "id": "cal_remove", "columns": 2, "apply": "Remove round", "disabled": !(can_edit && live.can("season.calendar.remove_round")), "fields": [
+        json!({ "form": { "id": "cal_remove", "columns": 2, "apply": "Remove round", "disabled": !(can_remove && can_edit && live.can("season.calendar.remove_round")), "fields": [
             { "select": { "id": "round", "label": "Remove", "value": "", "options": round_opts } } ] } }),
     ];
     if let Some(m) = modded_line {
@@ -1689,6 +1836,7 @@ fn calendar_ops_card(app: &App, live: &Live, cal: &Value) -> Value {
         "Only rounds after this weekend that haven't started can change. A track already on this calendar isn't offered again. Sprint format can't be changed live.",
         "muted",
     ));
+    blocks.push(text(&count_note(stops, rounds.len()), "muted"));
     for n in notes {
         blocks.push(text(&n, "muted"));
     }
@@ -1821,6 +1969,9 @@ fn drivers(app: &App, live: &Live) -> Value {
     blocks.push(numbers_card(live));
     blocks.push(grid(json!([1, 1]), vec![swap_card(live), moves_card(live)]));
     blocks.push(contracts_card(live));
+    if let Some(c) = free_agent_card(live) {
+        blocks.push(c);
+    }
     frame(app, live, season_line(live), blocks, false)
 }
 
@@ -2231,6 +2382,9 @@ fn season(app: &App, live: &Live) -> Value {
         if crate::calendar::index_named(&rounds) && rounds.iter().all(|r| r["track_stat_id"].is_null()) {
             b.push(text("This career names its rounds by number, so the track of each round shows once the Career Editor addon is updated.", "warn"));
         }
+        if let Some(c) = calendar_count_card(live, cal) {
+            blocks.push(c);
+        }
         blocks.push(card("Calendar", b));
         blocks.push(move_card(app, live, cal));
         blocks.push(calendar_ops_card(app, live, cal));
@@ -2540,6 +2694,7 @@ fn op_label(op: &str) -> String {
         "drivers.swap" => "Swap seats".into(),
         "drivers.contract.set" => "Contract".into(),
         "drivers.contracts.repair" => "Sign seat contracts".into(),
+        "drivers.freeAgent.add" => "Add free agent".into(),
         "economy.renown.set" => "Set renown".into(),
         "economy.renown.add" => "Add renown".into(),
         "economy.sponsor.loyalty.add" => "Sponsor loyalty".into(),
@@ -2550,6 +2705,7 @@ fn op_label(op: &str) -> String {
         "season.calendar.set_round" => "Replace a round".into(),
         "season.calendar.add_round" => "Add a round".into(),
         "season.calendar.remove_round" => "Remove a round".into(),
+        "season.calendar.repair" => "Repair the round count".into(),
         "season.calendar.toggle_sprint" => "Sprint format".into(),
         "batch" => "Batch".into(),
         other => other.to_owned(),
@@ -2923,6 +3079,16 @@ fn click(app: &mut App, host: &mut Host, live: &Live, _section: &str, id: &str) 
             live,
             "Sign seat contracts",
             vec![json!({ "op": "drivers.contracts.repair", "args": {} })],
+            None,
+        );
+    }
+    if id == "repair_calendar" {
+        return send(
+            app,
+            host,
+            live,
+            "Repair the round count",
+            vec![json!({ "op": "season.calendar.repair", "args": {} })],
             None,
         );
     }
@@ -3467,6 +3633,58 @@ fn submit(app: &mut App, host: &mut Host, live: &Live, form: &str, ev: &Value) -
                 None,
             )
         }
+        "free_agent_add" => {
+            let id: i64 = v["driver"]
+                .as_str()
+                .and_then(|x| x.parse().ok())
+                .ok_or("Choose a Driver Manager driver.")?;
+            let name = live
+                .section("drivers")
+                .and_then(|d| d["otherDrivers"].as_array())
+                .and_then(|a| a.iter().find(|d| d["driverStatId"].as_i64() == Some(id)))
+                .and_then(|d| d["name"].as_str().map(str::to_owned))
+                .ok_or("That driver isn't in the snapshot any more.")?;
+            send(
+                app,
+                host,
+                live,
+                &format!("Add {name} to the line-up as a free agent"),
+                vec![json!({ "op": "drivers.freeAgent.add", "args": { "driverStatId": id } })],
+                None,
+            )
+        }
+        "free_agent" => {
+            let id = |k: &str| v[k].as_str().and_then(|x| x.parse::<i64>().ok());
+            let (Some(free), Some(seat)) = (id("free"), id("seat")) else {
+                return Err("Choose a free agent and a race seat.".into());
+            };
+            let drivers = live
+                .section("drivers")
+                .and_then(|d| d["drivers"].as_array())
+                .cloned()
+                .unwrap_or_default();
+            let find = |id: i64| {
+                drivers
+                    .iter()
+                    .find(|d| d["driverStatId"].as_i64() == Some(id))
+                    .cloned()
+            };
+            let (Some(df), Some(ds)) = (find(free), find(seat)) else {
+                return Err("That driver isn't in the snapshot any more.".into());
+            };
+            let name = |d: &Value| title_case(d["name"].as_str().unwrap_or("driver"));
+            send(
+                app,
+                host,
+                live,
+                &format!("Sign {} into {}'s seat", name(&df), name(&ds)),
+                vec![
+                    json!({ "op": "drivers.swap", "args": { "a": seat, "b": free, "experimentalFreeAgent": true,
+                     "expect": { "aTeamStatId": ds["team"]["teamStatId"], "bTeamStatId": Value::Null } } }),
+                ],
+                None,
+            )
+        }
         "contracts" => {
             let row = ev["submit"]["row"].as_str().ok_or("no row")?;
             let mut parts = row.splitn(3, ':');
@@ -3772,6 +3990,49 @@ mod race_number_tests {
 }
 
 #[cfg(test)]
+mod late_free_agent_tests {
+    use super::*;
+
+    fn live_with(others: Value, ops: Value) -> Live {
+        let snap = json!({
+            "written": now_ms(),
+            "status": { "game": "running", "career": true, "mode": "driver_career", "safe": true },
+            "bridge": { "ops": ops },
+            "sections": { "drivers": { "available": true, "drivers": [], "otherDrivers": others } }
+        });
+        Live::new(None, &snap, true, None, None)
+    }
+
+    #[test]
+    fn lists_only_driver_manager_drivers_without_a_row() {
+        let live = live_with(
+            json!([
+                { "driverStatId": 208, "name": "dm_208", "initials": "SWO", "overall": 71 },
+                { "driverStatId": 120, "name": "some_f2_driver", "overall": 60 }
+            ]),
+            json!([{ "name": "drivers.freeAgent.add" }]),
+        );
+        let text = serde_json::to_string(&late_free_agent_blocks(&live)).unwrap();
+        assert!(text.contains("SWO · dm_208 · overall 71"));
+        assert!(!text.contains("some_f2_driver"));
+        assert!(text.contains("\"id\":\"free_agent_add\""));
+    }
+
+    #[test]
+    fn hidden_without_the_op_or_without_late_drivers() {
+        let dm = json!([{ "driverStatId": 208, "name": "dm_208" }]);
+        assert!(late_free_agent_blocks(&live_with(dm, json!([]))).is_empty());
+        assert!(
+            late_free_agent_blocks(&live_with(
+                json!([{ "driverStatId": 120, "name": "some_f2_driver" }]),
+                json!([{ "name": "drivers.freeAgent.add" }])
+            ))
+            .is_empty()
+        );
+    }
+}
+
+#[cfg(test)]
 mod swap_card_tests {
     use super::*;
 
@@ -3800,10 +4061,21 @@ mod swap_card_tests {
         );
         assert!(!my_team.contains("D208"));
         assert!(my_team.contains(
-            "Free agents, such as drivers made with Driver Manager, can't take a seat in My Team yet."
+            "Free agents, such as drivers made with Driver Manager, aren't listed here: the experimental Free agent into a seat card below signs one."
         ));
         let career = card("driver_career");
         assert!(career.contains("D208 · Free agent") && !career.contains("D30 "));
+        assert!(
+            career.contains("the game gives a driver a line-up place only when it builds a season's line-up")
+        );
+        let live = Live::new(None, &snap("my_team"), true, None, None);
+        let fa = serde_json::to_string(&free_agent_card(&live).unwrap()).unwrap();
+        assert!(
+            fa.contains("D208 · no team")
+                && fa.contains("D9 · Red Bull Racing · race seat")
+                && !fa.contains("D30")
+        );
+        assert!(free_agent_card(&Live::new(None, &snap("driver_career"), true, None, None)).is_none());
     }
 
     #[test]
@@ -3842,5 +4114,46 @@ mod swap_card_tests {
             json!({ "driverStatId": 1, "team": vcarb, "seat": { "hasCar": true }, "player": false }),
         ]);
         assert!(old.contains("Contract edits are My Team only."));
+    }
+}
+
+#[cfg(test)]
+mod calendar_count_tests {
+    use super::*;
+
+    fn cal(rounds: usize, stops: Value) -> Value {
+        let rs: Vec<Value> = (0..rounds)
+            .map(|i| json!({ "round": i + 1, "weekend": i.to_string(), "editable": i > 0 }))
+            .collect();
+        json!({ "rounds": rs, "race_weekends": stops, "editable_from": 2 })
+    }
+
+    fn live() -> Live {
+        let snap = json!({
+            "written": now_ms(),
+            "status": { "game": "running", "career": true, "mode": "driver_career", "safe": true },
+            "bridge": { "ops": [{ "name": "season.calendar.repair" }] },
+            "sections": {},
+        });
+        Live::new(None, &snap, true, None, None)
+    }
+
+    #[test]
+    fn a_matching_round_count_needs_no_repair_and_locks_add_and_remove() {
+        assert!(calendar_count_card(&live(), &cal(24, json!(24))).is_none());
+        assert!(calendar_count_card(&live(), &cal(24, Value::Null)).is_none());
+        assert!(count_note(Some(24), 24).contains("keeps 24 rounds"));
+        assert!(count_note(None, 24).contains("can't be added or removed"));
+    }
+
+    #[test]
+    fn a_short_or_long_calendar_offers_the_repair() {
+        let short =
+            serde_json::to_string(&calendar_count_card(&live(), &cal(20, json!(24))).unwrap()).unwrap();
+        assert!(short.contains("repair_calendar") && short.contains("adds 4 round(s) at the end"));
+        let long =
+            serde_json::to_string(&calendar_count_card(&live(), &cal(25, json!(24))).unwrap()).unwrap();
+        assert!(long.contains("repair_calendar") && long.contains("removes the last 1 round(s)"));
+        assert_eq!(op_label("season.calendar.repair"), "Repair the round count");
     }
 }

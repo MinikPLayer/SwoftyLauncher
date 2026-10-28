@@ -186,4 +186,21 @@ inline void decode(const void *record, int tag, SwoftyDbValue *out)
     }
 }
 
+
+// The game database map is a robin_hood map that grows (to twice its slots) when an insert finds it at 80% of
+// its power-of-two slot count. The game sizes it while it loads the file; growing it after that leaves the
+// game's pointers into the old slots dangling and crashes the game at boot (Gdb_Init_TableCursor under
+// Loc_LocaleModule_Init). grows_at is the record count at which the next insert grows a map of `slots`.
+constexpr uint64_t grows_at(uint64_t slots)
+{
+    return slots / 100 * 80 + slots % 100 * 80 / 100;
+}
+
+// Whether `added` new records fit in a map of `slots` holding `count`, with `spare` left for the core's class
+// probes and the game's own later inserts.
+constexpr bool fits_without_growing(uint64_t count, uint64_t added, uint64_t slots, uint64_t spare)
+{
+    return count + added + spare <= grows_at(slots);
+}
+
 }

@@ -25,12 +25,15 @@ When your plugin follows pointers through game objects, a stale or wrong pointer
 | `c_string(p, std::string &out, max = 256)` | `true` for 1 to `max - 1` bytes of printable UTF-8 ending in a NUL |
 | `printable_utf8(s, n)` | `true` for valid UTF-8 without control characters (tab, newline and carriage return pass) |
 | `invalidate()` | drops every thread's cached region answers |
+| `Trust t(ms)` | while `t` is alive, this thread keeps the answer for a region of 1 MB or more for `ms` instead of `ttl_ms` |
 
 Each call takes an address as `uintptr_t` or as a pointer. `c_string` rejects text that isn't valid UTF-8, contains control characters or has no NUL within `max`, so it never accepts a pointer's own bytes as a name.
 
 ## Cost
 
 Each thread caches the region answers of `VirtualQuery` for 64 pages and keeps each for `ttl_ms` (250 ms). Most checks in a per-frame walk hit the cache, so the guards are cheap enough to run every frame. Memory the game frees can stay marked readable in the cache until the entry expires. If you know the game has just freed or remapped memory you were reading, call `invalidate()`.
+
+A fresh `VirtualQuery` answer for an address in one of the game's multi-GB heaps can take milliseconds on Windows. A poll that reads long-lived objects in those heaps less often than every 250 ms can hold a `Trust` for its reads, so it pays that once per `ms` instead of on every poll. Only use it for memory that stays mapped for as long as you trust it.
 
 ## Example
 

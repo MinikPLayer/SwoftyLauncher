@@ -1,0 +1,889 @@
+{
+ "generated_by": "addons/progressive/tools/official_ratings.py",
+ "cache": "pages fetched with curl into /mnt/work/.progressive/ratings-sources (2026-10-27)",
+ "years": {
+  "2020": {
+   "game": "F1 2020",
+   "sources": [
+    "https://www.gpfans.com/en/f1-news/53235/f1-2020-first-driver-ratings-revealed/",
+    "https://www.gpfans.com/en/f1-news/53262/f1-2020-lewis-hamilton-driver-rating-revealed",
+    "https://www.gpfans.com/en/f1-news/53294/f1-2020-ferrari-driver-ratings-revealed"
+   ],
+   "note": "Codemasters' launch ratings as published team by team (June 2020); McLaren's were not found",
+   "drivers": {
+    "alex_albon": {
+     "overall": 79,
+     "experience": 52,
+     "racecraft": 87,
+     "awareness": 78,
+     "pace": 83
+    },
+    "antonio_giovinazzi": {
+     "overall": 73,
+     "experience": 47,
+     "racecraft": 73,
+     "awareness": 70,
+     "pace": 79
+    },
+    "charles_leclerc": {
+     "overall": 86,
+     "experience": 56,
+     "racecraft": 92,
+     "awareness": 82,
+     "pace": 93
+    },
+    "daniel_ricciardo": {
+     "overall": 87,
+     "experience": 76,
+     "racecraft": 90,
+     "awareness": 86,
+     "pace": 90
+    },
+    "daniil_kvyat": {
+     "overall": 80,
+     "experience": 63,
+     "racecraft": 86,
+     "awareness": 74,
+     "pace": 85
+    },
+    "esteban_ocon": {
+     "overall": 80,
+     "experience": 54,
+     "racecraft": 90,
+     "awareness": 79,
+     "pace": 82
+    },
+    "george_russell": {
+     "overall": 75,
+     "experience": 52,
+     "racecraft": 73,
+     "awareness": 78,
+     "pace": 80
+    },
+    "kevin_magnussen": {
+     "overall": 78,
+     "experience": 65,
+     "racecraft": 79,
+     "awareness": 73,
+     "pace": 83
+    },
+    "kimi_raikkonen": {
+     "overall": 87,
+     "experience": 98,
+     "racecraft": 84,
+     "awareness": 91,
+     "pace": 83
+    },
+    "lance_stroll": {
+     "overall": 78,
+     "experience": 57,
+     "racecraft": 86,
+     "awareness": 73,
+     "pace": 83
+    },
+    "lewis_hamilton": {
+     "overall": 94,
+     "experience": 89,
+     "racecraft": 93,
+     "awareness": 95,
+     "pace": 96
+    },
+    "max_verstappen": {
+     "overall": 90,
+     "experience": 68,
+     "racecraft": 94,
+     "awareness": 84,
+     "pace": 96
+    },
+    "nicholas_latifi": {
+     "overall": 64,
+     "experience": 32,
+     "racecraft": 60,
+     "awareness": 80,
+     "pace": 64
+    },
+    "pierre_gasly": {
+     "overall": 80,
+     "experience": 53,
+     "racecraft": 85,
+     "awareness": 87,
+     "pace": 80
+    },
+    "romain_grosjean": {
+     "overall": 80,
+     "experience": 75,
+     "racecraft": 81,
+     "awareness": 77,
+     "pace": 83
+    },
+    "sebastian_vettel": {
+     "overall": 89,
+     "experience": 88,
+     "racecraft": 89,
+     "awareness": 81,
+     "pace": 94
+    },
+    "sergio_perez": {
+     "overall": 85,
+     "experience": 78,
+     "racecraft": 91,
+     "awareness": 80,
+     "pace": 86
+    },
+    "valtteri_bottas": {
+     "overall": 90,
+     "experience": 71,
+     "racecraft": 89,
+     "awareness": 99,
+     "pace": 91
+    }
+   }
+  },
+  "2021": {
+   "game": "F1 2021",
+   "sources": [
+    "https://boxthislap.org/f1-2021-ratings-revealed/"
+   ],
+   "note": "launch ratings (July 2021)",
+   "drivers": {
+    "antonio_giovinazzi": {
+     "overall": 79,
+     "experience": 54,
+     "racecraft": 82,
+     "awareness": 82,
+     "pace": 80
+    },
+    "carlos_sainz-jr": {
+     "overall": 87,
+     "experience": 69,
+     "racecraft": 88,
+     "awareness": 94,
+     "pace": 85
+    },
+    "charles_leclerc": {
+     "overall": 88,
+     "experience": 62,
+     "racecraft": 88,
+     "awareness": 87,
+     "pace": 92
+    },
+    "daniel_ricciardo": {
+     "overall": 90,
+     "experience": 80,
+     "racecraft": 94,
+     "awareness": 91,
+     "pace": 88
+    },
+    "esteban_ocon": {
+     "overall": 86,
+     "experience": 60,
+     "racecraft": 93,
+     "awareness": 98,
+     "pace": 79
+    },
+    "fernando_alonso": {
+     "overall": 89,
+     "experience": 99,
+     "racecraft": 89,
+     "awareness": 94,
+     "pace": 86
+    },
+    "george_russell": {
+     "overall": 84,
+     "experience": 60,
+     "racecraft": 76,
+     "awareness": 99,
+     "pace": 83
+    },
+    "kimi_raikkonen": {
+     "overall": 87,
+     "experience": 99,
+     "racecraft": 91,
+     "awareness": 84,
+     "pace": 86
+    },
+    "lance_stroll": {
+     "overall": 83,
+     "experience": 62,
+     "racecraft": 93,
+     "awareness": 82,
+     "pace": 82
+    },
+    "lando_norris": {
+     "overall": 91,
+     "experience": 60,
+     "racecraft": 96,
+     "awareness": 99,
+     "pace": 89
+    },
+    "lewis_hamilton": {
+     "overall": 95,
+     "experience": 92,
+     "racecraft": 94,
+     "awareness": 89,
+     "pace": 98
+    },
+    "max_verstappen": {
+     "overall": 95,
+     "experience": 69,
+     "racecraft": 96,
+     "awareness": 96,
+     "pace": 97
+    },
+    "mick_schumacher": {
+     "overall": 76,
+     "experience": 47,
+     "racecraft": 65,
+     "awareness": 81,
+     "pace": 83
+    },
+    "nicholas_latifi": {
+     "overall": 71,
+     "experience": 55,
+     "racecraft": 69,
+     "awareness": 79,
+     "pace": 70
+    },
+    "nikita_mazepin": {
+     "overall": 67,
+     "experience": 47,
+     "racecraft": 65,
+     "awareness": 78,
+     "pace": 66
+    },
+    "pierre_gasly": {
+     "overall": 90,
+     "experience": 59,
+     "racecraft": 92,
+     "awareness": 99,
+     "pace": 89
+    },
+    "sebastian_vettel": {
+     "overall": 89,
+     "experience": 91,
+     "racecraft": 93,
+     "awareness": 87,
+     "pace": 88
+    },
+    "sergio_perez": {
+     "overall": 87,
+     "experience": 81,
+     "racecraft": 92,
+     "awareness": 84,
+     "pace": 87
+    },
+    "valtteri_bottas": {
+     "overall": 92,
+     "experience": 75,
+     "racecraft": 89,
+     "awareness": 99,
+     "pace": 92
+    },
+    "yuki_tsunoda": {
+     "overall": 82,
+     "experience": 46,
+     "racecraft": 88,
+     "awareness": 78,
+     "pace": 86
+    }
+   }
+  },
+  "2022": {
+   "game": "F1 22",
+   "sources": [
+    "https://traxion.gg/f1-22-driver-ratings-unveiled-verstappen-hamilton-tied-at-the-top/"
+   ],
+   "note": "launch ratings (24 June 2022, data through Monaco)",
+   "drivers": {
+    "alex_albon": {
+     "experience": 59,
+     "racecraft": 90,
+     "awareness": 76,
+     "pace": 81,
+     "overall": 82
+    },
+    "carlos_sainz-jr": {
+     "experience": 72,
+     "racecraft": 89,
+     "awareness": 89,
+     "pace": 87,
+     "overall": 87
+    },
+    "charles_leclerc": {
+     "experience": 65,
+     "racecraft": 94,
+     "awareness": 91,
+     "pace": 95,
+     "overall": 92
+    },
+    "daniel_ricciardo": {
+     "experience": 82,
+     "racecraft": 88,
+     "awareness": 93,
+     "pace": 80,
+     "overall": 83
+    },
+    "esteban_ocon": {
+     "experience": 63,
+     "racecraft": 90,
+     "awareness": 76,
+     "pace": 82,
+     "overall": 83
+    },
+    "fernando_alonso": {
+     "experience": 98,
+     "racecraft": 88,
+     "awareness": 78,
+     "pace": 89,
+     "overall": 89
+    },
+    "george_russell": {
+     "experience": 64,
+     "racecraft": 90,
+     "awareness": 86,
+     "pace": 93,
+     "overall": 90
+    },
+    "guanyu_zhou": {
+     "experience": 47,
+     "racecraft": 80,
+     "awareness": 73,
+     "pace": 67,
+     "overall": 70
+    },
+    "kevin_magnussen": {
+     "experience": 68,
+     "racecraft": 82,
+     "awareness": 84,
+     "pace": 82,
+     "overall": 81
+    },
+    "lance_stroll": {
+     "experience": 65,
+     "racecraft": 89,
+     "awareness": 76,
+     "pace": 77,
+     "overall": 80
+    },
+    "lando_norris": {
+     "experience": 64,
+     "racecraft": 94,
+     "awareness": 82,
+     "pace": 92,
+     "overall": 90
+    },
+    "lewis_hamilton": {
+     "experience": 93,
+     "racecraft": 96,
+     "awareness": 92,
+     "pace": 93,
+     "overall": 94
+    },
+    "max_verstappen": {
+     "experience": 72,
+     "racecraft": 98,
+     "awareness": 79,
+     "pace": 97,
+     "overall": 94
+    },
+    "mick_schumacher": {
+     "experience": 56,
+     "racecraft": 79,
+     "awareness": 80,
+     "pace": 79,
+     "overall": 77
+    },
+    "nicholas_latifi": {
+     "experience": 60,
+     "racecraft": 80,
+     "awareness": 76,
+     "pace": 66,
+     "overall": 70
+    },
+    "pierre_gasly": {
+     "experience": 62,
+     "racecraft": 90,
+     "awareness": 79,
+     "pace": 84,
+     "overall": 84
+    },
+    "sebastian_vettel": {
+     "experience": 91,
+     "racecraft": 87,
+     "awareness": 92,
+     "pace": 83,
+     "overall": 85
+    },
+    "sergio_perez": {
+     "experience": 83,
+     "racecraft": 89,
+     "awareness": 85,
+     "pace": 89,
+     "overall": 88
+    },
+    "valtteri_bottas": {
+     "experience": 77,
+     "racecraft": 84,
+     "awareness": 93,
+     "pace": 90,
+     "overall": 88
+    },
+    "yuki_tsunoda": {
+     "experience": 55,
+     "racecraft": 76,
+     "awareness": 74,
+     "pace": 83,
+     "overall": 78
+    }
+   }
+  },
+  "2023": {
+   "game": "F1 23",
+   "sources": [
+    "https://traxion.gg/verstappen-leads-alonso-hamilton-in-initial-f1-23-driver-ratings/"
+   ],
+   "note": "initial ratings (June 2023)",
+   "drivers": {
+    "alex_albon": {
+     "overall": 83,
+     "experience": 75,
+     "racecraft": 81,
+     "awareness": 78,
+     "pace": 86
+    },
+    "carlos_sainz-jr": {
+     "overall": 88,
+     "experience": 84,
+     "racecraft": 92,
+     "awareness": 81,
+     "pace": 87
+    },
+    "charles_leclerc": {
+     "overall": 89,
+     "experience": 77,
+     "racecraft": 92,
+     "awareness": 85,
+     "pace": 90
+    },
+    "esteban_ocon": {
+     "overall": 86,
+     "experience": 77,
+     "racecraft": 92,
+     "awareness": 76,
+     "pace": 86
+    },
+    "fernando_alonso": {
+     "overall": 92,
+     "experience": 99,
+     "racecraft": 91,
+     "awareness": 78,
+     "pace": 93
+    },
+    "george_russell": {
+     "overall": 88,
+     "experience": 76,
+     "racecraft": 87,
+     "awareness": 83,
+     "pace": 91
+    },
+    "guanyu_zhou": {
+     "overall": 78,
+     "experience": 63,
+     "racecraft": 78,
+     "awareness": 74,
+     "pace": 81
+    },
+    "kevin_magnussen": {
+     "overall": 81,
+     "experience": 81,
+     "racecraft": 79,
+     "awareness": 85,
+     "pace": 82
+    },
+    "lance_stroll": {
+     "overall": 84,
+     "experience": 79,
+     "racecraft": 91,
+     "awareness": 78,
+     "pace": 81
+    },
+    "lando_norris": {
+     "overall": 89,
+     "experience": 76,
+     "racecraft": 91,
+     "awareness": 79,
+     "pace": 91
+    },
+    "lewis_hamilton": {
+     "overall": 92,
+     "experience": 97,
+     "racecraft": 94,
+     "awareness": 94,
+     "pace": 90
+    },
+    "logan_sargeant": {
+     "overall": 71,
+     "experience": 48,
+     "racecraft": 84,
+     "awareness": 75,
+     "pace": 67
+    },
+    "max_verstappen": {
+     "overall": 94,
+     "experience": 84,
+     "racecraft": 97,
+     "awareness": 85,
+     "pace": 95
+    },
+    "nico_hulkenberg": {
+     "overall": 80,
+     "experience": 86,
+     "racecraft": 79,
+     "awareness": 81,
+     "pace": 80
+    },
+    "nyck_de-vries": {
+     "overall": 71,
+     "experience": 50,
+     "racecraft": 84,
+     "awareness": 75,
+     "pace": 67
+    },
+    "oscar_piastri": {
+     "overall": 74,
+     "experience": 74,
+     "racecraft": 73,
+     "awareness": 79,
+     "pace": 77
+    },
+    "pierre_gasly": {
+     "overall": 85,
+     "experience": 78,
+     "racecraft": 89,
+     "awareness": 76,
+     "pace": 85
+    },
+    "sergio_perez": {
+     "overall": 89,
+     "experience": 91,
+     "racecraft": 93,
+     "awareness": 86,
+     "pace": 87
+    },
+    "valtteri_bottas": {
+     "overall": 87,
+     "experience": 88,
+     "racecraft": 86,
+     "awareness": 97,
+     "pace": 86
+    },
+    "yuki_tsunoda": {
+     "overall": 83,
+     "experience": 69,
+     "racecraft": 79,
+     "awareness": 75,
+     "pace": 87
+    }
+   }
+  },
+  "2024": {
+   "game": "F1 24",
+   "sources": [
+    "https://clutchpoints.com/gaming/f1-24-roster-driver-ratings-max-verstappen-leads-the-charge"
+   ],
+   "note": "launch ratings (May 2024)",
+   "drivers": {
+    "alex_albon": {
+     "experience": 77,
+     "racecraft": 83,
+     "awareness": 79,
+     "pace": 87,
+     "overall": 85
+    },
+    "carlos_sainz-jr": {
+     "experience": 85,
+     "racecraft": 93,
+     "awareness": 89,
+     "pace": 88,
+     "overall": 89
+    },
+    "charles_leclerc": {
+     "experience": 78,
+     "racecraft": 91,
+     "awareness": 90,
+     "pace": 89,
+     "overall": 89
+    },
+    "daniel_ricciardo": {
+     "experience": 89,
+     "racecraft": 81,
+     "awareness": 85,
+     "pace": 82,
+     "overall": 82
+    },
+    "esteban_ocon": {
+     "experience": 79,
+     "racecraft": 83,
+     "awareness": 80,
+     "pace": 83,
+     "overall": 83
+    },
+    "fernando_alonso": {
+     "experience": 99,
+     "racecraft": 94,
+     "awareness": 81,
+     "pace": 91,
+     "overall": 92
+    },
+    "george_russell": {
+     "experience": 78,
+     "racecraft": 87,
+     "awareness": 84,
+     "pace": 88,
+     "overall": 87
+    },
+    "guanyu_zhou": {
+     "experience": 68,
+     "racecraft": 78,
+     "awareness": 82,
+     "pace": 83,
+     "overall": 80
+    },
+    "kevin_magnussen": {
+     "experience": 82,
+     "racecraft": 75,
+     "awareness": 79,
+     "pace": 82,
+     "overall": 80
+    },
+    "lance_stroll": {
+     "experience": 80,
+     "racecraft": 83,
+     "awareness": 79,
+     "pace": 79,
+     "overall": 80
+    },
+    "lando_norris": {
+     "experience": 78,
+     "racecraft": 89,
+     "awareness": 85,
+     "pace": 90,
+     "overall": 89
+    },
+    "lewis_hamilton": {
+     "experience": 97,
+     "racecraft": 90,
+     "awareness": 92,
+     "pace": 87,
+     "overall": 89
+    },
+    "logan_sargeant": {
+     "experience": 62,
+     "racecraft": 68,
+     "awareness": 75,
+     "pace": 72,
+     "overall": 70
+    },
+    "max_verstappen": {
+     "experience": 85,
+     "racecraft": 98,
+     "awareness": 94,
+     "pace": 96,
+     "overall": 96
+    },
+    "nico_hulkenberg": {
+     "experience": 85,
+     "racecraft": 82,
+     "awareness": 85,
+     "pace": 81,
+     "overall": 82
+    },
+    "oscar_piastri": {
+     "experience": 62,
+     "racecraft": 85,
+     "awareness": 81,
+     "pace": 86,
+     "overall": 84
+    },
+    "pierre_gasly": {
+     "experience": 79,
+     "racecraft": 85,
+     "awareness": 78,
+     "pace": 85,
+     "overall": 84
+    },
+    "sergio_perez": {
+     "experience": 91,
+     "racecraft": 93,
+     "awareness": 79,
+     "pace": 85,
+     "overall": 87
+    },
+    "valtteri_bottas": {
+     "experience": 88,
+     "racecraft": 72,
+     "awareness": 97,
+     "pace": 83,
+     "overall": 81
+    },
+    "yuki_tsunoda": {
+     "experience": 72,
+     "racecraft": 74,
+     "awareness": 77,
+     "pace": 86,
+     "overall": 81
+    }
+   }
+  },
+  "2025": {
+   "game": "F1 25",
+   "sources": [
+    "https://insider-gaming.com/f1-25-ratings-all-driver-ratings-listed/",
+    "https://traxion.gg/verstappen-heads-f1-25-games-driver-ratings-piastri-eighth/"
+   ],
+   "note": "launch ratings (May 2025); the same as the stock gamedb's default dataset",
+   "drivers": {
+    "alex_albon": {
+     "overall": 83,
+     "experience": 81,
+     "racecraft": 82,
+     "awareness": 78,
+     "pace": 85
+    },
+    "andrea-kimi_antonelli": {
+     "overall": 72,
+     "experience": 50,
+     "racecraft": 67,
+     "awareness": 79,
+     "pace": 76
+    },
+    "carlos_sainz-jr": {
+     "overall": 90,
+     "experience": 87,
+     "racecraft": 96,
+     "awareness": 88,
+     "pace": 88
+    },
+    "charles_leclerc": {
+     "overall": 91,
+     "experience": 81,
+     "racecraft": 95,
+     "awareness": 93,
+     "pace": 90
+    },
+    "esteban_ocon": {
+     "overall": 85,
+     "experience": 81,
+     "racecraft": 86,
+     "awareness": 79,
+     "pace": 85
+    },
+    "fernando_alonso": {
+     "overall": 88,
+     "experience": 99,
+     "racecraft": 90,
+     "awareness": 81,
+     "pace": 87
+    },
+    "gabriel_bortoleto": {
+     "overall": 74,
+     "experience": 50,
+     "racecraft": 76,
+     "awareness": 68,
+     "pace": 77
+    },
+    "george_russell": {
+     "overall": 90,
+     "experience": 81,
+     "racecraft": 92,
+     "awareness": 84,
+     "pace": 90
+    },
+    "isack_hadjar": {
+     "overall": 68,
+     "experience": 51,
+     "racecraft": 66,
+     "awareness": 65,
+     "pace": 72
+    },
+    "jack_doohan": {
+     "overall": 73,
+     "experience": 51,
+     "racecraft": 71,
+     "awareness": 67,
+     "pace": 78
+    },
+    "lance_stroll": {
+     "overall": 78,
+     "experience": 83,
+     "racecraft": 81,
+     "awareness": 78,
+     "pace": 76
+    },
+    "lando_norris": {
+     "overall": 91,
+     "experience": 81,
+     "racecraft": 89,
+     "awareness": 80,
+     "pace": 94
+    },
+    "lewis_hamilton": {
+     "overall": 89,
+     "experience": 98,
+     "racecraft": 90,
+     "awareness": 90,
+     "pace": 87
+    },
+    "liam_lawson": {
+     "overall": 80,
+     "experience": 54,
+     "racecraft": 76,
+     "awareness": 75,
+     "pace": 85
+    },
+    "max_verstappen": {
+     "overall": 95,
+     "experience": 87,
+     "racecraft": 96,
+     "awareness": 85,
+     "pace": 96
+    },
+    "nico_hulkenberg": {
+     "overall": 84,
+     "experience": 87,
+     "racecraft": 86,
+     "awareness": 85,
+     "pace": 82
+    },
+    "oliver_bearman": {
+     "overall": 74,
+     "experience": 52,
+     "racecraft": 84,
+     "awareness": 65,
+     "pace": 73
+    },
+    "oscar_piastri": {
+     "overall": 87,
+     "experience": 72,
+     "racecraft": 92,
+     "awareness": 86,
+     "pace": 87
+    },
+    "pierre_gasly": {
+     "overall": 86,
+     "experience": 82,
+     "racecraft": 88,
+     "awareness": 79,
+     "pace": 86
+    },
+    "yuki_tsunoda": {
+     "overall": 82,
+     "experience": 77,
+     "racecraft": 78,
+     "awareness": 77,
+     "pace": 85
+    }
+   }
+  }
+ }
+}

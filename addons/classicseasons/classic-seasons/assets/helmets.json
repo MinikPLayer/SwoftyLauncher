@@ -1,0 +1,1741 @@
+{
+ "schema_version": 1,
+ "ops": [
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-tororosso_isack_hadjar/isack_hadjar_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-tororosso_isack_hadjar/isack_hadjar_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-tororosso_isack_hadjar/isack_hadjar_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-tororosso_isack_hadjar/isack_hadjar_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-tororosso_isack_hadjar/isack_hadjar_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-tororosso_isack_hadjar/isack_hadjar_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-redbull_sergio_perez/sergio_perez_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-redbull_sergio_perez/sergio_perez_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-redbull_sergio_perez/sergio_perez_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-haas_oliver_bearman/oliver_bearman_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-haas_oliver_bearman/oliver_bearman_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-haas_oliver_bearman/oliver_bearman_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-haas_oliver_bearman/oliver_bearman_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-haas_oliver_bearman/oliver_bearman_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-haas_oliver_bearman/oliver_bearman_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-renault_jack_doohan/jack_doohan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-renault_jack_doohan/jack_doohan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-renault_jack_doohan/jack_doohan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-forceindia_lance_stroll/lance_stroll_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-forceindia_lance_stroll/lance_stroll_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-forceindia_lance_stroll/lance_stroll_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-f2-camposracing_isack_hadjar/isack_hadjar_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-f2-camposracing_isack_hadjar/isack_hadjar_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-f2-camposracing_isack_hadjar/isack_hadjar_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-camposracing_isack_hadjar/isack_hadjar_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-f2-camposracing_isack_hadjar/isack_hadjar_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-camposracing_isack_hadjar/isack_hadjar_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-f2-invictaracing_kush_maini/kush_maini_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-f2-invictaracing_kush_maini/kush_maini_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-f2-invictaracing_kush_maini/kush_maini_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-invictaracing_kush_maini/kush_maini_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-f2-invictaracing_kush_maini/kush_maini_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-invictaracing_kush_maini/kush_maini_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-f2-trident_richard_verschoor/richard_verschoor_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-f2-trident_richard_verschoor/richard_verschoor_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-f2-trident_richard_verschoor/richard_verschoor_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-trident_richard_verschoor/richard_verschoor_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-f2-trident_richard_verschoor/richard_verschoor_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-trident_richard_verschoor/richard_verschoor_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-haas_esteban_ocon/esteban_ocon_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-haas_esteban_ocon/esteban_ocon_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-haas_esteban_ocon/esteban_ocon_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-haas_esteban_ocon/esteban_ocon_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-haas_esteban_ocon/esteban_ocon_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-haas_esteban_ocon/esteban_ocon_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-haas_kevin_magnussen/kevin_magnussen_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-haas_kevin_magnussen/kevin_magnussen_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-haas_kevin_magnussen/kevin_magnussen_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-haas_kevin_magnussen/kevin_magnussen_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-haas_kevin_magnussen/kevin_magnussen_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-haas_kevin_magnussen/kevin_magnussen_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-f2-invictaracing_kush_maini/kush_maini_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-f2-invictaracing_kush_maini/kush_maini_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-f2-invictaracing_kush_maini/kush_maini_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-invictaracing_kush_maini/kush_maini_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-f2-invictaracing_kush_maini/kush_maini_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-invictaracing_kush_maini/kush_maini_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs16-renault_pierre_gasly/pierre_gasly_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs16-renault_pierre_gasly/pierre_gasly_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs16-renault_pierre_gasly/pierre_gasly_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-renault_pierre_gasly/pierre_gasly_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs16-renault_pierre_gasly/pierre_gasly_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-renault_pierre_gasly/pierre_gasly_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-forceindia_lance_stroll/lance_stroll_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-forceindia_lance_stroll/lance_stroll_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-forceindia_lance_stroll/lance_stroll_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-redbull_sergio_perez/sergio_perez_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-redbull_sergio_perez/sergio_perez_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-redbull_sergio_perez/sergio_perez_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-renault_esteban_ocon/esteban_ocon_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-renault_esteban_ocon/esteban_ocon_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-renault_esteban_ocon/esteban_ocon_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-renault_esteban_ocon/esteban_ocon_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-renault_esteban_ocon/esteban_ocon_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-renault_esteban_ocon/esteban_ocon_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-renault_jack_doohan/jack_doohan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-renault_jack_doohan/jack_doohan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-renault_jack_doohan/jack_doohan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-renault_pierre_gasly/pierre_gasly_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-renault_pierre_gasly/pierre_gasly_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-renault_pierre_gasly/pierre_gasly_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-renault_pierre_gasly/pierre_gasly_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-renault_pierre_gasly/pierre_gasly_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-renault_pierre_gasly/pierre_gasly_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-f2-artgp_victor_martins/victor_martins_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-f2-artgp_victor_martins/victor_martins_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-f2-artgp_victor_martins/victor_martins_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_victor_martins/victor_martins_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-f2-artgp_victor_martins/victor_martins_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_victor_martins/victor_martins_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-haas_esteban_ocon/esteban_ocon_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-haas_esteban_ocon/esteban_ocon_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-haas_esteban_ocon/esteban_ocon_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-haas_esteban_ocon/esteban_ocon_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-haas_esteban_ocon/esteban_ocon_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-haas_esteban_ocon/esteban_ocon_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs17-haas_oliver_bearman/oliver_bearman_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs17-haas_oliver_bearman/oliver_bearman_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs17-haas_oliver_bearman/oliver_bearman_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-haas_oliver_bearman/oliver_bearman_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs17-haas_oliver_bearman/oliver_bearman_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-haas_oliver_bearman/oliver_bearman_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-f2-camposracing_isack_hadjar/isack_hadjar_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-f2-camposracing_isack_hadjar/isack_hadjar_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-f2-camposracing_isack_hadjar/isack_hadjar_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-camposracing_isack_hadjar/isack_hadjar_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-f2-camposracing_isack_hadjar/isack_hadjar_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-camposracing_isack_hadjar/isack_hadjar_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-renault_jack_doohan/jack_doohan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-renault_jack_doohan/jack_doohan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-renault_jack_doohan/jack_doohan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-haas_esteban_ocon/esteban_ocon_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-haas_esteban_ocon/esteban_ocon_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-haas_esteban_ocon/esteban_ocon_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-haas_esteban_ocon/esteban_ocon_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-haas_esteban_ocon/esteban_ocon_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-haas_esteban_ocon/esteban_ocon_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-haas_oliver_bearman/oliver_bearman_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-haas_oliver_bearman/oliver_bearman_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-haas_oliver_bearman/oliver_bearman_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-haas_oliver_bearman/oliver_bearman_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-haas_oliver_bearman/oliver_bearman_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-haas_oliver_bearman/oliver_bearman_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-renault_pierre_gasly/pierre_gasly_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-renault_pierre_gasly/pierre_gasly_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-renault_pierre_gasly/pierre_gasly_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-renault_pierre_gasly/pierre_gasly_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-renault_pierre_gasly/pierre_gasly_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-renault_pierre_gasly/pierre_gasly_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-f2-artgp_victor_martins/victor_martins_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-f2-artgp_victor_martins/victor_martins_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-f2-artgp_victor_martins/victor_martins_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_victor_martins/victor_martins_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-f2-artgp_victor_martins/victor_martins_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_victor_martins/victor_martins_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-redbull_sergio_perez/sergio_perez_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-redbull_sergio_perez/sergio_perez_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-redbull_sergio_perez/sergio_perez_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-renault_esteban_ocon/esteban_ocon_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-renault_esteban_ocon/esteban_ocon_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-renault_esteban_ocon/esteban_ocon_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-renault_esteban_ocon/esteban_ocon_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-renault_esteban_ocon/esteban_ocon_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-renault_esteban_ocon/esteban_ocon_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-ferrarimonza_charles_leclerc/charles_leclerc_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-ferrarimonza_charles_leclerc/charles_leclerc_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-ferrarimonza_charles_leclerc/charles_leclerc_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-ferrarimonza_charles_leclerc/charles_leclerc_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-ferrarimonza_charles_leclerc/charles_leclerc_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-ferrarimonza_charles_leclerc/charles_leclerc_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-tororosso_liam_lawson/liam_lawson_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-tororosso_liam_lawson/liam_lawson_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-tororosso_liam_lawson/liam_lawson_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-tororosso_liam_lawson/liam_lawson_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-tororosso_liam_lawson/liam_lawson_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-tororosso_liam_lawson/liam_lawson_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-f2-camposracing_pepe_marti/pepe_marti_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-f2-camposracing_pepe_marti/pepe_marti_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-camposracing_pepe_marti/pepe_marti_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-f2-camposracing_pepe_marti/pepe_marti_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-forceindia_lance_stroll/lance_stroll_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-forceindia_lance_stroll/lance_stroll_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-forceindia_lance_stroll/lance_stroll_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs18-williams_logan_sargeant/logan_sargeant_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs18-williams_logan_sargeant/logan_sargeant_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs18-williams_logan_sargeant/logan_sargeant_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-williams_logan_sargeant/logan_sargeant_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs18-williams_logan_sargeant/logan_sargeant_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-williams_logan_sargeant/logan_sargeant_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-tororosso_liam_lawson/liam_lawson_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-tororosso_liam_lawson/liam_lawson_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-tororosso_liam_lawson/liam_lawson_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-tororosso_liam_lawson/liam_lawson_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-tororosso_liam_lawson/liam_lawson_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-tororosso_liam_lawson/liam_lawson_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-renault_jack_doohan/jack_doohan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-renault_jack_doohan/jack_doohan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-renault_jack_doohan/jack_doohan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-mclaren_lando_norris/lando_norris_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-mclaren_lando_norris/lando_norris_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-mclaren_lando_norris/lando_norris_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-mclaren_lando_norris/lando_norris_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-mclaren_lando_norris/lando_norris_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-mclaren_lando_norris/lando_norris_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-sauber_nico_hulkenberg/nico_hulkenberg_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-williams_alex_albon/alex_albon_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-williams_alex_albon/alex_albon_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-williams_alex_albon/alex_albon_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-williams_alex_albon/alex_albon_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-williams_alex_albon/alex_albon_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-williams_alex_albon/alex_albon_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-redbull_sergio_perez/sergio_perez_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-redbull_sergio_perez/sergio_perez_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-redbull_sergio_perez/sergio_perez_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-forceindia_lance_stroll/lance_stroll_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-forceindia_lance_stroll/lance_stroll_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-forceindia_lance_stroll/lance_stroll_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-f2-artgp_victor_martins/victor_martins_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-f2-artgp_victor_martins/victor_martins_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-f2-artgp_victor_martins/victor_martins_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_victor_martins/victor_martins_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-f2-artgp_victor_martins/victor_martins_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_victor_martins/victor_martins_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-f2-camposracing_pepe_marti/pepe_marti_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-f2-camposracing_pepe_marti/pepe_marti_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-camposracing_pepe_marti/pepe_marti_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-f2-camposracing_pepe_marti/pepe_marti_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-haas_esteban_ocon/esteban_ocon_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-haas_esteban_ocon/esteban_ocon_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-haas_esteban_ocon/esteban_ocon_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-haas_esteban_ocon/esteban_ocon_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-haas_esteban_ocon/esteban_ocon_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-haas_esteban_ocon/esteban_ocon_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-haas_oliver_bearman/oliver_bearman_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-haas_oliver_bearman/oliver_bearman_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-haas_oliver_bearman/oliver_bearman_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-haas_oliver_bearman/oliver_bearman_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-haas_oliver_bearman/oliver_bearman_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-haas_oliver_bearman/oliver_bearman_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-f2-dams_jak_crawford/jak_crawford_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-f2-dams_jak_crawford/jak_crawford_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-f2-dams_jak_crawford/jak_crawford_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-dams_jak_crawford/jak_crawford_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-f2-dams_jak_crawford/jak_crawford_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-dams_jak_crawford/jak_crawford_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs19-f2-dams_juan-manuel_correa/juan-manuel_correa_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs19-f2-dams_juan-manuel_correa/juan-manuel_correa_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs19-f2-dams_juan-manuel_correa/juan-manuel_correa_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-dams_juan-manuel_correa/juan-manuel_correa_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs19-f2-dams_juan-manuel_correa/juan-manuel_correa_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-dams_juan-manuel_correa/juan-manuel_correa_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-williams_alex_albon/alex_albon_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-williams_alex_albon/alex_albon_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-williams_alex_albon/alex_albon_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-williams_alex_albon/alex_albon_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-williams_alex_albon/alex_albon_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-williams_alex_albon/alex_albon_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-renault_jack_doohan/jack_doohan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-renault_jack_doohan/jack_doohan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-renault_jack_doohan/jack_doohan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-mclaren_lando_norris/lando_norris_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-mclaren_lando_norris/lando_norris_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-mclaren_lando_norris/lando_norris_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-mclaren_lando_norris/lando_norris_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-mclaren_lando_norris/lando_norris_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-mclaren_lando_norris/lando_norris_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-redbull_sergio_perez/sergio_perez_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-redbull_sergio_perez/sergio_perez_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-redbull_sergio_perez/sergio_perez_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-forceindia_lance_stroll/lance_stroll_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-forceindia_lance_stroll/lance_stroll_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-forceindia_lance_stroll/lance_stroll_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-renault_esteban_ocon/esteban_ocon_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-renault_esteban_ocon/esteban_ocon_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-renault_esteban_ocon/esteban_ocon_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-renault_esteban_ocon/esteban_ocon_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-renault_esteban_ocon/esteban_ocon_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-renault_esteban_ocon/esteban_ocon_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-tororosso_liam_lawson/liam_lawson_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-tororosso_liam_lawson/liam_lawson_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-tororosso_liam_lawson/liam_lawson_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-tororosso_liam_lawson/liam_lawson_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-tororosso_liam_lawson/liam_lawson_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-tororosso_liam_lawson/liam_lawson_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-f2-artgp_victor_martins/victor_martins_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-f2-artgp_victor_martins/victor_martins_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-f2-artgp_victor_martins/victor_martins_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_victor_martins/victor_martins_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-f2-artgp_victor_martins/victor_martins_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_victor_martins/victor_martins_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-f2-camposracing_pepe_marti/pepe_marti_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-f2-camposracing_pepe_marti/pepe_marti_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-camposracing_pepe_marti/pepe_marti_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-f2-camposracing_pepe_marti/pepe_marti_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-haas_esteban_ocon/esteban_ocon_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-haas_esteban_ocon/esteban_ocon_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-haas_esteban_ocon/esteban_ocon_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-haas_esteban_ocon/esteban_ocon_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-haas_esteban_ocon/esteban_ocon_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-haas_esteban_ocon/esteban_ocon_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-haas_oliver_bearman/oliver_bearman_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-haas_oliver_bearman/oliver_bearman_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-haas_oliver_bearman/oliver_bearman_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-haas_oliver_bearman/oliver_bearman_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-haas_oliver_bearman/oliver_bearman_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-haas_oliver_bearman/oliver_bearman_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-mercedes_george_russell/george_russell_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-mercedes_george_russell/george_russell_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-mercedes_george_russell/george_russell_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-mercedes_george_russell/george_russell_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-mercedes_george_russell/george_russell_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-mercedes_george_russell/george_russell_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs20-williams_logan_sargeant/logan_sargeant_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs20-williams_logan_sargeant/logan_sargeant_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs20-williams_logan_sargeant/logan_sargeant_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-williams_logan_sargeant/logan_sargeant_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs20-williams_logan_sargeant/logan_sargeant_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-williams_logan_sargeant/logan_sargeant_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-mercedes_lewis_hamilton/lewis_hamilton_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-sauber_valtteri_bottas/valtteri_bottas_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-redbull_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-redbull_sergio_perez/sergio_perez_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-redbull_sergio_perez/sergio_perez_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-redbull_sergio_perez/sergio_perez_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-redbull_sergio_perez/sergio_perez_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-ferrari_charles_leclerc/charles_leclerc_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-ferrari_charles_leclerc/charles_leclerc_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-renault_jack_doohan/jack_doohan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-renault_jack_doohan/jack_doohan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-renault_jack_doohan/jack_doohan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-renault_jack_doohan/jack_doohan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-mclaren_lando_norris/lando_norris_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-mclaren_lando_norris/lando_norris_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-mclaren_lando_norris/lando_norris_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-mclaren_lando_norris/lando_norris_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-mclaren_lando_norris/lando_norris_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-mclaren_lando_norris/lando_norris_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-renault_pierre_gasly/pierre_gasly_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-renault_pierre_gasly/pierre_gasly_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-renault_pierre_gasly/pierre_gasly_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-renault_pierre_gasly/pierre_gasly_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-renault_pierre_gasly/pierre_gasly_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-renault_pierre_gasly/pierre_gasly_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-renault_esteban_ocon/esteban_ocon_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-renault_esteban_ocon/esteban_ocon_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-renault_esteban_ocon/esteban_ocon_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-renault_esteban_ocon/esteban_ocon_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-renault_esteban_ocon/esteban_ocon_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-renault_esteban_ocon/esteban_ocon_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-tororosso_liam_lawson/liam_lawson_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-tororosso_liam_lawson/liam_lawson_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-tororosso_liam_lawson/liam_lawson_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-tororosso_liam_lawson/liam_lawson_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-tororosso_liam_lawson/liam_lawson_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-tororosso_liam_lawson/liam_lawson_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-forceindia_lance_stroll/lance_stroll_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-forceindia_lance_stroll/lance_stroll_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-forceindia_lance_stroll/lance_stroll_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-forceindia_lance_stroll/lance_stroll_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-mercedes_george_russell/george_russell_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-mercedes_george_russell/george_russell_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-mercedes_george_russell/george_russell_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-mercedes_george_russell/george_russell_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-mercedes_george_russell/george_russell_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-mercedes_george_russell/george_russell_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-williams_logan_sargeant/logan_sargeant_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-williams_logan_sargeant/logan_sargeant_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-williams_logan_sargeant/logan_sargeant_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-williams_logan_sargeant/logan_sargeant_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-williams_logan_sargeant/logan_sargeant_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-williams_logan_sargeant/logan_sargeant_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-f2-artgp_victor_martins/victor_martins_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-f2-artgp_victor_martins/victor_martins_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-f2-artgp_victor_martins/victor_martins_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_victor_martins/victor_martins_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-f2-artgp_victor_martins/victor_martins_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_victor_martins/victor_martins_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-f2-camposracing_pepe_marti/pepe_marti_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-f2-camposracing_pepe_marti/pepe_marti_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-camposracing_pepe_marti/pepe_marti_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-f2-camposracing_pepe_marti/pepe_marti_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-haas_nico_hulkenberg/nico_hulkenberg_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-haas_nico_hulkenberg/nico_hulkenberg_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-haas_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-haas_nico_hulkenberg/nico_hulkenberg_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-haas_nico_hulkenberg/nico_hulkenberg_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-haas_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs21-f2-dams_jak_crawford/jak_crawford_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs21-f2-dams_jak_crawford/jak_crawford_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs21-f2-dams_jak_crawford/jak_crawford_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-dams_jak_crawford/jak_crawford_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs21-f2-dams_jak_crawford/jak_crawford_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-dams_jak_crawford/jak_crawford_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs22-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs22-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs22-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs22-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2025-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "helmets/cs22-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+   "target": "2025_asset_groups/character_package/drivers/male/cs22-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/character_package/drivers/male/cs22-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+   "erps": [
+    "2025_asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp",
+    "2025_asset_groups/character_package/drivers/male/cs22-f2-artgp_zak_osullivan/zak_osullivan_helmet.erp"
+   ],
+   "template": "asset_groups/character_package/drivers/male/2024-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup"
+  }
+ ]
+}

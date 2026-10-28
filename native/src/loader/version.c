@@ -9,6 +9,7 @@
 #include <math.h>
 #include "swofty_api.h"
 #include "pattern_scan.h"
+#include "data_folder.h"
 #include "alog.h"
 
 #define HOST_EXE L"F1_25.exe"
@@ -1401,10 +1402,8 @@ static void open_log(void)
     if (log_file != INVALID_HANDLE_VALUE)
         return;
     wcscpy(refused_path, log_path);
-    DWORD n = GetEnvironmentVariableW(L"LOCALAPPDATA", dir, MAX_PATH);
-    if (!n || n >= MAX_PATH)
+    if (!swofty_data_folder(dir, MAX_PATH))
         return;
-    wcscat(dir, L"\\Swofty");
     CreateDirectoryW(dir, NULL);
     wcscat(dir, L"\\state");
     DWORD error;

@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Each season car's pace, set in its handling file (.vtf) from the team's real qualifying gap.
 
-Outside career, a car's pace comes from its handling file: the stock teams differ in F1Aero (FrontCoeffLiftMultiplier
-and RearCoeffLiftMultiplier, the body drag and wing coefficients) and Chassis Mass. A season car keeps the handling
-file of the stock team in its slot, so it raced at that 2025 team's pace. Every season car gets the stock teams' mean
-wing coefficients (NEUTRAL), and per 1 % of its team's median qualifying gap to the season's fastest team
-(data/performance.json): lift multipliers LIFT_PER_PERCENT below TOP_LIFT (no lower than MIN_LIFT), MASS_PER_PERCENT
-kg over TOP_MASS, and body drag DRAG_PER_PERCENT % over the stock mean (DRAG). The AI gains little from lift above
-about 0.9, so mass and drag set the gaps among the front teams. build_cars.py sets them on every build; run on its own,
-the tool sets them on built cars.
+Outside career, a car's pace comes from its handling file and its per-track AI data (aislots.py). The AI's tables,
+and the lap times of simulated sessions, are kept per mass, so mass is the lever the AI follows in both driven and
+simulated sessions, where lower lift or more drag only slow the car's physics. Every season car gets the same aero:
+the stock teams' mean wing coefficients (NEUTRAL) and body drag (DRAG), and lift multipliers of LIFT. Its Chassis
+Mass is TOP_MASS plus its team's median qualifying gap to the season's fastest team (data/performance.json), less the
+head start of its AI slot, at the lap time a kilogram costs in the AI's tables (data/ai_slots.json). build_cars.py
+sets them on every build; run on its own, the tool sets them on built cars.
 
     python3 tools/pace.py [--years 2016-2024]
 """
@@ -21,18 +20,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT / "tools"), str(ROOT.parents[2] / "tools")]
 
+import aislots
 import erpw
 import vtf
 from layout import cars_dir
 
 SEASONS = {s["year"]: s for s in json.loads((ROOT / "data" / "seasons.json").read_text())["seasons"]}
 PERFORMANCE = json.loads((ROOT / "data" / "performance.json").read_text())
-TOP_LIFT = 0.95
-LIFT_PER_PERCENT = 0.045
-MIN_LIFT = 0.72
+LIFT_VALUE = 0.95
 TOP_MASS = 798
-MASS_PER_PERCENT = 12
-DRAG_PER_PERCENT = 2
 DRAG = {("F1Aero", "BodyDragCoeffMin"): 0.4491, ("F1Aero", "BodyDragCoeffMax"): 0.641}
 NEUTRAL = {
     ("F1Aero", "FrontWingCoL1"): "0.008254",
@@ -45,21 +41,21 @@ MASS = ("Chassis", "Mass")
 
 
 def gap(year, key):
-    return PERFORMANCE[str(year)]["teams"][key]
+    """The team's real gap left for the handling file to make, in percent, after its AI slot's head start."""
+    return max(PERFORMANCE[str(year)]["teams"][key] - aislots.head_start(year, key), 0.0)
 
 
-def lift(year, key):
-    return round(max(TOP_LIFT - LIFT_PER_PERCENT * gap(year, key), MIN_LIFT), 4)
+def mass(year, key):
+    return round(TOP_MASS + gap(year, key) / aislots.percent_per_kg())
 
 
 def values(year, key):
-    g = gap(year, key)
     v = dict(NEUTRAL)
     for field in LIFT:
-        v[field] = f"{lift(year, key):g}"
-    v[MASS] = f"{round(TOP_MASS + MASS_PER_PERCENT * g):d}"
+        v[field] = f"{LIFT_VALUE:g}"
+    v[MASS] = f"{mass(year, key):d}"
     for field, mean in DRAG.items():
-        v[field] = f"{mean * (1 + DRAG_PER_PERCENT / 100 * g):.4f}"
+        v[field] = f"{mean:.4f}"
     return v
 
 

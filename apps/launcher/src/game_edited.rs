@@ -16,6 +16,7 @@ use crate::shell::{Page, Shell};
 use crate::theme::{Palette, palette};
 
 const TITLE: &str = "Your game files have been edited";
+const MISSING_TITLE: &str = "Some game files are missing";
 
 /// A blocked launch the player can fix: files that aren't Steam's copy, or
 /// files Swofty did not put in the game folder.
@@ -37,8 +38,40 @@ impl Edited {
         matches!(self, Self::Leftovers(_))
     }
 
+    fn missing(&self) -> Option<stock::Fix> {
+        match self {
+            Self::NotStock(r) if r.missing => Some(r.fix()),
+            _ => None,
+        }
+    }
+
     fn why(&self, repair: &Repair) -> String {
         match self {
+            Self::NotStock(r) if r.missing => {
+                let (gone, them) = match r.files.len() {
+                    1 => ("1 game file is".to_owned(), "it"),
+                    n => (format!("{n} game files are"), "them"),
+                };
+                let puts = match (r.fix(), r.version.as_deref()) {
+                    (stock::Fix::Update, Some(v)) => format!(
+                        "Your F1 25 is {v}, older than {}. Updating F1 25 puts {them} back",
+                        swofty_core::known_problems::LATEST_GAME_VERSION
+                    ),
+                    (stock::Fix::Verify, _) => format!("{} puts {them} back", repair.restores),
+                    _ => {
+                        let mut then = repair.restores.chars();
+                        let then = then
+                            .next()
+                            .map(|c| c.to_lowercase().chain(then).collect::<String>())
+                            .unwrap_or_default();
+                        format!("Updating F1 25, then {then}, puts {them} back")
+                    }
+                };
+                format!(
+                    "{gone} missing from the F1 25 folder, so Swofty stopped before changing anything. \
+                     {puts}, and then Play works."
+                )
+            }
             Self::NotStock(r) => {
                 let (changed, them) = match r.files.len() {
                     1 => ("1 game file was".to_owned(), "it"),
@@ -60,7 +93,34 @@ impl Edited {
     }
 
     fn open(&self, repair: &Repair) -> Option<Open> {
-        repair.open.filter(|_| !self.leftovers())
+        repair
+            .open
+            .filter(|_| !self.leftovers() && self.missing() != Some(stock::Fix::Update))
+    }
+
+    fn title(&self) -> &'static str {
+        match self.missing() {
+            Some(_) => MISSING_TITLE,
+            None => TITLE,
+        }
+    }
+}
+
+/// The launcher's one-line notice for a launch the game files stopped.
+pub(crate) fn notice(r: &stock::Report, source: Option<Source>) -> String {
+    let ea = source == Some(Source::EaApp);
+    match (r.missing, r.fix(), ea) {
+        (true, stock::Fix::Update, _) => {
+            "F1 25 is missing game files; update it in Steam or the EA app".to_owned()
+        }
+        (true, _, true) => "F1 25 is missing game files; repair them in the EA app".to_owned(),
+        (true, _, false) => "F1 25 is missing game files; verify them in Steam".to_owned(),
+        (false, _, true) => {
+            "your game files aren't the ones the EA app installed; repair them in the EA app".to_owned()
+        }
+        (false, _, false) => {
+            "your game files aren't the ones Steam installed; verify them in Steam".to_owned()
+        }
     }
 }
 
@@ -143,7 +203,7 @@ fn heading(edited: &Edited, repair: &Repair, p: Palette) -> impl IntoElement {
                 .line_height(px(23.))
                 .font_weight(FontWeight::BOLD)
                 .text_color(p.text)
-                .child(TITLE),
+                .child(edited.title()),
         )
         .child(
             div()
@@ -160,7 +220,13 @@ fn files_box(edited: &Edited, p: Palette) -> impl IntoElement {
     let shown = files.len().min(6);
     v_flex()
         .gap(px(6.))
-        .child(label("THE FILES SWOFTY FOUND", p))
+        .child(label(
+            match edited.missing() {
+                Some(_) => "THE MISSING FILES",
+                None => "THE FILES SWOFTY FOUND",
+            },
+            p,
+        ))
         .child(
             v_flex()
                 .gap(px(2.))
@@ -233,7 +299,32 @@ fn step(n: u32, title: &'static str, body: &'static str, p: Palette) -> impl Int
         )
 }
 
-fn steps(edited: &Edited, repair: &Repair, p: Palette) -> impl IntoElement {
+fn steps(edited: &Edited, repair: &Repair, p: Palette) -> AnyElement {
+    if let Some(fix) = edited.missing() {
+        let update = step(
+            1,
+            "Update F1 25",
+            "In Steam or the EA app, install the latest F1 25 update, then press Play again.",
+            p,
+        );
+        let verify = |n| {
+            step(
+                n,
+                repair.title,
+                edited.open(repair).map_or(repair.how, |o| o.how),
+                p,
+            )
+        };
+        return v_flex()
+            .gap(px(9.))
+            .child(label("WHAT TO DO", p))
+            .map(|d| match fix {
+                stock::Fix::Update => d.child(update),
+                stock::Fix::Verify => d.child(verify(1)),
+                stock::Fix::Both => d.child(update).child(verify(2)),
+            })
+            .into_any_element();
+    }
     let leftovers = edited.leftovers();
     let first = if leftovers { 2 } else { 1 };
     v_flex()
@@ -267,6 +358,7 @@ fn steps(edited: &Edited, repair: &Repair, p: Palette) -> impl IntoElement {
                 p,
             ))
         })
+        .into_any_element()
 }
 
 pub(crate) fn discord_link(id: &'static str, p: Palette) -> Stateful<Div> {
@@ -286,7 +378,13 @@ pub(crate) fn discord_link(id: &'static str, p: Palette) -> Stateful<Div> {
         .on_click(|_, _, cx| cx.open_url(INVITE))
 }
 
-fn footer(shell: WeakEntity<Shell>, leftovers: bool, open: Option<Open>, p: Palette) -> DialogFooter {
+fn footer(
+    shell: WeakEntity<Shell>,
+    leftovers: bool,
+    importer_shown: bool,
+    open: Option<Open>,
+    p: Palette,
+) -> DialogFooter {
     let importer = shell.clone();
     let restore = shell.clone();
     DialogFooter::new()
@@ -296,17 +394,19 @@ fn footer(shell: WeakEntity<Shell>, leftovers: bool, open: Option<Open>, p: Pale
         .child(
             h_flex()
                 .gap(px(8.))
-                .child(
-                    Button::new("game-edited-importer")
-                        .outline()
-                        .h(px(36.))
-                        .px(px(14.))
-                        .label("Go to Simplified Importer")
-                        .on_click(move |_, window, cx| {
-                            window.close_dialog(cx);
-                            importer.update(cx, |s, cx| s.open_page(Page::Importer, cx)).ok();
-                        }),
-                )
+                .when(importer_shown, |d| {
+                    d.child(
+                        Button::new("game-edited-importer")
+                            .outline()
+                            .h(px(36.))
+                            .px(px(14.))
+                            .label("Go to Simplified Importer")
+                            .on_click(move |_, window, cx| {
+                                window.close_dialog(cx);
+                                importer.update(cx, |s, cx| s.open_page(Page::Importer, cx)).ok();
+                            }),
+                    )
+                })
                 .when(leftovers, |d| {
                     d.child(
                         Button::new("game-edited-restore")
@@ -386,14 +486,20 @@ impl Shell {
                         .child(files_box(&edited, p))
                         .child(steps(&edited, &repair, p)),
                 )
-                .footer(footer(shell, edited.leftovers(), edited.open(&repair), p))
+                .footer(footer(
+                    shell,
+                    edited.leftovers(),
+                    edited.missing().is_none(),
+                    edited.open(&repair),
+                    p,
+                ))
         });
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Edited, repair};
+    use super::{Edited, notice, repair};
     use swofty_core::install::Source;
     use swofty_core::recovery::Blocked;
     use swofty_core::stock;
@@ -401,6 +507,61 @@ mod tests {
     fn not_stock(n: usize) -> Edited {
         let files = (0..n).map(|i| format!("2025_asset_groups/f{i}.erp")).collect();
         Edited::NotStock(stock::Report::new(files, std::path::Path::new("/games/F1 25")))
+    }
+
+    fn missing(version: Option<&str>) -> Edited {
+        let files = (0..3)
+            .map(|i| format!("character_package/heads/male_driver/nico_rosberg/textures/h{i}.mipmaps"))
+            .collect();
+        Edited::NotStock(stock::Report::missing(
+            files,
+            std::path::Path::new("/games/F1 25"),
+            version.map(str::to_owned),
+        ))
+    }
+
+    #[test]
+    fn missing_files_on_the_latest_game_are_verified() {
+        let r = repair(Source::Steam);
+        let m = missing(Some("1.0.141.7865"));
+        assert_eq!(m.title(), "Some game files are missing");
+        assert_eq!(m.open(&r).unwrap().url, "steam://validate/3059520");
+        let why = m.why(&r);
+        assert!(
+            why.starts_with("3 game files are missing from the F1 25 folder"),
+            "{why}"
+        );
+        assert!(
+            why.contains("Verifying the game files in Steam puts them back"),
+            "{why}"
+        );
+    }
+
+    #[test]
+    fn missing_files_on_an_older_game_are_updated_first() {
+        let r = repair(Source::Steam);
+        let old = missing(Some("1.0.138.5601"));
+        assert_eq!(old.open(&r), None);
+        let why = old.why(&r);
+        assert!(
+            why.contains("Your F1 25 is 1.0.138.5601, older than 1.0.141.7865"),
+            "{why}"
+        );
+        assert!(why.contains("Updating F1 25 puts them back"), "{why}");
+        let unknown = missing(None);
+        assert!(unknown.open(&r).is_some());
+        let why = unknown.why(&r);
+        assert!(
+            why.contains("Updating F1 25, then verifying the game files in Steam, puts them back"),
+            "{why}"
+        );
+        let Edited::NotStock(report) = old else {
+            unreachable!()
+        };
+        assert_eq!(
+            notice(&report, Some(Source::Steam)),
+            "F1 25 is missing game files; update it in Steam or the EA app"
+        );
     }
 
     fn leftovers() -> Edited {

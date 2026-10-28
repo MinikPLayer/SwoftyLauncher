@@ -64,6 +64,8 @@ pub struct GameData {
     pub missing: BTreeSet<String>,
     #[serde(skip)]
     pub supplied: BTreeMap<String, String>,
+    #[serde(skip)]
+    pub added_heads: BTreeSet<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -152,6 +154,20 @@ impl GameData {
             Some(addon) => format!("{label} ({addon})"),
             None => label,
         }
+    }
+
+    pub fn add_heads(&mut self, heads: &[Choice]) {
+        let before = std::mem::take(&mut self.added_heads);
+        self.heads.retain(|c| !before.contains(&c.value));
+        let mut seen = BTreeSet::new();
+        let mut added: Vec<Choice> = heads
+            .iter()
+            .filter(|h| !self.has(List::Head, &h.value) && seen.insert(h.value.clone()))
+            .cloned()
+            .collect();
+        added.sort_by_key(|c| c.label.to_lowercase());
+        self.added_heads = seen;
+        self.heads.extend(added);
     }
 
     pub fn stock_driver(&self, label: &str) -> Option<&StockDriver> {

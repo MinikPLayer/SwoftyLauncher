@@ -8,6 +8,7 @@ cd "$(dirname "$SELF")"
 if ! command -v wine >/dev/null || ! command -v zig >/dev/null; then
     exec nix shell nixpkgs#zig nixpkgs#wineWow64Packages.stable -c "$SELF" "$@"
 fi
+. ./game_lock.sh
 OUT=${1:-$PWD/../build/bind-test}
 DIST=${DIST:-$PWD/../dist}
 EXE=${SWOFTY_TEST_EXE:-$PWD/../../work/exe/F1_25.exe}

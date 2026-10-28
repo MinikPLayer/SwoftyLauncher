@@ -2,6 +2,7 @@
 #include <swofty/mixin.hpp>
 
 #include "perf.hpp"
+#include "runtime.hpp"
 
 using namespace swofty::game;
 
@@ -163,7 +164,41 @@ SWOFTY_WRAP(FeHome_Handle_Command, uint64_t, FEHomeViewModel *vm, NeStr **cmd)
         perf::Scope p(probe);
         settings_command(cmd && *cmd ? *reinterpret_cast<const uint32_t *>(*cmd) : 0x1505);
     }
+    runtime::netplay_home_vm(vm);
     return orig(vm, cmd);
+}
+
+// F1 THE MOVIE home tile. The home case of FeTile_Build_List adds it (FeHome_Add_MovieTile at index
+// r15b+2, then r12 = r15) only while feature flag bit 42 ([rsi+5] & 4) is set; with the flag clear the
+// je skips to the F1 World block, which numbers itself r12+1 from the tile before. The anchor is the
+// movie block's first instruction, the je's fall-through right after the 6 bytes the
+// site_FeHome_AfterCareerCall hook relocates; a short jmp there to the F1 World block builds the
+// flag-clear list, so the button numbering stays contiguous. No branch lands in the 2 replaced bytes.
+namespace {
+
+const runtime::Sig S_MOVIE_TILE{"FeHome_MovieTileBlock",
+                                "41 80 C7 02 4C 89 F1 44 89 FA E8 ?? ?? ?? ?? 45 89 FC 45 8D 7C 24 01 4C 89 F1 44 89 FA E8",
+                                0x1742fdc, runtime::Sig::addr, 0, 0, 0};
+
+void hide_movie_tile()
+{
+    static const uint8_t skip_movie[] = {0xEB, 0x10};
+    auto at = reinterpret_cast<void *>(runtime::find(S_MOVIE_TILE, "home", "core"));
+    DWORD old;
+    bool hidden = at && VirtualProtect(at, sizeof skip_movie, PAGE_EXECUTE_READWRITE, &old);
+    if (hidden) {
+        memcpy(at, skip_movie, sizeof skip_movie);
+        VirtualProtect(at, sizeof skip_movie, old, &old);
+        FlushInstructionCache(GetCurrentProcess(), at, sizeof skip_movie);
+    }
+    swofty::log("[core] F1 THE MOVIE home tile %s", hidden ? "hidden" : "left in place (signature did not resolve)");
+}
+
+}
+
+SWOFTY_ON_LOAD
+{
+    runtime::when_code_ready("core: F1 THE MOVIE home tile", hide_movie_tile);
 }
 
 SWOFTY_MOD(check)

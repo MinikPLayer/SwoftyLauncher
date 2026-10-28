@@ -25,6 +25,9 @@ pub const ERROR_VIRUS_DELETED: i32 = 226;
 pub const REFUSED_EXIT: u8 = 225;
 /// The loader's first line once version.dll is running in the game.
 pub const ATTACHED: &str = "(version.dll proxy) attached";
+/// The tail of the attach line that survives when a concurrent writer
+/// overwrites the start of it.
+const ATTACHED_TAIL: &str = "proxy) attached";
 /// The offline play stub's line when it has the game image and resumes it.
 const PATCHING: &str = "game image at ";
 /// The loader's line in its fallback log naming the game folder's log it
@@ -97,6 +100,54 @@ pub enum Cause {
     /// The game holds a version.dll from another folder and not the game
     /// folder's (`prefer_system32`: its exploit protection asks for that).
     OtherCopy { path: String, prefer_system32: bool },
+    /// The game holds another version.dll, and F1_25.exe has Exploit
+    /// protection program settings.
+    ExploitProtection { path: String },
+    /// The game holds another version.dll, and compatibility settings are on
+    /// for F1_25.exe or Windows loaded its compatibility shims into it.
+    /// `from`: the program that started the game with them.
+    CompatLayer {
+        path: String,
+        layers: Vec<String>,
+        shims: Vec<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        from: Option<Carrier>,
+    },
+    /// The game holds another version.dll, and an antivirus other than
+    /// Microsoft Defender is on.
+    Antivirus { path: String, names: Vec<String> },
+    /// The game holds another version.dll and nothing the session can see
+    /// explains it; `hooks` are the programs hooked into the game.
+    Unexplained { path: String, hooks: Vec<String> },
+    /// Windows denied the session a look inside the game process, and no
+    /// block event or other antivirus explains the miss.
+    Unreadable,
+}
+
+/// A program that hands compatibility layers on to the game it starts.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Carrier {
+    /// Its file name, such as EADesktop.exe.
+    pub name: String,
+    /// Its path, as the setting stores it or as it runs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub exe: Option<String>,
+    /// The settings on it, as `<layers> (for this user|for all users)`;
+    /// empty when it runs with shims and has no setting of its own.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub layers: Vec<String>,
+}
+
+impl Carrier {
+    fn ea_app(&self) -> bool {
+        [crate::ea_app::PROCESS, crate::ea_app::LAUNCHER_EXE]
+            .iter()
+            .any(|n| n.eq_ignore_ascii_case(&self.name))
+    }
+
+    fn launcher(&self) -> bool {
+        self.name.eq_ignore_ascii_case("swofty-launcher.exe")
+    }
 }
 
 impl Cause {
@@ -128,7 +179,58 @@ impl Cause {
                 "the game loaded {path} instead of the game folder's {PROXY}. Security software on this PC most \
                  likely redirected it"
             ),
+            Self::ExploitProtection { path } => format!(
+                "the game loaded {path} instead of the game folder's {PROXY}, and F1_25.exe has its own Exploit \
+                 protection settings in Windows Security, the most likely reason"
+            ),
+            Self::CompatLayer {
+                path,
+                layers,
+                shims,
+                from,
+            } => {
+                let why = match from {
+                    _ if !layers.is_empty() => format!(
+                        "compatibility settings are on for F1_25.exe ({})",
+                        layers.join(", ")
+                    ),
+                    Some(c) if c.layers.is_empty() => format!(
+                        "Windows applied compatibility shims to it ({}), passed on from {}, which runs with them too",
+                        shims.join(", "),
+                        c.name
+                    ),
+                    Some(c) => format!(
+                        "Windows applied compatibility shims to it ({}), passed on from the compatibility settings \
+                         on {} ({})",
+                        shims.join(", "),
+                        c.name,
+                        c.layers.join(", ")
+                    ),
+                    None => format!("Windows applied compatibility shims to it ({})", shims.join(", ")),
+                };
+                format!(
+                    "the game loaded {path} instead of the game folder's {PROXY}, and {why}, the most likely reason"
+                )
+            }
+            Self::Antivirus { path, names } => format!(
+                "the game loaded {path} instead of the game folder's {PROXY}. {}, the antivirus on this PC, most \
+                 likely redirected it",
+                names.join(" and ")
+            ),
+            Self::Unexplained { path, .. } => format!(
+                "the game loaded {path} instead of the game folder's {PROXY}, and Swofty Launcher couldn't tell why"
+            ),
+            Self::Unreadable => format!(
+                "Windows didn't let Swofty Launcher look inside the game (access denied), so it can't tell what kept \
+                 {PROXY} out. Windows Security and Smart App Control show no block"
+            ),
         }
+    }
+
+    /// Whether the session found nothing that explains the miss, so the
+    /// player is pointed at Send Logs and the support Discord.
+    pub fn unexplained(&self) -> bool {
+        matches!(self, Self::Unexplained { .. } | Self::Unreadable)
     }
 
     /// The fix, when it is not the antivirus one.
@@ -155,6 +257,71 @@ impl Cause {
             ),
             Self::OtherCopy { .. } => "To fix it, close F1 25, turn off your antivirus's DLL or behaviour \
                  protection for F1_25.exe (a folder exclusion is often not enough), then launch again."
+                .to_owned(),
+            Self::ExploitProtection { .. } => "To fix it, close F1 25, open Windows Security > App & browser \
+                 control > Exploit protection settings > Program settings, remove every F1_25.exe entry, restart \
+                 the PC, then launch again."
+                .to_owned(),
+            Self::CompatLayer { layers, from, .. } => {
+                const UNTICK: &str = "open Properties > Compatibility and untick everything, then select Change \
+                     settings for all users and untick everything there too";
+                const QUIT_EA: &str = "fully quit the EA app (right-click its icon in the system tray > Exit)";
+                let at = |c: &Carrier| c.exe.as_ref().map(|e| format!(" ({e})")).unwrap_or_default();
+                match from {
+                    _ if !layers.is_empty() => format!(
+                        "To fix it, close F1 25, right-click F1_25.exe in the game folder ({}), {UNTICK}, then \
+                         launch again.",
+                        game.display()
+                    ),
+                    Some(c) if c.layers.is_empty() => format!(
+                        "To fix it, close F1 25, {QUIT_EA}, then press Play in Swofty Launcher without starting \
+                         the EA app first. If mods still don't load, right-click {}{}, {UNTICK}.",
+                        c.name,
+                        at(c)
+                    ),
+                    Some(c) if c.launcher() => format!(
+                        "To fix it, close F1 25 and Swofty Launcher, {QUIT_EA}, right-click {}{}, {UNTICK}, then \
+                         start Swofty Launcher and launch again.",
+                        c.name,
+                        at(c)
+                    ),
+                    Some(c) if c.ea_app() => format!(
+                        "To fix it, close F1 25, {QUIT_EA}, right-click {}{}, {UNTICK}, then launch again.",
+                        c.name,
+                        at(c)
+                    ),
+                    Some(c) => format!(
+                        "To fix it, close F1 25, right-click {}{}, {UNTICK}, then launch again.",
+                        c.name,
+                        at(c)
+                    ),
+                    None => "To fix it, close F1 25, fully quit the EA app or Steam (right-click its icon in the \
+                         system tray > Exit), then press Play in Swofty Launcher without starting them first. If \
+                         mods still don't load, press Send Logs to Developers and ask in the support Discord."
+                        .to_owned(),
+                }
+            }
+            Self::Antivirus { names, .. } => format!(
+                "To fix it, close F1 25, open {}, restore or allow {PROXY} and F1_25.exe if it blocked them, add \
+                 exclusions for the game folder ({}) and the launcher folder, and turn off its DLL or behaviour \
+                 protection for F1_25.exe (a folder exclusion is often not enough), then launch again.",
+                names[0],
+                game.display()
+            ),
+            Self::Unexplained { hooks, .. } => {
+                let close = if hooks.is_empty() {
+                    String::new()
+                } else {
+                    format!("Close {} before you press Play and try again. ", hooks.join(" and "))
+                };
+                format!(
+                    "{close}If mods still don't load, press Send Logs to Developers and ask in the support Discord, \
+                     so the developers can look at your PC's setup."
+                )
+            }
+            Self::Unreadable => "To fix it, close F1 25, fully quit the EA app or Steam from the system tray, then \
+                 launch again. If mods still don't load, press Send Logs to Developers and ask in the support \
+                 Discord."
                 .to_owned(),
             Self::Defender => return None,
         })
@@ -196,14 +363,33 @@ impl Report {
         }
     }
 
+    fn no_loader_folder(&self) -> bool {
+        self.files.iter().any(|f| f == LOADER_FOLDER)
+    }
+
     pub fn title(&self) -> &'static str {
         match self.stage {
+            Stage::BeforeLaunch if self.no_loader_folder() => "Swofty Launcher's loader folder is missing",
             Stage::BeforeLaunch => "Your antivirus removed mod files",
             Stage::InGame => "Mods did not load",
         }
     }
 
     pub fn text(&self) -> String {
+        if self.stage == Stage::BeforeLaunch && self.no_loader_folder() {
+            let launcher = self
+                .launcher
+                .as_ref()
+                .map(|l| format!(" ({})", l.display()))
+                .unwrap_or_default();
+            return format!(
+                "F1 25 was not started: your Swofty Launcher install has no loader folder, the part that puts the \
+                 mods into the game. To fix it, reinstall Swofty Launcher with the installer from f1.swofty.net; \
+                 your addons and settings are kept. If the folder goes missing again, your antivirus removed it: \
+                 restore it from the antivirus's quarantine and add the launcher folder{launcher} to its \
+                 exclusions."
+            );
+        }
         let names = names(&self.files);
         let one = self.files.len() <= 1;
         let it = if one { "it" } else { "them" };
@@ -317,8 +503,12 @@ pub fn missing(game: &Path, dlls: &[(String, String)]) -> Vec<String> {
         .collect()
 }
 
-/// A loader folder of the install that lost version.dll or the core DLL: the
-/// build then finds no loader and the game starts without one.
+/// The report's file list for an install with no loader folder at all.
+pub const LOADER_FOLDER: &str = "loader/";
+
+/// A loader folder of the install that lost version.dll or the core DLL, or
+/// an installed launcher (in a `bin` folder) with no loader folder at all:
+/// the build then finds no loader and the game starts without one.
 pub fn damaged_install() -> Vec<String> {
     if crate::builtin::loader_dir().is_some() || std::env::var_os(LOADER_ENV).is_some() {
         return Vec::new();
@@ -326,11 +516,16 @@ pub fn damaged_install() -> Vec<String> {
     let Some(bin) = launcher_dir() else {
         return Vec::new();
     };
+    damaged_in(&bin)
+}
+
+fn damaged_in(bin: &Path) -> Vec<String> {
     let dirs = [bin.parent().map(|p| p.join("loader")), Some(bin.join("loader"))];
-    let Some(dir) = dirs.into_iter().flatten().find(|d| d.is_dir()) else {
-        return Vec::new();
-    };
-    damaged_loader(&dir)
+    match dirs.into_iter().flatten().find(|d| d.is_dir()) {
+        Some(dir) => damaged_loader(&dir),
+        None if bin.file_name().is_some_and(|n| n == "bin") => vec![LOADER_FOLDER.to_owned()],
+        None => Vec::new(),
+    }
 }
 
 fn damaged_loader(dir: &Path) -> Vec<String> {
@@ -352,7 +547,7 @@ pub enum Attach {
 /// with lines but no attach line (only the offline play stub's), `None` for
 /// an empty one.
 pub fn attached(text: &str) -> Option<bool> {
-    if text.contains(ATTACHED) {
+    if text.contains(ATTACHED_TAIL) {
         return Some(true);
     }
     (!text.trim().is_empty()).then_some(false)
@@ -372,20 +567,13 @@ pub fn refused(fallback: &str) -> Option<String> {
     Some(format!("{log}{rights}"))
 }
 
-/// What the session says when the loader attached but logs to its fallback,
-/// for a launcher that runs as administrator or not.
-pub fn refused_text(elevated: bool) -> String {
-    let fix = if elevated {
-        "close F1 25 and the EA app, then press Play again: Swofty Launcher then starts the EA app as \
-         administrator too"
-    } else {
-        "close F1 25 and the EA app, run Swofty Launcher as administrator, then press Play again, or move F1 25 \
-         to a folder outside Program Files"
-    };
-    format!(
-        "F1 25 can't change files in its folder, so addons that save files there, such as the Career Mode \
-         Editor, don't work. To fix it, {fix}."
-    )
+/// What the session says when the loader attached but logs to its fallback.
+/// The EA app can start F1 25 without administrator rights even when an
+/// elevated launcher started the EA app, so it names no restart as the fix.
+pub fn refused_text() -> &'static str {
+    "F1 25 can't create files in its folder, so this session the loader logs to the data folder and addons keep \
+     their files in addon-storage in the data folder. An addon that writes in the game folder by itself can't save \
+     there; moving F1 25 to a folder outside Program Files fixes that."
 }
 
 /// Follows the game folder's loader.log after the game starts. The stub
@@ -575,6 +763,13 @@ mod tests {
     }
 
     #[test]
+    fn reads_an_attach_line_with_a_clobbered_start() {
+        let clobbered = ".dll proxy) attached, pid 12316\r\n\
+                         2026-10-27 18:31:45.051 [ 2416] host: F1_25.exe\n";
+        assert_eq!(attached(clobbered), Some(true));
+    }
+
+    #[test]
     fn misses_the_loader_a_while_after_the_stub_patched_the_game() {
         let dir = temp("watch-miss");
         let log = dir.join("loader.log");
@@ -641,8 +836,8 @@ mod tests {
         );
         assert_eq!(refused(LOADED), None);
         assert_eq!(refused(STUB), None);
-        assert!(refused_text(true).ends_with("starts the EA app as administrator too."));
-        assert!(refused_text(false).contains("run Swofty Launcher as administrator"));
+        assert!(refused_text().contains("addon-storage"));
+        assert!(!refused_text().contains("administrator"));
     }
 
     #[test]
@@ -774,6 +969,136 @@ mod tests {
             prefer.contains("Exploit protection makes F1_25.exe prefer System32 DLLs. To fix it"),
             "{prefer}"
         );
+        let system = || r"C:\WINDOWS\SYSTEM32\VERSION.dll".to_owned();
+        let exploit = text(&mut r, Cause::ExploitProtection { path: system() });
+        assert!(
+            exploit.contains("has its own Exploit protection settings")
+                && exploit.contains("remove every F1_25.exe entry, restart the PC"),
+            "{exploit}"
+        );
+        let layers = text(
+            &mut r,
+            Cause::CompatLayer {
+                path: system(),
+                layers: vec!["~ WIN8RTM (for this user)".into()],
+                shims: vec!["AcLayers.dll".into()],
+                from: None,
+            },
+        );
+        assert!(
+            layers.contains("compatibility settings are on for F1_25.exe (~ WIN8RTM (for this user))")
+                && layers.contains("Change settings for all users"),
+            "{layers}"
+        );
+        let shims = text(
+            &mut r,
+            Cause::CompatLayer {
+                path: system(),
+                layers: Vec::new(),
+                shims: vec!["AcLayers.dll".into()],
+                from: None,
+            },
+        );
+        assert!(
+            shims.contains("Windows applied compatibility shims to it (AcLayers.dll)")
+                && shims.contains("fully quit the EA app or Steam")
+                && !shims.contains("right-click F1_25.exe"),
+            "{shims}"
+        );
+        const EA: &str = r"C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\EADesktop.exe";
+        let shimmed = |from: Carrier| Cause::CompatLayer {
+            path: system(),
+            layers: Vec::new(),
+            shims: vec!["AcLayers.DLL".into(), "AcGenral.DLL".into()],
+            from: Some(from),
+        };
+        let ea = text(
+            &mut r,
+            shimmed(Carrier {
+                name: "EADesktop.exe".into(),
+                exe: Some(EA.into()),
+                layers: vec!["~ RUNASADMIN (for all users)".into()],
+            }),
+        );
+        assert!(
+            ea.contains(
+                "Windows applied compatibility shims to it (AcLayers.DLL, AcGenral.DLL), passed on from the \
+                 compatibility settings on EADesktop.exe (~ RUNASADMIN (for all users))"
+            ) && ea.contains(&format!(
+                "fully quit the EA app (right-click its icon in the system tray > Exit), right-click EADesktop.exe \
+                 ({EA}), open Properties > Compatibility and untick everything"
+            )) && ea.contains("Change settings for all users")
+                && !ea.contains("F1_25.exe in the game folder"),
+            "{ea}"
+        );
+        let running = text(
+            &mut r,
+            shimmed(Carrier {
+                name: "EADesktop.exe".into(),
+                exe: Some(EA.into()),
+                layers: Vec::new(),
+            }),
+        );
+        assert!(
+            running.contains("passed on from EADesktop.exe, which runs with them too")
+                && running.contains("then press Play in Swofty Launcher without starting the EA app first"),
+            "{running}"
+        );
+        let launcher = text(
+            &mut r,
+            shimmed(Carrier {
+                name: "swofty-launcher.exe".into(),
+                exe: Some(r"C:\Swofty\swofty-launcher.exe".into()),
+                layers: vec!["~ WIN7RTM (for this user)".into()],
+            }),
+        );
+        assert!(
+            launcher.contains("close F1 25 and Swofty Launcher")
+                && launcher.contains(r"right-click swofty-launcher.exe (C:\Swofty\swofty-launcher.exe)")
+                && launcher.contains("then start Swofty Launcher and launch again"),
+            "{launcher}"
+        );
+        let av = text(
+            &mut r,
+            Cause::Antivirus {
+                path: system(),
+                names: vec!["Reason Cybersecurity".into()],
+            },
+        );
+        assert!(
+            av.contains("Reason Cybersecurity, the antivirus on this PC, most likely redirected it")
+                && av.contains("open Reason Cybersecurity, restore or allow version.dll"),
+            "{av}"
+        );
+        let unexplained = text(
+            &mut r,
+            Cause::Unexplained {
+                path: system(),
+                hooks: vec!["Medal".into()],
+            },
+        );
+        assert!(
+            unexplained.contains("Swofty Launcher couldn't tell why")
+                && unexplained.contains("Close Medal before you press Play")
+                && unexplained.contains("support Discord")
+                && !unexplained.contains("antivirus"),
+            "{unexplained}"
+        );
+        assert!(
+            Cause::Unexplained {
+                path: system(),
+                hooks: Vec::new()
+            }
+            .unexplained()
+        );
+        let unreadable = text(&mut r, Cause::Unreadable);
+        assert!(
+            unreadable.contains("access denied")
+                && unreadable.contains("Send Logs")
+                && !unreadable.contains("antivirus"),
+            "{unreadable}"
+        );
+        assert!(Cause::Unreadable.unexplained());
         r.removed = true;
         assert!(
             r.text()
@@ -783,6 +1108,28 @@ mod tests {
         r.removed = false;
         assert_eq!(r.text(), fallback);
         assert_eq!(r.title(), "Mods did not load");
+    }
+
+    #[test]
+    fn an_install_without_a_loader_folder_says_reinstall() {
+        let root = temp("no-loader");
+        let bin = root.join("bin");
+        std::fs::create_dir_all(&bin).unwrap();
+        assert_eq!(damaged_in(&bin), [LOADER_FOLDER]);
+        assert!(damaged_in(&root.join("debug")).is_empty(), "a source build");
+        std::fs::create_dir_all(root.join("loader")).unwrap();
+        assert_eq!(
+            damaged_in(&bin),
+            ["loader/version.dll", "loader/swofty/addons/core/swofty_core.dll"]
+        );
+        let r = Report::new(
+            Stage::BeforeLaunch,
+            vec![LOADER_FOLDER.into()],
+            Path::new("/games/F1 25"),
+        );
+        assert_eq!(r.title(), "Swofty Launcher's loader folder is missing");
+        assert!(r.text().contains("reinstall Swofty Launcher"), "{}", r.text());
+        std::fs::remove_dir_all(&root).ok();
     }
 
     #[test]

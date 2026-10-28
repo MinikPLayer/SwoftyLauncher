@@ -14,13 +14,15 @@ use gpui_kit::component::{Disableable, Icon, Sizable, WindowExt, h_flex, v_flex}
 use gpui_kit::prelude::FluentBuilder;
 use gpui_kit::*;
 use swofty_core::conflicts::{self, Pair, Report};
+use swofty_core::folders::{self, Entry, Key, Spot};
 use swofty_core::import::{self, Route};
 use swofty_core::manifest::{Category, Kind, MANIFEST_FILE};
 use swofty_core::profile::VANILLA;
+use swofty_core::save_backup;
 
 use crate::library::{AddonItem, Changes, Source, plural};
 use crate::pages::{GUTTER, addon_icon, badge, chevron, fact, label, logo, tag, track_badge};
-use crate::shell::{Page, Shell};
+use crate::shell::{Page, Prompt, Shell};
 use crate::theme::{Palette, SCROLLBAR_GAP, ScrollArea, palette};
 
 const FADE: Duration = Duration::from_secs(4);
@@ -137,21 +139,8 @@ impl Facet {
 }
 
 /// Addons that load first, in this order: SwoftyMod, then Simplified for Swofty.
-/// Nothing is placed above them.
+/// They make up Built In, and nothing is placed above them.
 const PINNED: [&str; 2] = [swofty_core::builtin::CORE_ID, swofty_core::managed::ID];
-
-/// How far `id`, at `from` among `addons`, moves to land on `to`, kept below
-/// the pinned addons.
-fn pinned_delta(addons: &[swofty_core::profile::ProfileAddon], id: &str, from: usize, to: usize) -> isize {
-    let floor = addons
-        .iter()
-        .filter(|a| a.id != id)
-        .enumerate()
-        .filter(|(_, a)| PINNED.contains(&a.id.as_str()))
-        .last()
-        .map_or(0, |(i, _)| i + 1);
-    to.max(floor) as isize - from as isize
-}
 
 /// The experimental features an addon turns on, as "Overlay".
 fn experimental_labels(m: &AddonItem) -> String {
@@ -189,15 +178,25 @@ fn fallback_icon(m: &AddonItem, size: f32, p: Palette) -> Div {
     }
 }
 
+#[derive(Clone, PartialEq)]
+enum Dragging {
+    Addon(String),
+    Folder(Key),
+}
+
 #[derive(Clone)]
-struct DraggedAddon {
-    id: String,
+struct Dragged {
+    item: Dragging,
     name: SharedString,
 }
 
-impl Render for DraggedAddon {
+impl Render for Dragged {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let p = palette(cx);
+        let icon = match self.item {
+            Dragging::Addon(_) => IconName::GripVertical,
+            Dragging::Folder(_) => IconName::Folder,
+        };
         h_flex()
             .px(px(10.))
             .py(px(6.))
@@ -208,27 +207,47 @@ impl Render for DraggedAddon {
             .border_color(p.accent)
             .text_size(px(13.))
             .text_color(p.text)
-            .child(
-                Icon::new(IconName::GripVertical)
-                    .size(px(13.))
-                    .text_color(p.text_muted),
-            )
+            .child(Icon::new(icon).size(px(13.)).text_color(p.text_muted))
             .child(self.name.clone())
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Edge {
+    Above,
+    Below,
+    Into,
+}
+
+/// Where a dragged addon or folder lands, and the list item that marks it.
+#[derive(Debug, Clone, PartialEq)]
+struct DropAt {
+    spot: Spot,
+    ix: usize,
+    edge: Edge,
+    nested: bool,
+}
+
+const NESTED: f32 = 22.;
+
 #[derive(Clone, PartialEq)]
 enum AddonListItem {
-    Heading {
-        group: Option<bool>,
-        first: bool,
-        empty: bool,
+    Heading,
+    Folder {
+        key: Key,
+        at: usize,
+        count: usize,
+        on: usize,
+        open: bool,
     },
     Addon {
         index: usize,
         position: Option<usize>,
+        at: usize,
+        nested: Option<(Key, usize)>,
     },
     Detail(String),
+    End,
     BrokenHeading,
     Broken(usize),
 }
@@ -251,6 +270,7 @@ pub(crate) struct AddonsPage {
     all_items: HashSet<(String, String)>,
     advanced: bool,
     changes: HashMap<String, Changes>,
+    drop: Option<DropAt>,
     _search: Subscription,
 }
 
@@ -284,6 +304,7 @@ impl AddonsPage {
             all_items: HashSet::new(),
             advanced: false,
             changes: HashMap::new(),
+            drop: None,
             _search: changed,
         }
     }
@@ -500,6 +521,32 @@ fn pill(icon: IconName, text: impl Into<SharedString>, color: Hsla) -> Div {
         .child(text.into())
 }
 
+/// The line, or for a folder the outline, that shows where a drop lands.
+fn drop_mark(edge: Edge, nested: bool, p: Palette) -> Div {
+    let line = || {
+        div()
+            .absolute()
+            .left(px(if nested { 6. + NESTED } else { 6. }))
+            .right(px(8.))
+            .h(px(2.))
+            .rounded(px(1.))
+            .bg(p.accent)
+    };
+    match edge {
+        Edge::Above => line().top_0(),
+        Edge::Below => line().bottom_0(),
+        Edge::Into => div()
+            .absolute()
+            .top_0()
+            .bottom_0()
+            .left_0()
+            .right_0()
+            .border_1()
+            .border_color(p.accent)
+            .bg(p.accent.opacity(0.08)),
+    }
+}
+
 impl Shell {
     fn addon_on(&self, m: &AddonItem) -> bool {
         !self.vanilla() && (m.enabled || m.locked)
@@ -558,6 +605,48 @@ impl Shell {
             .map_or_else(|| id.to_owned(), |a| a.manifest.name.clone())
     }
 
+    /// The requirements of an addon that's on which stop Play, and those listed below it, which the build
+    /// loads first anyway.
+    fn needs(&self, m: &AddonItem) -> Vec<Need> {
+        if self.vanilla() || !m.enabled {
+            return Vec::new();
+        }
+        let order: HashMap<&str, usize> = self
+            .library
+            .profile
+            .enabled()
+            .enumerate()
+            .map(|(i, id)| (id, i))
+            .collect();
+        m.manifest
+            .requires
+            .iter()
+            .filter_map(|r| {
+                let need = |kind| Need {
+                    id: r.id.clone(),
+                    name: self.addon_name(&r.id),
+                    kind,
+                };
+                let Some(dep) = self.library.addons.iter().find(|a| a.manifest.id == r.id) else {
+                    return Some(need(NeedKind::Missing));
+                };
+                if !dep.enabled {
+                    return Some(need(NeedKind::Off));
+                }
+                if !r.version.matches(&dep.manifest.version) {
+                    return Some(need(NeedKind::Version {
+                        wanted: r.version.to_string(),
+                        found: dep.manifest.version.to_string(),
+                    }));
+                }
+                match (order.get(r.id.as_str()), order.get(m.manifest.id.as_str())) {
+                    (Some(dep_at), Some(at)) if dep_at > at => Some(need(NeedKind::Below)),
+                    _ => None,
+                }
+            })
+            .collect()
+    }
+
     fn matches_facet(&self, m: &AddonItem, f: Facet) -> bool {
         match f {
             Facet::Category(c) => m.category() == c,
@@ -579,31 +668,30 @@ impl Shell {
             })
     }
 
-    /// The profile's enabled addons in load order, then the rest; and how many
-    /// are in the load order.
-    fn ordered(&self) -> (Vec<&AddonItem>, usize) {
+    /// Where each listed addon that's on loads, counting from 1; and how many are on.
+    fn positions(&self) -> (HashMap<&str, usize>, usize) {
         if self.vanilla() {
-            return (self.library.listed().collect(), 0);
+            return (HashMap::new(), 0);
         }
-        let by_id: HashMap<&str, &AddonItem> = self
+        let on: HashSet<&str> = self
             .library
             .listed()
-            .map(|a| (a.manifest.id.as_str(), a))
+            .filter(|m| self.addon_on(m))
+            .map(|m| m.manifest.id.as_str())
             .collect();
-        let mut out: Vec<&AddonItem> = self
-            .library
-            .profile
-            .enabled()
-            .filter_map(|id| by_id.get(id).copied())
-            .collect();
-        let loaded = out.len();
-        let enabled: HashSet<&str> = out.iter().map(|a| a.manifest.id.as_str()).collect();
-        for m in self.library.listed() {
-            if !enabled.contains(m.manifest.id.as_str()) {
-                out.push(m);
+        let mut out = HashMap::new();
+        for e in &self.library.entries {
+            let ids = match e {
+                Entry::Addon(id) => std::slice::from_ref(id),
+                Entry::Folder(_, members) => members.as_slice(),
+            };
+            for id in ids.iter().filter(|id| on.contains(id.as_str())) {
+                let n = out.len() + 1;
+                out.insert(id.as_str(), n);
             }
         }
-        (out, loaded)
+        let n = out.len();
+        (out, n)
     }
 
     fn sync_addons(&mut self) {
@@ -638,6 +726,17 @@ impl Shell {
                 self.addons.seen = Some(at);
                 self.addons.scroll_pending = true;
                 self.open_addon = Some(id.clone());
+                if let Some(key) = self
+                    .library
+                    .place(&id)
+                    .filter(|k| self.library.folders.is_collapsed(k))
+                {
+                    let mut f = self.library.folders.clone();
+                    f.set_collapsed(&key, false);
+                    if self.store.save_folders(&f).is_ok() {
+                        self.library.folders = f;
+                    }
+                }
                 if hidden {
                     self.addons.facets.clear();
                     if !query.is_empty() {
@@ -722,7 +821,10 @@ impl Shell {
                             let store = &store;
                             store.install_addons(path).into_iter().map(move |r| match r {
                                 Ok(m) => Ok((swofty_core::tracks::left_out_lines(store, &m), m)),
-                                Err(e) => Err(format!("{name}: {e}")),
+                                Err(e) => {
+                                    crate::app_log::action("install addon").file(path).failed(&e);
+                                    Err(format!("{name}: {e}"))
+                                }
                             })
                         })
                         .collect::<Vec<_>>()
@@ -756,88 +858,254 @@ impl Shell {
         .detach();
     }
 
-    fn move_onto(&mut self, id: &str, target: &str, window: &mut Window, cx: &mut Context<Self>) {
-        let addons = &self.library.profile.addons;
-        let at = |x: &str| addons.iter().position(|a| a.id == x);
-        let (Some(a), Some(b)) = (at(id), at(target)) else {
-            return;
-        };
-        let delta = pinned_delta(addons, id, a, b);
-        if delta != 0 {
-            let id = id.to_owned();
-            self.update_profile(window, cx, |p| p.move_addon(&id, delta));
-        }
-    }
-
-    /// Whether the list shows `id` among the addons that are on.
-    fn listed_on(&self, id: &str) -> bool {
-        let (order, loaded) = self.ordered();
-        order[..loaded].iter().any(|m| m.manifest.id == id)
-    }
-
-    /// Drops `id` on `target`: onto an addon that is on, it turns on and takes that
-    /// place in the load order; onto one that is off, it turns off.
-    fn drop_onto(&mut self, id: &str, target: &str, window: &mut Window, cx: &mut Context<Self>) {
-        match (self.listed_on(id), self.listed_on(target)) {
-            (true, true) => {
-                if self
-                    .library
-                    .listed()
-                    .any(|m| m.manifest.id == id && self.movable(m))
-                {
-                    self.move_onto(id, target, window, cx);
-                }
-            }
-            (false, true) => {
-                let registry = self.library.registry.clone();
-                let (id, target) = (id.to_owned(), target.to_owned());
-                self.update_profile(window, cx, |p| {
-                    registry.set_enabled(p, &id, true)?;
-                    let at = |x: &str| p.addons.iter().position(|a| a.id == x);
-                    match (at(&id), at(&target)) {
-                        (Some(a), Some(b)) => match pinned_delta(&p.addons, &id, a, b) {
-                            0 => Ok(()),
-                            delta => p.move_addon(&id, delta),
-                        },
-                        _ => Ok(()),
-                    }
-                });
-            }
-            (true, false) => self.set_addon_enabled(id, false, window, cx),
-            (false, false) => {}
-        }
-    }
-
-    /// Drops `id` on a group's heading: ON turns it on, OFF turns it off.
-    fn drop_into(&mut self, id: &str, on: bool, window: &mut Window, cx: &mut Context<Self>) {
-        if self.listed_on(id) != on {
-            self.set_addon_enabled(id, on, window, cx);
-        }
-    }
-
-    /// Addons that can be dragged between ON and OFF, and turned on or off.
-    fn switchable(&self, m: &AddonItem) -> bool {
-        !self.vanilla() && !m.locked
+    /// Addons that can be dragged and moved with the arrows: anything outside Built In.
+    fn movable(&self, m: &AddonItem) -> bool {
+        !self.vanilla()
+            && !m.locked
+            && m.source != Source::Builtin
+            && !m.manifest.is_builtin()
+            && !PINNED.contains(&m.manifest.id.as_str())
     }
 
     fn move_step(&mut self, id: &str, up: bool, window: &mut Window, cx: &mut Context<Self>) {
-        let (order, loaded) = self.ordered();
-        let order: Vec<String> = order[..loaded].iter().map(|m| m.manifest.id.clone()).collect();
-        let Some(i) = order.iter().position(|x| x == id) else {
+        let Some(spot) = folders::step(&self.library.entries, id, up) else {
             return;
         };
-        let j = if up { i.checked_sub(1) } else { Some(i + 1) };
-        if let Some(target) = j.and_then(|j| order.get(j)) {
-            self.move_onto(id, target, window, cx);
+        let mut entries = self.library.entries.clone();
+        if folders::move_addon(&mut entries, id, &spot).is_some() {
+            self.save_order(entries, None, window, cx);
         }
     }
 
-    fn movable(&self, m: &AddonItem) -> bool {
-        !self.vanilla()
-            && m.enabled
-            && !m.locked
-            && !m.manifest.is_builtin()
-            && !PINNED.contains(&m.manifest.id.as_str())
+    /// Where something dragged over list item `ix`, at `frac` of its height from the top, lands.
+    fn drop_for(&self, ix: usize, frac: f32, dragging: &Dragging) -> Option<DropAt> {
+        let items = &self.addons.list_items;
+        let folder_drag = matches!(dragging, Dragging::Folder(_));
+        let mark = |spot: Spot, ix: usize, edge: Edge, nested: bool| DropAt {
+            spot,
+            ix,
+            edge,
+            nested,
+        };
+        let after = |key: &Key, at: usize, row: usize| {
+            let last = items[row + 1..]
+                .iter()
+                .take_while(|i| match i {
+                    AddonListItem::Addon {
+                        nested: Some((k, _)), ..
+                    } => k == key,
+                    AddonListItem::Detail(_) => true,
+                    _ => false,
+                })
+                .count();
+            mark(Spot::Top(at + 1), row + last, Edge::Below, false)
+        };
+        match items.get(ix)? {
+            AddonListItem::End => Some(mark(
+                Spot::Top(self.library.entries.len()),
+                ix,
+                Edge::Above,
+                false,
+            )),
+            AddonListItem::Folder {
+                key: Key::BuiltIn, ..
+            } => None,
+            AddonListItem::Folder { key, .. } if *dragging == Dragging::Folder(key.clone()) => None,
+            AddonListItem::Folder { key, at, open, .. } => Some(match folder_drag {
+                true if frac < 0.5 => mark(Spot::Top(*at), ix, Edge::Above, false),
+                true => after(key, *at, ix),
+                false if frac < 0.3 => mark(Spot::Top(*at), ix, Edge::Above, false),
+                false if !open && frac > 0.7 => mark(Spot::Top(at + 1), ix, Edge::Below, false),
+                false => {
+                    let len = self.library.entries.get(*at).map_or(0, |e| match e {
+                        Entry::Folder(_, members) => members.len(),
+                        Entry::Addon(_) => 0,
+                    });
+                    mark(Spot::In(key.clone(), len), ix, Edge::Into, false)
+                }
+            }),
+            AddonListItem::Addon { at, nested: None, .. } => Some(match frac < 0.5 {
+                true => mark(Spot::Top(*at), ix, Edge::Above, false),
+                false => mark(Spot::Top(at + 1), ix, Edge::Below, false),
+            }),
+            AddonListItem::Addon {
+                nested: Some((Key::BuiltIn, _)),
+                ..
+            } => None,
+            AddonListItem::Addon {
+                at,
+                nested: Some((key, j)),
+                ..
+            } => {
+                if !folder_drag {
+                    return Some(match frac < 0.5 {
+                        true => mark(Spot::In(key.clone(), *j), ix, Edge::Above, true),
+                        false => mark(Spot::In(key.clone(), j + 1), ix, Edge::Below, true),
+                    });
+                }
+                if *dragging == Dragging::Folder(key.clone()) {
+                    return None;
+                }
+                let row = items[..ix]
+                    .iter()
+                    .rposition(|i| matches!(i, AddonListItem::Folder { key: k, .. } if k == key))?;
+                let members: Vec<usize> = (row + 1..items.len())
+                    .take_while(|&i| match &items[i] {
+                        AddonListItem::Addon {
+                            nested: Some((k, _)), ..
+                        } => k == key,
+                        AddonListItem::Detail(_) => true,
+                        _ => false,
+                    })
+                    .collect();
+                let place = members.iter().position(|&i| i == ix).unwrap_or(0) as f32 + frac;
+                Some(match place < members.len() as f32 / 2. {
+                    true => mark(Spot::Top(*at), row, Edge::Above, false),
+                    false => after(key, *at, row),
+                })
+            }
+            _ => None,
+        }
+    }
+
+    fn apply_drop(&mut self, d: &Dragged, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(drop) = self.addons.drop.take() else {
+            return;
+        };
+        let mut entries = self.library.entries.clone();
+        match &d.item {
+            Dragging::Addon(id) => {
+                if let Some(place) = folders::move_addon(&mut entries, id, &drop.spot) {
+                    self.save_order(entries, Some((id.clone(), place)), window, cx);
+                }
+            }
+            Dragging::Folder(key) => {
+                if let Spot::Top(to) = drop.spot
+                    && folders::move_folder(&mut entries, key, to)
+                {
+                    self.save_order(entries, None, window, cx);
+                }
+            }
+        }
+        cx.notify();
+    }
+
+    /// Saves a new list: `placed` is an addon that changed folder and the one it is in now.
+    fn save_order(
+        &mut self,
+        entries: Vec<Entry>,
+        placed: Option<(String, Option<Key>)>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let mut moved_folder = false;
+        if let Some((id, place)) = placed {
+            let default = self
+                .library
+                .addons
+                .iter()
+                .find(|a| a.manifest.id == id)
+                .and_then(|a| folders::default_place(a.source == Source::Builtin, a.category()));
+            let mut f = self.library.folders.clone();
+            f.set_place(&id, place.as_ref(), default.as_ref());
+            if f != self.library.folders {
+                if let Err(e) = self.store.save_folders(&f) {
+                    crate::app_log::action("save folders").failed(&e);
+                    window.push_notification(Notification::error(e.to_string()), cx);
+                    return;
+                }
+                moved_folder = true;
+            }
+        }
+        let order = folders::flatten(&entries);
+        if order == folders::flatten(&self.library.entries) {
+            if moved_folder {
+                self.reload(cx);
+            }
+            return;
+        }
+        let installed: HashSet<String> = self
+            .library
+            .addons
+            .iter()
+            .map(|a| a.manifest.id.clone())
+            .collect();
+        self.update_profile(window, cx, move |p| {
+            folders::reorder(p, &order, &|id| installed.contains(id));
+            Ok(())
+        });
+    }
+
+    fn toggle_folder(&mut self, key: &Key, window: &mut Window, cx: &mut Context<Self>) {
+        let mut f = self.library.folders.clone();
+        f.set_collapsed(key, !f.is_collapsed(key));
+        match self.store.save_folders(&f) {
+            Ok(()) => self.library.folders = f,
+            Err(e) => {
+                crate::app_log::action("save folders").failed(&e);
+                window.push_notification(Notification::error(e.to_string()), cx)
+            }
+        }
+        cx.notify();
+    }
+
+    fn new_folder(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let prompt = Prompt {
+            title: "New folder",
+            description: "Drag addons onto the folder to put them in it. Its addons load together, \
+                          and dragging the folder moves them all."
+                .to_owned(),
+            initial: String::new(),
+            placeholder: "Folder name",
+            ok: "Make folder",
+            browse: None,
+            action: std::rc::Rc::new(|store, name| {
+                let mut f = store.folders();
+                f.check_name(name, None)?;
+                f.create(name);
+                store.save_folders(&f).map_err(|e| e.to_string())?;
+                Ok(format!("Made the folder {name}"))
+            }),
+        };
+        self.prompt(prompt, window, cx);
+    }
+
+    fn rename_folder(&mut self, id: &str, window: &mut Window, cx: &mut Context<Self>) {
+        let initial = self
+            .library
+            .folders
+            .folder(id)
+            .map(|f| f.name.clone())
+            .unwrap_or_default();
+        let id = id.to_owned();
+        let prompt = Prompt {
+            title: "Rename folder",
+            description: "Its addons stay where they are.".to_owned(),
+            initial,
+            placeholder: "Folder name",
+            ok: "Rename",
+            browse: None,
+            action: std::rc::Rc::new(move |store, name| {
+                let mut f = store.folders();
+                f.check_name(name, Some(&id))?;
+                f.rename(&id, name);
+                store.save_folders(&f).map_err(|e| e.to_string())?;
+                Ok(format!("Renamed the folder to {name}"))
+            }),
+        };
+        self.prompt(prompt, window, cx);
+    }
+
+    /// Removes a folder of the player's own; its addons go back to their own folders.
+    fn remove_folder(&mut self, id: &str, window: &mut Window, cx: &mut Context<Self>) {
+        let mut f = self.library.folders.clone();
+        f.remove(id);
+        if let Err(e) = self.store.save_folders(&f) {
+            crate::app_log::action("save folders").failed(&e);
+            window.push_notification(Notification::error(e.to_string()), cx);
+            return;
+        }
+        self.reload(cx);
     }
 
     /// Turns off every addon except those that are always on and those whose
@@ -902,8 +1170,8 @@ impl Shell {
     }
 
     fn launching(&self) -> bool {
-        use crate::shell::PlayState::{Launching, Restoring, Running};
-        matches!(self.play_state(), Launching | Restoring | Running)
+        use crate::shell::PlayState::{Building, Launching, Restoring, Running};
+        matches!(self.play_state(), Launching | Restoring | Running | Building)
     }
 
     fn check_conflicts(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -936,8 +1204,11 @@ impl Shell {
                             s.addons.report = Some(report);
                         }
                     }
-                    Err(e) => window
-                        .push_notification(Notification::error(e).title("Could not check conflicts"), cx),
+                    Err(e) => {
+                        crate::app_log::action("check conflicts").failed(&e);
+                        window
+                            .push_notification(Notification::error(e).title("Could not check conflicts"), cx)
+                    }
                 }
                 cx.notify();
             })
@@ -997,6 +1268,7 @@ impl Shell {
                     self.library.profile.name
                 ))
         });
+        let saves = self.save_notice(p, cx);
         let hidden = self.library.addons.len() - self.library.listed().count();
         let tracks = self.library.tracks_page.filter(|_| hidden > 0).map(|i| {
             h_flex()
@@ -1037,6 +1309,7 @@ impl Shell {
         v_flex()
             .size_full()
             .child(self.header(Page::Addons.label(), subtitle, div().children(actions), p))
+            .children(saves)
             .children(pending)
             .children(tracks)
             .child(self.install_cards(p, cx))
@@ -1053,6 +1326,80 @@ impl Shell {
                     .children(detail),
             )
             .into_any_element()
+    }
+
+    fn save_notice(&self, p: Palette, cx: &mut Context<Self>) -> Option<Div> {
+        let notice = save_backup::read_notice(&self.store.root)?;
+        let name = notice.backup.clone();
+        Some(
+            h_flex()
+                .px(px(GUTTER))
+                .pb(px(12.))
+                .gap(px(8.))
+                .flex_shrink_0()
+                .items_center()
+                .text_size(px(13.))
+                .text_color(p.text_muted)
+                .child(
+                    Icon::new(IconName::CircleAlert)
+                        .size(px(14.))
+                        .text_color(p.warning),
+                )
+                .child(div().flex_1().min_w_0().child(format!(
+                    "The profile save shrank from {} to {} bytes in a session without {}; their careers may be \
+                     gone. Backup {} holds the save from before that session.",
+                    notice.before,
+                    notice.after,
+                    notice.absent.join(", "),
+                    notice.backup
+                )))
+                .child(
+                    Button::new("restore-save")
+                        .outline()
+                        .small()
+                        .label("Restore")
+                        .on_click(cx.listener(move |this, _, window, cx| this.restore_save(&name, window, cx))),
+                )
+                .child(
+                    Button::new("dismiss-save-notice")
+                        .ghost()
+                        .small()
+                        .label("Dismiss")
+                        .on_click(cx.listener(|this, _, _, cx| {
+                            save_backup::clear_notice(&this.store.root);
+                            cx.notify();
+                        })),
+                ),
+        )
+    }
+
+    fn restore_save(&mut self, name: &str, window: &mut Window, cx: &mut Context<Self>) {
+        if swofty_core::process::game_running() {
+            window.push_notification(Notification::warning("Close F1 25, then restore the save."), cx);
+            return;
+        }
+        let root = self.store.root.clone();
+        let restored = save_backup::find(&root, name).and_then(|b| {
+            let dir = match b.manifest.save_dir.is_dir() {
+                true => Some(b.manifest.save_dir.clone()),
+                false => swofty_core::steam::find_save_dir(),
+            }
+            .ok_or_else(|| swofty_core::Error::Other("no Steam save folder found to restore into".into()))?;
+            save_backup::restore(&root, name, &dir, &save_backup::now_stamp())
+        });
+        let note = match restored {
+            Ok(Some(before)) => Notification::success(format!(
+                "Restored the profile save from {name}. The save it replaced is backup {}.",
+                before.name
+            )),
+            Ok(None) => Notification::success(format!("Restored the profile save from {name}.")),
+            Err(e) => {
+                crate::app_log::action("restore a save").failed(&e);
+                Notification::error(format!("The save was not restored: {e}"))
+            }
+        };
+        window.push_notification(note, cx);
+        cx.notify();
     }
 
     fn install_cards(&self, p: Palette, cx: &mut Context<Self>) -> impl IntoElement {
@@ -1306,15 +1653,12 @@ impl Shell {
         p: Palette,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let (order, loaded) = self.ordered();
-        let total = order.len();
-        let shown: Vec<(usize, String)> = order
-            .iter()
-            .enumerate()
-            .filter(|(_, m)| self.passes(m, query, None))
-            .map(|(i, m)| (i, m.manifest.id.clone()))
-            .collect();
+        if !cx.has_active_drag() {
+            self.addons.drop = None;
+        }
         let vanilla = self.vanilla();
+        let filtering = !query.is_empty() || !self.addons.facets.is_empty();
+        let (positions, _) = self.positions();
         let indices: HashMap<&str, usize> = self
             .library
             .addons
@@ -1322,44 +1666,66 @@ impl Shell {
             .enumerate()
             .map(|(i, a)| (a.manifest.id.as_str(), i))
             .collect();
-        let mut children = Vec::new();
+        let listed: HashMap<&str, &AddonItem> = self
+            .library
+            .listed()
+            .map(|a| (a.manifest.id.as_str(), a))
+            .collect();
+        let total = listed.len();
+        let passes = |id: &str| listed.get(id).is_some_and(|m| self.passes(m, query, None));
+        let matched = listed.keys().filter(|id| passes(id)).count();
+        let mut children = vec![AddonListItem::Heading];
         let mut scroll_to = None;
-        let mut last_group = None;
-        if !vanilla && !shown.iter().any(|(i, _)| *i < loaded) {
-            children.push(AddonListItem::Heading {
-                group: Some(true),
-                first: true,
-                empty: true,
-            });
-        }
-        for (i, id) in &shown {
-            let group = (!vanilla).then_some(*i < loaded);
-            if group != last_group {
-                children.push(AddonListItem::Heading {
-                    group,
-                    first: children.is_empty(),
-                    empty: false,
+        let mut push =
+            |children: &mut Vec<AddonListItem>, id: &str, at: usize, nested: Option<(Key, usize)>| {
+                let Some(&index) = indices.get(id) else {
+                    return;
+                };
+                if highlight.is_some_and(|(h, _)| h == id) && self.addons.scroll_pending {
+                    scroll_to = Some(children.len());
+                }
+                children.push(AddonListItem::Addon {
+                    index,
+                    position: positions.get(id).copied(),
+                    at,
+                    nested,
                 });
-                last_group = group;
-            }
-            let fade = highlight.filter(|(h, _)| h == id).map(|(_, k)| *k);
-            if fade.is_some() && self.addons.scroll_pending {
-                scroll_to = Some(children.len());
-            }
-            let position = (*i < loaded && !vanilla).then_some(*i + 1);
-            if let Some(&index) = indices.get(id.as_str()) {
-                children.push(AddonListItem::Addon { index, position });
-            }
-            if !split && self.open_addon.as_ref() == Some(id) {
-                children.push(AddonListItem::Detail(id.clone()));
+                if !split && self.open_addon.as_deref() == Some(id) {
+                    children.push(AddonListItem::Detail(id.to_owned()));
+                }
+            };
+        for (at, entry) in self.library.entries.iter().enumerate() {
+            match entry {
+                Entry::Addon(id) if passes(id) => push(&mut children, id, at, None),
+                Entry::Addon(_) => {}
+                Entry::Folder(key, members) => {
+                    let inside: Vec<&AddonItem> = members
+                        .iter()
+                        .filter_map(|id| listed.get(id.as_str()).copied())
+                        .collect();
+                    let matching: Vec<(usize, &String)> =
+                        members.iter().enumerate().filter(|(_, id)| passes(id)).collect();
+                    if matching.is_empty() && (filtering || !matches!(key, Key::Own(_))) {
+                        continue;
+                    }
+                    let open = filtering || !self.library.folders.is_collapsed(key);
+                    children.push(AddonListItem::Folder {
+                        key: key.clone(),
+                        at,
+                        count: inside.len(),
+                        on: inside.iter().filter(|m| self.addon_on(m)).count(),
+                        open,
+                    });
+                    if open {
+                        for (j, id) in matching {
+                            push(&mut children, id, at, Some((key.clone(), j)));
+                        }
+                    }
+                }
             }
         }
-        if !vanilla && last_group != Some(false) {
-            children.push(AddonListItem::Heading {
-                group: Some(false),
-                first: children.is_empty(),
-                empty: true,
-            });
+        if !vanilla {
+            children.push(AddonListItem::End);
         }
         let needle = query.trim().to_lowercase();
         let broken: Vec<usize> = (0..self.library.broken.len())
@@ -1372,7 +1738,18 @@ impl Shell {
             children.push(AddonListItem::BrokenHeading);
             children.extend(broken.into_iter().map(AddonListItem::Broken));
         }
-        if self.addons.list_items != children {
+        if self.addons.list_items.len() == children.len() {
+            // Same rows with new contents, such as a switch or a folder's count: keep the scroll.
+            for (i, (old, new)) in self.addons.list_items.iter().zip(&children).enumerate() {
+                if old != new || matches!(new, AddonListItem::Detail(_)) {
+                    self.addons.scroll.remeasure_items(i..i + 1);
+                }
+            }
+            if self.addons.list_items != children {
+                self.addons.list_items = children;
+                self.addons.drop = None;
+            }
+        } else {
             let old = &self.addons.list_items;
             let prefix = old.iter().zip(&children).take_while(|(a, b)| a == b).count();
             let suffix = old[prefix..]
@@ -1385,13 +1762,7 @@ impl Shell {
                 .scroll
                 .splice(prefix..old.len() - suffix, children.len() - prefix - suffix);
             self.addons.list_items = children;
-        } else {
-            // Inline details can change height without changing the list's items.
-            for (i, item) in self.addons.list_items.iter().enumerate() {
-                if matches!(item, AddonListItem::Detail(_)) {
-                    self.addons.scroll.remeasure_items(i..i + 1);
-                }
-            }
+            self.addons.drop = None;
         }
         if let Some(ix) = scroll_to {
             self.addons.smooth.cancel();
@@ -1415,15 +1786,25 @@ impl Shell {
             } else {
                 "Lower in the list wins when two addons change the same thing".to_owned()
             }))
-            .when(shown.len() != total, |d| {
+            .when(matched != total, |d| {
                 d.child(
                     div()
                         .flex_shrink_0()
                         .text_color(p.text_placeholder)
-                        .child(format!("{} of {total}", shown.len())),
+                        .child(format!("{matched} of {total}")),
+                )
+            })
+            .when(!vanilla, |d| {
+                d.child(
+                    Button::new("new-folder")
+                        .ghost()
+                        .xsmall()
+                        .icon(IconName::FolderPlus)
+                        .label("New folder")
+                        .on_click(cx.listener(|this, _, window, cx| this.new_folder(window, cx))),
                 )
             });
-        let body = if shown.is_empty() {
+        let body = if matched == 0 {
             v_flex()
                 .flex_1()
                 .items_center()
@@ -1464,24 +1845,44 @@ impl Shell {
                 .border_1()
                 .border_color(p.border)
                 .overflow_hidden()
+                .on_drag_move(cx.listener(|this, e: &DragMoveEvent<Dragged>, _, cx| {
+                    if !e.bounds.contains(&e.event.position) && this.addons.drop.take().is_some() {
+                        cx.notify();
+                    }
+                }))
                 .child(
                     list(
                         self.addons.scroll.clone(),
                         cx.processor(move |this, i, _, cx| {
                             let p = palette(cx);
                             let item = match this.addons.list_items.get(i).cloned() {
-                                Some(AddonListItem::Heading { group, first, empty }) => {
-                                    this.group_heading(group, first, empty, p, cx)
-                                }
-                                Some(AddonListItem::Addon { index, position }) => {
+                                Some(AddonListItem::Heading) => this.list_heading(p),
+                                Some(AddonListItem::Folder {
+                                    key, count, on, open, ..
+                                }) => this.folder_row(&key, count, on, open, p, cx),
+                                Some(AddonListItem::Addon {
+                                    index,
+                                    position,
+                                    nested,
+                                    ..
+                                }) => {
                                     let m = &this.library.addons[index];
                                     let fade = highlight
                                         .as_ref()
                                         .filter(|(id, _)| *id == m.manifest.id)
                                         .map(|(_, k)| *k);
-                                    this.list_row(m, position, fade, p, cx)
+                                    this.list_row(m, position, nested.is_some(), fade, p, cx)
                                 }
                                 Some(AddonListItem::Detail(id)) => this.addon_detail(&id, true, p, cx),
+                                Some(AddonListItem::End) => div()
+                                    .h(px(30.))
+                                    .px(px(12.))
+                                    .flex()
+                                    .items_center()
+                                    .text_size(px(12.))
+                                    .text_color(p.text_placeholder)
+                                    .when(cx.has_active_drag(), |d| d.child("Drop here to move to the end"))
+                                    .into_any_element(),
                                 Some(AddonListItem::BrokenHeading) => v_flex()
                                     .px(px(12.))
                                     .pt(px(14.))
@@ -1491,7 +1892,38 @@ impl Shell {
                                 Some(AddonListItem::Broken(i)) => this.broken_row(i, p, cx),
                                 None => div().into_any_element(),
                             };
-                            div().w_full().child(item).into_any_element()
+                            let mark = this
+                                .addons
+                                .drop
+                                .as_ref()
+                                .filter(|d| d.ix == i)
+                                .map(|d| drop_mark(d.edge, d.nested, p));
+                            div()
+                                .w_full()
+                                .relative()
+                                .child(item)
+                                .children(mark)
+                                .when(!this.vanilla(), |d| {
+                                    d.on_drag_move(cx.listener(
+                                        move |this, e: &DragMoveEvent<Dragged>, _, cx| {
+                                            if !e.bounds.contains(&e.event.position) {
+                                                return;
+                                            }
+                                            let frac =
+                                                (e.event.position.y - e.bounds.top()) / e.bounds.size.height;
+                                            let dragging = e.drag(cx).item.clone();
+                                            let drop = this.drop_for(i, frac, &dragging);
+                                            if drop != this.addons.drop {
+                                                this.addons.drop = drop;
+                                                cx.notify();
+                                            }
+                                        },
+                                    ))
+                                    .on_drop(cx.listener(
+                                        |this, d: &Dragged, window, cx| this.apply_drop(d, window, cx),
+                                    ))
+                                })
+                                .into_any_element()
                         }),
                     )
                     .flex_1()
@@ -1511,50 +1943,150 @@ impl Shell {
             .into_any_element()
     }
 
-    /// A group's heading in the list. ON and OFF take a dragged addon, which turns
-    /// it on or off; an empty group says so.
-    fn group_heading(
+    fn list_heading(&self, p: Palette) -> AnyElement {
+        let title = match self.vanilla() {
+            true => "INSTALLED".to_owned(),
+            false => format!("LOAD ORDER IN {}", self.library.profile.name.to_uppercase()),
+        };
+        div()
+            .px(px(12.))
+            .pt(px(8.))
+            .pb(px(6.))
+            .child(label(title, p))
+            .into_any_element()
+    }
+
+    /// A folder's row: click to open or close it, drag it to move its addons.
+    fn folder_row(
         &self,
-        group: Option<bool>,
-        first: bool,
-        empty: bool,
+        key: &Key,
+        count: usize,
+        on: usize,
+        open: bool,
         p: Palette,
         cx: &mut Context<Self>,
     ) -> AnyElement {
-        let title = match group {
-            Some(true) => format!("ON IN {} · LOAD ORDER", self.library.profile.name.to_uppercase()),
-            Some(false) => "OFF".to_owned(),
-            None => "INSTALLED".to_owned(),
+        let name = self.library.folders.name(key);
+        let vanilla = self.vanilla();
+        let filled = self
+            .library
+            .entries
+            .iter()
+            .any(|e| matches!(e, Entry::Folder(k, m) if k == key && !m.is_empty()));
+        let draggable = !vanilla && *key != Key::BuiltIn && filled;
+        let own = match key {
+            Key::Own(id) if !vanilla => Some(id.clone()),
+            _ => None,
         };
-        let heading = v_flex()
-            .id(SharedString::from(format!("group-{group:?}")))
-            .px(px(12.))
-            .pt(px(if first { 8. } else { 14. }))
-            .pb(px(6.))
-            .gap(px(6.))
-            .flex_shrink_0()
-            .child(label(title, p))
-            .when(empty, |d| {
-                d.child(
-                    div()
-                        .py(px(10.))
-                        .text_size(px(12.))
-                        .text_color(p.text_placeholder)
-                        .child(match group {
-                            Some(true) => "Drag an addon here to turn it on",
-                            _ => "Drag an addon here to turn it off",
-                        }),
+        let summary = match count {
+            0 => "Empty · drag addons here".to_owned(),
+            n if vanilla => plural(n, "addon", "addons"),
+            n => format!("{} · {on} on", plural(n, "addon", "addons")),
+        };
+        let tag = key.text();
+        let actions = own.map(|id| {
+            let (rename, remove) = (id.clone(), id);
+            h_flex()
+                .gap(px(2.))
+                .child(
+                    Button::new(SharedString::from(format!("folder-rename-{tag}")))
+                        .ghost()
+                        .xsmall()
+                        .icon(IconName::Pencil)
+                        .tooltip("Rename folder")
+                        .on_click(cx.listener(move |this, _, window, cx| {
+                            cx.stop_propagation();
+                            this.rename_folder(&rename, window, cx)
+                        })),
                 )
-            });
-        let Some(on) = group else {
-            return heading.into_any_element();
-        };
-        heading
-            .drag_over::<DraggedAddon>(move |s, _, _, _| s.bg(p.hover))
-            .on_drop(
-                cx.listener(move |this, d: &DraggedAddon, window, cx| this.drop_into(&d.id, on, window, cx)),
+                .child(
+                    Button::new(SharedString::from(format!("folder-remove-{tag}")))
+                        .ghost()
+                        .xsmall()
+                        .icon(IconName::Trash)
+                        .tooltip("Remove folder. Its addons go back to their own folders.")
+                        .on_click(cx.listener(move |this, _, window, cx| {
+                            cx.stop_propagation();
+                            this.remove_folder(&remove, window, cx)
+                        })),
+                )
+        });
+        let toggle = key.clone();
+        let row = h_flex()
+            .id(SharedString::from(format!("folder-{tag}")))
+            .h(px(40.))
+            .pl(px(6.))
+            .pr(px(12.))
+            .gap(px(10.))
+            .flex_shrink_0()
+            .border_t_1()
+            .border_color(p.border_variant)
+            .cursor_pointer()
+            .hover(move |s| s.bg(p.hover))
+            .child(div().w(px(14.)).flex_shrink_0().when(draggable, |d| {
+                d.child(
+                    Icon::new(IconName::GripVertical)
+                        .size(px(14.))
+                        .text_color(p.text_placeholder),
+                )
+            }))
+            .child(
+                Icon::new(if open {
+                    IconName::ChevronDown
+                } else {
+                    IconName::ChevronRight
+                })
+                .size(px(14.))
+                .text_color(p.text_placeholder),
             )
-            .into_any_element()
+            .child(
+                Icon::new(if open {
+                    IconName::FolderOpen
+                } else {
+                    IconName::Folder
+                })
+                .size(px(16.))
+                .text_color(if *key == Key::BuiltIn {
+                    p.accent
+                } else {
+                    p.text_muted
+                }),
+            )
+            .child(
+                h_flex()
+                    .flex_1()
+                    .min_w_0()
+                    .gap(px(8.))
+                    .items_baseline()
+                    .child(
+                        div()
+                            .min_w_0()
+                            .truncate()
+                            .text_size(px(13.5))
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .child(name.clone()),
+                    )
+                    .child(
+                        div()
+                            .flex_shrink_0()
+                            .text_size(px(12.))
+                            .text_color(p.text_placeholder)
+                            .child(summary),
+                    ),
+            )
+            .children(actions)
+            .on_click(cx.listener(move |this, _, window, cx| this.toggle_folder(&toggle, window, cx)));
+        match draggable {
+            true => {
+                let dragged = Dragged {
+                    item: Dragging::Folder(key.clone()),
+                    name: name.into(),
+                };
+                row.on_drag(dragged, |d, _, _, cx| cx.new(|_| d.clone()))
+                    .into_any_element()
+            }
+            false => row.into_any_element(),
+        }
     }
 
     /// An installed addon this launcher can't read: its name, why, and Remove.
@@ -1628,6 +2160,7 @@ impl Shell {
         &self,
         m: &AddonItem,
         position: Option<usize>,
+        nested: bool,
         fade: Option<f32>,
         p: Palette,
         cx: &mut Context<Self>,
@@ -1635,11 +2168,13 @@ impl Shell {
         let man = &m.manifest;
         let id = man.id.clone();
         let selected = self.open_addon.as_ref() == Some(&id);
-        let draggable = self.switchable(m);
+        let draggable = self.movable(m);
+        let off = !self.vanilla() && !self.addon_on(m);
         let pairs = self.live_pairs(m);
         let lost = pairs.iter().filter(|pr| pr.loser == id).count();
         let won = pairs.len() - lost;
         let kept = self.stock_removals(m);
+        let needs = self.needs(m);
         let trailing = if m.locked {
             h_flex()
                 .gap(px(5.))
@@ -1684,7 +2219,7 @@ impl Shell {
             .id(SharedString::from(format!("addon-{id}")))
             .relative()
             .h(px(52.))
-            .pl(px(6.))
+            .pl(px(if nested { 6. + NESTED } else { 6. }))
             .pr(px(12.))
             .gap(px(10.))
             .flex_shrink_0()
@@ -1727,7 +2262,7 @@ impl Shell {
                     .text_color(p.text_placeholder)
                     .children(position.map(|n| n.to_string())),
             )
-            .child(icon)
+            .child(div().flex_shrink_0().when(off, |d| d.opacity(0.55)).child(icon))
             .child(
                 v_flex()
                     .flex_1()
@@ -1742,6 +2277,7 @@ impl Shell {
                                     .min_w_0()
                                     .text_size(px(14.))
                                     .font_weight(FontWeight::MEDIUM)
+                                    .when(off, |d| d.text_color(p.text_muted))
                                     .truncate()
                                     .child(man.name.clone()),
                             )
@@ -1843,6 +2379,37 @@ impl Shell {
                                 }),
                         )
                     })
+                    .when(!needs.is_empty(), |d| {
+                        let blocking: Vec<&Need> = needs.iter().filter(|n| n.blocks()).collect();
+                        let (icon, text, color, tip) = match blocking.as_slice() {
+                            [] => (
+                                IconName::Layers,
+                                match needs.as_slice() {
+                                    [one] => format!("Loads after {}", one.name),
+                                    many => format!("Loads after {}", plural(many.len(), "addon", "addons")),
+                                },
+                                p.text_muted,
+                                needs.iter().map(Need::line).collect::<Vec<_>>().join("\n"),
+                            ),
+                            shown => (
+                                IconName::TriangleAlert,
+                                match shown {
+                                    [one] => format!("Needs {}", one.name),
+                                    many => format!("Needs {}", plural(many.len(), "addon", "addons")),
+                                },
+                                p.warning,
+                                format!(
+                                    "{}\nPlay stops until every addon this one requires is on.",
+                                    shown.iter().map(|n| n.line()).collect::<Vec<_>>().join("\n")
+                                ),
+                            ),
+                        };
+                        d.child(
+                            pill(icon, text, color)
+                                .id(SharedString::from(format!("needs-{id}")))
+                                .tooltip(move |window, cx| Tooltip::new(tip.clone()).build(window, cx)),
+                        )
+                    })
                     .when(!m.left_out.is_empty(), |d| {
                         let why = m.left_out.join("\n");
                         d.child(
@@ -1908,20 +2475,10 @@ impl Shell {
                     cx.notify();
                 }
             }));
-        let row = match self.vanilla() {
-            true => row,
-            false => {
-                let target = id.clone();
-                row.drag_over::<DraggedAddon>(move |s, _, _, _| s.bg(p.hover).border_color(p.accent))
-                    .on_drop(cx.listener(move |this, d: &DraggedAddon, window, cx| {
-                        this.drop_onto(&d.id, &target, window, cx)
-                    }))
-            }
-        };
         let row = match draggable {
             true => {
-                let dragged = DraggedAddon {
-                    id: id.clone(),
+                let dragged = Dragged {
+                    item: Dragging::Addon(id.clone()),
                     name: man.name.clone().into(),
                 };
                 row.on_drag(dragged, |d, _, _, cx| cx.new(|_| d.clone()))
@@ -1974,9 +2531,12 @@ impl Shell {
         } else {
             ("Off".to_owned(), p.text_muted)
         };
-        let (order, loaded) = self.ordered();
-        let position = order[..loaded].iter().position(|a| a.manifest.id == id);
+        let (positions, loaded) = self.positions();
+        let position = positions.get(id).copied();
         let movable = self.movable(m);
+        let can_up = folders::step(&self.library.entries, id, true).is_some();
+        let can_down = folders::step(&self.library.entries, id, false).is_some();
+        let folder = self.library.place(id).map(|k| self.library.folders.name(&k));
         let source = match (&man.origin, m.source) {
             (Some(o), Source::Importer) => match &o.file {
                 Some(f) => format!("{} · from {f}", m.source.label()),
@@ -2026,7 +2586,7 @@ impl Shell {
             let (up, down) = (id.to_owned(), id.to_owned());
             h_flex()
                 .gap(px(4.))
-                .child(div().flex_1().child(format!("{} of {loaded}", i + 1)))
+                .child(div().flex_1().child(format!("{i} of {loaded}")))
                 .when(movable, |d| {
                     d.child(
                         Button::new("detail-up")
@@ -2034,7 +2594,7 @@ impl Shell {
                             .xsmall()
                             .icon(IconName::ArrowUp)
                             .tooltip("Move up")
-                            .disabled(i <= 1)
+                            .disabled(!can_up)
                             .on_click(
                                 cx.listener(move |this, _, window, cx| this.move_step(&up, true, window, cx)),
                             ),
@@ -2045,7 +2605,7 @@ impl Shell {
                             .xsmall()
                             .icon(IconName::ArrowDown)
                             .tooltip("Move down")
-                            .disabled(i + 1 >= loaded)
+                            .disabled(!can_down)
                             .on_click(cx.listener(move |this, _, window, cx| {
                                 this.move_step(&down, false, window, cx)
                             })),
@@ -2055,6 +2615,9 @@ impl Shell {
         let facts = v_flex()
             .child(fact("Status", div().text_color(status_color).child(status), p))
             .when_some(order_line, |d, line| d.child(fact("Load order", line, p)))
+            .when(!self.vanilla(), |d| {
+                d.child(fact("Folder", folder.unwrap_or_else(|| "None".to_owned()), p))
+            })
             .when(m.category().is_some() || m.source != Source::Builtin, |d| {
                 d.child(fact(
                     "Category",
@@ -2081,15 +2644,28 @@ impl Shell {
                 p,
             ))
             .when(!man.requires.is_empty(), |d| {
-                d.child(fact(
-                    "Requires",
-                    man.requires
-                        .iter()
-                        .map(|r| format!("{} {}", self.addon_name(&r.id), r.version))
-                        .collect::<Vec<_>>()
-                        .join(", "),
-                    p,
-                ))
+                let needs = self.needs(m);
+                let text = man
+                    .requires
+                    .iter()
+                    .map(|r| {
+                        let named = format!("{} {}", self.addon_name(&r.id), r.version);
+                        match needs.iter().find(|n| n.id == r.id).map(|n| &n.kind) {
+                            Some(NeedKind::Missing) => format!("{named} (not installed)"),
+                            Some(NeedKind::Off) => format!("{named} (off)"),
+                            Some(NeedKind::Version { found, .. }) => format!("{named} ({found} installed)"),
+                            Some(NeedKind::Below) => format!("{named} (loads first)"),
+                            None => named,
+                        }
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                let color = if needs.iter().any(Need::blocks) {
+                    p.warning
+                } else {
+                    p.text
+                };
+                d.child(fact("Requires", div().text_color(color).child(text), p))
             })
             .when_some(man.license.clone(), |d, l| d.child(fact("License", l, p)))
             .when_some(man.homepage.clone(), |d, h| d.child(fact("Homepage", h, p)));
@@ -2518,37 +3094,34 @@ impl Shell {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use swofty_core::profile::ProfileAddon;
+/// One of an addon's requirements that stops Play, or that the build loads before it though listed below it.
+struct Need {
+    id: String,
+    name: String,
+    kind: NeedKind,
+}
 
-    use super::pinned_delta;
+enum NeedKind {
+    Missing,
+    Off,
+    Version { wanted: String, found: String },
+    Below,
+}
 
-    fn addons(ids: &[&str]) -> Vec<ProfileAddon> {
-        ids.iter()
-            .map(|id| ProfileAddon {
-                id: (*id).into(),
-                enabled: true,
-                unknown: Default::default(),
-            })
-            .collect()
+impl Need {
+    fn blocks(&self) -> bool {
+        !matches!(self.kind, NeedKind::Below)
     }
 
-    #[test]
-    fn nothing_moves_above_swoftymod_or_simplified_for_swofty() {
-        let list = addons(&["swofty.core", "teamsimplified.mods", "a", "b"]);
-        assert_eq!(
-            pinned_delta(&list, "b", 3, 0),
-            -1,
-            "b stops below the pinned addons"
-        );
-        assert_eq!(pinned_delta(&list, "b", 3, 2), -1);
-        assert_eq!(pinned_delta(&list, "a", 2, 3), 1);
-        let list = addons(&["swofty.core", "a", "teamsimplified.mods", "b"]);
-        assert_eq!(
-            pinned_delta(&list, "a", 1, 1),
-            1,
-            "an addon above them moves below"
-        );
+    fn line(&self) -> String {
+        let name = &self.name;
+        match &self.kind {
+            NeedKind::Missing => format!("{name} isn't installed."),
+            NeedKind::Off => format!("{name} is off."),
+            NeedKind::Version { wanted, found } => format!("Needs {name} {wanted}; {found} is installed."),
+            NeedKind::Below => format!(
+                "{name} loads before this addon, which requires it, whatever their places in the list."
+            ),
+        }
     }
 }

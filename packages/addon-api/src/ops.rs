@@ -744,6 +744,18 @@ pub fn apply_db_op(db: &mut Gvdb, op: &DbOp, names: &dyn FieldNames) -> Result<O
     Ok(replaced)
 }
 
+/// The keys of each row in `rows` that `db` holds, relative to the row, as `add-row` copies them.
+pub fn row_keys(db: &mut Gvdb, names: &dyn FieldNames, rows: &[String]) -> Vec<BTreeSet<String>> {
+    let db = Db::new(db);
+    rows.iter()
+        .map(|row| {
+            let mut out = Walk::default();
+            walk(&db, names, row, "", &mut out);
+            out.keys
+        })
+        .collect()
+}
+
 struct Cx<'r> {
     strict: bool,
     report: &'r mut DbReport,

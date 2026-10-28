@@ -152,10 +152,15 @@ impl Shell {
                             cx,
                         );
                     }
-                    Err(e) => window.push_notification(
-                        Notification::error(e).title(format!("Could not install {}", managed::NAME)),
-                        cx,
-                    ),
+                    Err(e) => {
+                        crate::app_log::action("install addon")
+                            .addon(managed::ID)
+                            .failed(&e);
+                        window.push_notification(
+                            Notification::error(e).title(format!("Could not install {}", managed::NAME)),
+                            cx,
+                        )
+                    }
                 }
                 cx.notify();
             })

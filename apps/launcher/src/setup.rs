@@ -127,7 +127,10 @@ impl SetupWizard {
                         }
                         w.step = Step::Verify;
                     }
-                    Err(e) => w.error = Some(format!("Swofty couldn't put the game folder back: {e}")),
+                    Err(e) => {
+                        crate::app_log::action("first play setup: put the game folder back").failed(&e);
+                        w.error = Some(format!("Swofty couldn't put the game folder back: {e}"))
+                    }
                 }
                 cx.notify();
             })
@@ -174,6 +177,7 @@ impl SetupWizard {
             return;
         }
         if let Err(e) = setup::finish(&self.store.root) {
+            crate::app_log::action("first play setup: finish").failed(&e);
             self.error = Some(e.to_string());
             cx.notify();
             return;
@@ -730,6 +734,7 @@ impl Shell {
                 .show_cancel(true)
                 .on_ok(move |_, window, cx| {
                     if let Err(e) = setup::record_notice(&store.root) {
+                        crate::app_log::action("first play setup: notice").failed(&e);
                         window.push_notification(Notification::error(e.to_string()), cx);
                         return false;
                     }

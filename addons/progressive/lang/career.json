@@ -1,0 +1,161 @@
+{
+ "schema_version": 1,
+ "ops": [
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_career_content",
+   "value": "Progressive Career"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_career_content_description",
+   "value": "Start in any season from 2016 to 2026 as a real driver. Every new season brings that year's cars, liveries, helmets and line-ups; after 2026 the grid stays 2026."
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_career",
+   "value": "Progressive Career"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_driver_pool",
+   "value": "Progressive Career drivers"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_f1_2016",
+   "value": "F1 2016"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_f1_2017",
+   "value": "F1 2017"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_f1_2018",
+   "value": "F1 2018"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_f1_2019",
+   "value": "F1 2019"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_f1_2020",
+   "value": "F1 2020"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_f1_2021",
+   "value": "F1 2021"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_f1_2022",
+   "value": "F1 2022"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_f1_2023",
+   "value": "F1 2023"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_f1_2024",
+   "value": "F1 2024"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_f1_2025",
+   "value": "F1 2025"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_f1_2026",
+   "value": "F1 2026"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_resume_2016",
+   "value": "Progressive - 2016"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_resume_2017",
+   "value": "Progressive - 2017"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_resume_2018",
+   "value": "Progressive - 2018"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_resume_2019",
+   "value": "Progressive - 2019"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_resume_2020",
+   "value": "Progressive - 2020"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_resume_2021",
+   "value": "Progressive - 2021"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_resume_2022",
+   "value": "Progressive - 2022"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_resume_2023",
+   "value": "Progressive - 2023"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_resume_2024",
+   "value": "Progressive - 2024"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_resume_2025",
+   "value": "Progressive - 2025"
+  },
+  {
+   "op": "lang.set",
+   "language": "*",
+   "key": "lng_pg_resume_2026",
+   "value": "Progressive - 2026"
+  }
+ ]
+}

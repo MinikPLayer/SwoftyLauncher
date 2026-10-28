@@ -8,6 +8,7 @@ mod overlay_exec;
 mod postfx;
 mod recover;
 mod run;
+mod saves;
 mod send_logs;
 mod setup;
 mod time;
@@ -155,6 +156,11 @@ enum Command {
         about = "Post-process passes: compile an addon's shaders to check them"
     )]
     Postfx(postfx::PostfxCommand),
+    #[command(
+        subcommand,
+        about = "List the profile save backups taken before sessions without an addon that affects saves, and restore one"
+    )]
+    Saves(saves::SavesCommand),
     #[command(about = "Check for a new release and install it into this copy")]
     Update {
         #[arg(long, help = "Only report whether a new release is available")]
@@ -262,10 +268,20 @@ fn main() -> ExitCode {
     match run_cli(&store, args) {
         Ok(code) => code,
         Err(e) => {
-            eprintln!("swofty: {e:#}");
+            eprintln!("swofty: {}", causes(&e));
             ExitCode::FAILURE
         }
     }
+}
+
+fn causes(e: &anyhow::Error) -> String {
+    let mut out = e.to_string();
+    for c in e.chain().skip(1).map(|c| c.to_string()) {
+        if !out.contains(&c) {
+            out = format!("{out}: {c}");
+        }
+    }
+    out
 }
 
 fn migrate(store: &Store) {
@@ -473,6 +489,7 @@ fn dispatch(store: &Store, cli: Cli) -> Result<ExitCode> {
         Command::Logs { dir, exe, .. } => run::logs(&store, dir, exe),
         Command::Doctor => doctor::doctor(&store),
         Command::Game(cmd) => game(&store, cmd).map(|_| ExitCode::SUCCESS),
+        Command::Saves(cmd) => saves::command(&store, cmd),
         Command::Steam { start } => run::steam_check(&store, start),
         Command::Postfx(cmd) => postfx::command(cmd),
         Command::Update { check } => update::update(check),
@@ -804,6 +821,18 @@ mod tests {
     use swofty_core::manifest::AddonManifest;
 
     use super::*;
+
+    #[test]
+    fn an_error_says_its_os_message_once() {
+        let e: anyhow::Error = swofty_core::Error::Io {
+            path: "F1 25/a.erp".into(),
+            source: std::io::Error::from(std::io::ErrorKind::NotFound),
+        }
+        .into();
+        assert_eq!(causes(&e), "F1 25/a.erp: entity not found");
+        let e = anyhow::Error::from(std::io::Error::from(std::io::ErrorKind::NotFound)).context("reading x");
+        assert_eq!(causes(&e), "reading x: entity not found");
+    }
 
     struct Mods(AddonManifest);
 

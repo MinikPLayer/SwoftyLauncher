@@ -101,6 +101,10 @@ pub struct Image {
     pub caption: Option<String>,
     #[serde(default)]
     pub fit: Fit,
+    /// Draws the picture without the box behind it, so its transparent parts show what is
+    /// under it.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub transparent: bool,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -306,6 +310,10 @@ impl Search {
 
 fn yes() -> bool {
     true
+}
+
+fn is_yes(v: &bool) -> bool {
+    *v
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -539,7 +547,7 @@ pub struct CellSpec {
 
 /// A cell's picture: the absolute path of a PNG or JPEG under the addon's cache or data
 /// folder, or that with a size in pixels. Without a size it is a square as tall as the row
-/// allows; with one it fills that box, cropped to it.
+/// allows; with one it fills that box, cropped to it unless `fit` is `contain`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum CellImage {
@@ -550,6 +558,10 @@ pub enum CellImage {
         width: Option<f32>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         height: Option<f32>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        fit: Option<Fit>,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        transparent: bool,
     },
 }
 
@@ -571,6 +583,23 @@ impl CellImage {
                 (None, None) => (side, side),
             },
         }
+    }
+
+    pub fn fit(&self) -> Fit {
+        match self {
+            Self::Sized { fit: Some(f), .. } => *f,
+            _ => Fit::Cover,
+        }
+    }
+
+    pub fn transparent(&self) -> bool {
+        matches!(
+            self,
+            Self::Sized {
+                transparent: true,
+                ..
+            }
+        )
     }
 }
 
@@ -657,6 +686,7 @@ pub enum Field {
     Text(TextField),
     Select(SelectField),
     Toggle(ToggleField),
+    Colour(ColourField),
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -822,6 +852,51 @@ pub struct ToggleField {
     pub value: bool,
 }
 
+/// A colour, sent as `#RRGGBB`. `value` takes `#RRGGBB` or `#RGB`, with or without `#`, in
+/// either case; `hex: false` shows only the colour's dot.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ColourField {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub help: Option<String>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub disabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(default = "yes", skip_serializing_if = "is_yes")]
+    pub hex: bool,
+}
+
+impl ColourField {
+    pub fn rgb(&self) -> Option<[u8; 3]> {
+        self.value.as_deref().and_then(parse_colour)
+    }
+}
+
+pub fn parse_colour(text: &str) -> Option<[u8; 3]> {
+    let text = text.trim();
+    let digits = text.strip_prefix('#').unwrap_or(text);
+    if !digits.chars().all(|c| c.is_ascii_hexdigit()) {
+        return None;
+    }
+    let digit = |i: usize| u8::from_str_radix(&digits[i..i + 1], 16).ok();
+    match digits.len() {
+        3 => Some([digit(0)? * 17, digit(1)? * 17, digit(2)? * 17]),
+        6 => {
+            let byte = |i: usize| u8::from_str_radix(&digits[i..i + 2], 16).ok();
+            Some([byte(0)?, byte(2)?, byte(4)?])
+        }
+        _ => None,
+    }
+}
+
+pub fn colour_hex([r, g, b]: [u8; 3]) -> String {
+    format!("#{r:02X}{g:02X}{b:02X}")
+}
+
 impl Field {
     pub fn id(&self) -> &str {
         match self {
@@ -829,6 +904,7 @@ impl Field {
             Self::Text(f) => &f.id,
             Self::Select(f) => &f.id,
             Self::Toggle(f) => &f.id,
+            Self::Colour(f) => &f.id,
         }
     }
 
@@ -838,6 +914,7 @@ impl Field {
             Self::Text(f) => f.label.as_deref(),
             Self::Select(f) => f.label.as_deref(),
             Self::Toggle(f) => f.label.as_deref(),
+            Self::Colour(f) => f.label.as_deref(),
         }
     }
 
@@ -847,6 +924,7 @@ impl Field {
             Self::Text(f) => f.help.as_deref(),
             Self::Select(f) => f.help.as_deref(),
             Self::Toggle(f) => f.help.as_deref(),
+            Self::Colour(f) => f.help.as_deref(),
         }
     }
 
@@ -856,6 +934,7 @@ impl Field {
             Self::Text(f) => f.disabled,
             Self::Select(f) => f.disabled,
             Self::Toggle(f) => f.disabled,
+            Self::Colour(f) => f.disabled,
         }
     }
 
@@ -871,6 +950,7 @@ impl Field {
                 .or_else(|| f.options.first().map(|o| o.value().to_owned()))
                 .map_or(Value::Null, Value::String),
             Self::Toggle(f) => Value::Bool(f.value),
+            Self::Colour(f) => f.rgb().map_or(Value::Null, |c| Value::String(colour_hex(c))),
         }
     }
 }
@@ -1607,6 +1687,104 @@ mod tests {
             serde_json::to_value(Table::plain(vec!["A".into()], vec![vec!["1".into()]])).unwrap(),
             serde_json::json!({ "columns": ["A"], "rows": [["1"]] })
         );
+    }
+
+    #[test]
+    fn colour_fields_send_upper_case_hex_and_leave_the_default_hex_out() {
+        let form: Form = serde_json::from_value(serde_json::json!({ "id": "livery", "fields": [
+            { "colour": { "id": "team", "label": "Team colour", "value": "#e10600" } },
+            { "colour": { "id": "accent", "value": "0af", "hex": false } },
+            { "colour": { "id": "unset" } }
+        ] }))
+        .unwrap();
+        let values: Vec<serde_json::Value> = form.fields.iter().map(Field::value).collect();
+        assert_eq!(
+            values,
+            [
+                serde_json::json!("#E10600"),
+                serde_json::json!("#00AAFF"),
+                serde_json::Value::Null
+            ]
+        );
+        let Field::Colour(team) = &form.fields[0] else {
+            panic!("colour")
+        };
+        assert!(team.hex && team.rgb() == Some([0xE1, 0x06, 0x00]));
+        assert_eq!(form.fields[0].label(), Some("Team colour"));
+        let json = serde_json::to_value(&form).unwrap();
+        assert!(json["fields"][0]["colour"].get("hex").is_none());
+        assert_eq!(json["fields"][1]["colour"]["hex"], false);
+        let again: Form = serde_json::from_value(json).unwrap();
+        assert_eq!(again, form);
+    }
+
+    #[test]
+    fn parse_colour_takes_six_or_three_digits_and_refuses_the_rest() {
+        assert_eq!(parse_colour("#E8002D"), Some([0xE8, 0x00, 0x2D]));
+        assert_eq!(parse_colour(" e8002d "), Some([0xE8, 0x00, 0x2D]));
+        assert_eq!(parse_colour("#fA0"), Some([0xFF, 0xAA, 0x00]));
+        assert_eq!(parse_colour("abc"), Some([0xAA, 0xBB, 0xCC]));
+        for bad in [
+            "",
+            "#",
+            "#12",
+            "#1234",
+            "#12345",
+            "#1234567",
+            "#GGGGGG",
+            "##123456",
+            "+12345",
+            "red",
+            "#12 456",
+            "#E8002Dé",
+        ] {
+            assert_eq!(parse_colour(bad), None, "{bad}");
+        }
+        assert_eq!(colour_hex([0x00, 0xa1, 0x9c]), "#00A19C");
+    }
+
+    #[test]
+    fn colour_cells_and_transparent_pictures_parse() {
+        let row: TableRow = serde_json::from_value(serde_json::json!({ "id": "ferrari", "cells": [
+            { "text": "Ferrari", "image": { "path": "/cache/logos/ferrari.png", "width": 28, "height": 28,
+                                            "fit": "contain", "transparent": true } },
+            { "text": "#E8002D", "edit": { "colour": {} } },
+            { "text": "#E8002D", "edit": { "colour": { "hex": false } } }
+        ] }))
+        .unwrap();
+        let logo = row.cells()[0].spec().image.unwrap();
+        assert_eq!(
+            (logo.fit(), logo.transparent(), logo.size(32.)),
+            (Fit::Contain, true, (28., 28.))
+        );
+        let Some(Field::Colour(cell)) = row.cells()[1].spec().edit else {
+            panic!("colour cell")
+        };
+        assert!(cell.hex && cell.value.is_none());
+        assert!(matches!(
+            row.cells()[2].spec().edit,
+            Some(Field::Colour(ColourField { hex: false, .. }))
+        ));
+        let block: Block = serde_json::from_value(serde_json::json!(
+            { "image": { "path": "/c/logo.png", "width": 96, "height": 96, "transparent": true } }
+        ))
+        .unwrap();
+        assert!(matches!(&block, Block::Image(i) if i.transparent));
+        let again: TableRow = serde_json::from_value(serde_json::to_value(&row).unwrap()).unwrap();
+        assert_eq!(again, row);
+    }
+
+    #[test]
+    fn pictures_without_the_new_keys_serialize_as_before() {
+        let sized = serde_json::json!({ "path": "/cache/flags/FI.png", "width": 20.0, "height": 14.0 });
+        let image: CellImage = serde_json::from_value(sized.clone()).unwrap();
+        assert_eq!((image.fit(), image.transparent()), (Fit::Cover, false));
+        assert_eq!(serde_json::to_value(&image).unwrap(), sized);
+        let plain: CellImage = serde_json::from_value(serde_json::json!("/cache/kimi.png")).unwrap();
+        assert!(!plain.transparent() && plain.fit() == Fit::Cover);
+        let block = serde_json::json!({ "image": { "path": "/c/helmet.png", "width": 240.0, "height": 135.0, "fit": "cover" } });
+        let parsed: Block = serde_json::from_value(block.clone()).unwrap();
+        assert_eq!(serde_json::to_value(&parsed).unwrap(), block);
     }
 
     #[test]

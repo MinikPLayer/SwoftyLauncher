@@ -240,6 +240,17 @@ int main()
         expect(g_open_seen == 1 && g_open == 0, "the scope is open while the callback runs and closed after it");
     }
 
+    // A career content tile press is published as career.content.pressed; addons must be able to
+    // subscribe to it.
+    {
+        runtime::ev::Dispatcher<Recorder> d;
+        uint32_t t = 0;
+        expect(runtime::ev::canonical(SWOFTY_EVENT_CAREER_CONTENT_PRESSED) != nullptr,
+               "career.content.pressed is a known event");
+        expect(d.subscribe(1, SWOFTY_EVENT_CAREER_CONTENT_PRESSED, on_event, nullptr, &t) == SWOFTY_ASSET_OK,
+               "career.content.pressed can be subscribed");
+    }
+
     printf("%s\n", fails ? "events dispatcher: FAILED" : "events dispatcher: all checks passed");
     return fails ? 1 : 0;
 }

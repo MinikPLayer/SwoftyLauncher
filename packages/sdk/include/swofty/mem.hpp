@@ -90,6 +90,9 @@ struct Page {
 
 inline std::atomic<uint32_t> generation{1};
 
+// Set by Trust: how long a big region's answer stays good on this thread.
+inline thread_local uint32_t region_ttl = 0;
+
 struct Image {
     uintptr_t lo = 0, hi = 0;
 };
@@ -123,8 +126,9 @@ inline bool query(uintptr_t at, uintptr_t &hi)
         hi = e.hi;
         return e.ok;
     }
+    uint64_t region_ttl_ms = region_ttl > ttl_ms ? region_ttl : ttl_ms;
     for (Page &r : regions)
-        if (r.generation == gen && now - r.stamp < ttl_ms && at >= r.lo && at < r.hi) {
+        if (r.generation == gen && now - r.stamp < region_ttl_ms && at >= r.lo && at < r.hi) {
             e = {page, r.lo, r.hi, r.stamp, gen, r.ok};
             hi = r.hi;
             return r.ok;
@@ -150,6 +154,21 @@ inline void invalidate()
 {
     detail::generation.fetch_add(1, std::memory_order_relaxed);
 }
+
+// While one is alive, this thread's reads keep a big region's answer for ms
+// instead of ttl_ms. A VirtualQuery inside one of the game's multi-GB heaps
+// walks the rest of the region and can take milliseconds, so a poll of
+// objects that live as long as those heaps uses one to pay it once a while.
+class Trust {
+public:
+    explicit Trust(uint32_t ms) : was_(detail::region_ttl) { detail::region_ttl = ms; }
+    ~Trust() { detail::region_ttl = was_; }
+    Trust(const Trust &) = delete;
+    Trust &operator=(const Trust &) = delete;
+
+private:
+    uint32_t was_;
+};
 
 // n bytes at p are committed and readable.
 inline bool readable(uintptr_t p, size_t n)

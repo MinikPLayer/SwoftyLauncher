@@ -2,7 +2,7 @@
  "schema_version": 1,
  "id": "swofty.classic-seasons-2022",
  "name": "F1 2022 GP/TT Addon",
- "version": "0.5.0",
+ "version": "0.6.4",
  "author": "Swofty",
  "description": "The F1 2022 season for Classic Seasons: its cars, teams and drivers in Grand Prix and Time Trial. Cars by fanfreluche.",
  "license": "AGPL-3.0-or-later",
@@ -26,7 +26,7 @@
   },
   {
    "id": "swofty.classic-seasons",
-   "version": ">=0.5.0"
+   "version": ">=0.6.1"
   }
  ],
  "operations": {
@@ -35,7 +35,8 @@
   ],
   "assets": [
    "lang/season.json",
-   "assets/cars.json"
+   "assets/cars.json",
+   "assets/sounds.json"
   ]
  }
 }

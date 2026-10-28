@@ -31,9 +31,9 @@ On Linux, the [Steam launch option](/guide/linux) uses `swofty run -- %command%`
 
 `swofty overlay-exec` is internal: `swofty run` starts it to make the mount and run Proton inside it. It doesn't appear in `swofty --help`, and its arguments aren't stable.
 
-For a direct launch, you'll find the wrapper's output in `$DATA/state/wrapper-run.log`, and `swofty run` prints what the wrapper reports after the game exits. If the wrapper exits before the game starts or while it runs, `swofty run` prints the wrapper's last lines and its error, rolls back anything the wrapper left, then exits with an error itself. It stops waiting once the wrapper has written nothing for 10 minutes, or after 2 minutes when Steam launches the game. An install that takes longer than 10 seconds writes `[info] installing: <copied> of <total> file(s) copied` every 10 seconds.
+For a direct launch, you'll find the wrapper's output in `$DATA/state/wrapper-run.log`, and `swofty run` prints what the wrapper reports after the game exits. If the wrapper exits before the game starts or while it runs, `swofty run` prints the wrapper's last lines and its error, rolls back anything the wrapper left, then exits with an error itself. It stops waiting once the wrapper has written nothing for 10 minutes and has no build running, or after 2 minutes when Steam launches the game. A build writes `[info] build: still working after <seconds> s` at least once a minute, and keeps `state/build.json` current every 2 seconds. An install that takes longer than 10 seconds writes `[info] installing: <copied> of <total> file(s) copied` every 10 seconds.
 
-Before anything else, `swofty run` and `swofty apply` roll back what an unfinished session left in the game folder and print `Recovered the game folder from an unfinished session` with what they put back and the `swofty doctor` report. If a session is still running or rolling back, they wait up to 2 minutes for it.
+Before anything else, `swofty run` and `swofty apply` roll back what an unfinished session left in the game folder and print `Recovered the game folder from an unfinished session` with what they put back and the `swofty doctor` report. If a session is still rolling back, they wait up to 2 minutes for it, and then say to close F1 25 only when the game is running. If a session is still building or copying the mods, they stop at once with its step and progress, for example `Swofty is still copying the mods into the game folder (443 of 2,544 files) for profile default, started 2 h 36 min ago`. The wrapper's `build: still working after` lines name the step the build is on.
 
 If the wrapper receives a stop signal (Steam's **Stop**, `kill`, a closed terminal), it closes the game it started and rolls the session back before exiting.
 
@@ -61,13 +61,13 @@ Without `--dry-run`, the command keeps the zip in `$DATA/logs/swofty-logs-<usern
 
 ## `swofty build`
 
-Use `swofty build [--profile <name>]` when you want to prepare your profile's database and track files without starting the game. You'll find the output in `$DATA/cache/overlay/<profile>/<buildhash>/`: `swofty/settings.json` holds the session settings, and `plan.json` lists the game files to replace and add, along with their sources. Track archives, menu archives and car handling files are built in `$DATA/cache/maps`, `$DATA/cache/menus` and `$DATA/cache/ers`. Once the build succeeds, it removes older builds from those folders and your profile's overlay folder, keeping any that another profile's latest build uses.
+Use `swofty build [--profile <name>]` when you want to prepare your profile's database and track files without starting the game. You'll find the output in `$DATA/cache/overlay/<profile>/<buildhash>/`: `swofty/settings.json` holds the session settings, and `plan.json` lists the game files to replace and add, along with their sources. Track archives, menu archives and car handling files are built in `$DATA/cache/maps`, `$DATA/cache/menus` and `$DATA/cache/ers`. Once the build succeeds, it removes older builds from those folders and your profile's overlay folder, keeping any that another profile's latest build uses. Rebuilt archives are also kept in `$DATA/cache/archives`. A later build that needs the same archive links it from there instead of writing it again. The folder keeps archives used in the last 3 days, up to 10 GB.
 
 After the database operations, the build checks each `add-row` copy for the label-keyed side data it lacks and warns for the known lookups it misses, with one line per addon counting the matches to review. `--side-data` lists every finding; see [The side-data check](/reference/ops/database#the-side-data-check).
 
 The build also prepares addon ERP files and prints their warnings. Files with a `patch-pkg` edit other than `clone-entry` and `set-value` are skipped. Addon ERP operations work on the archives the track stages have already built; `add-mipmaps` files replace or add loose game files. If your build includes a `remove-resource`, it rewrites the archives even when `swofty_core` lists `erp` as `stable`. `file.put` operations and `operations.files` entries also replace or add loose game files. Other addon ERP and UI operations are currently skipped.
 
-Some assets go into `swofty/assets.json` instead. This applies to each asset kind that `swofty_core` lists as `stable` in `swofty/addons/core/features.json`, or as `experimental` and named in `config.json` `"runtime_assets"`. These assets are asset groups, changed ERP resources, database records that differ from the game file, one language table per language and overlay files. For `group` and `lang` operations, this is the only delivery route: without the feature, they wait, and the build lists them. To keep `erp`, `db` or `file` kinds on the build route, list them in `config.json` `"build_assets"`.
+Some assets go into `swofty/assets.json` instead. This applies to each asset kind that `swofty_core` lists as `stable` in `swofty/addons/core/features.json`, or as `experimental` and named in `config.json` `"runtime_assets"`. These assets are asset groups, changed ERP resources, database records that differ from the game file, one language table per language and overlay files. For `group` and `lang` operations, this is the only delivery route: without the feature, they wait, and the build lists them. To keep `erp`, `db` or `file` kinds on the build route, list them in `config.json` `"build_assets"`. When the addons add more database records than the game's database takes once it has loaded (its map grows at 80% of its slots, 838,860 records for the stock game), the build puts the whole database into the game file instead, and the build log has a `database: built into the game file` line with both counts.
 
 The output has a line per addon with what it writes, such as `Example Livery: 412 database values, 3 archive resources, 2 files`. Each pair of addons in conflict, where a later addon replaced what an earlier one wrote, prints a warning such as `Example Livery overrides Grid 24 on 12 database values and 1 file`.
 
@@ -159,6 +159,19 @@ These commands come from the built-in Team Simplified addon. Use them to manage 
 | `swofty profile delete <name> [--yes]` | Delete a profile with its settings, build cache (`$DATA/cache/overlay/<name>/`), in-game changes and saves. It asks first; `--yes` skips the question |
 
 `swofty profile delete` follows the same rules as the launcher's [Delete a profile](/using/profiles#delete-a-profile). It refuses `vanilla`, your only profile, any profile while F1 25 runs, and a profile with an open journal in the game folder; run `swofty restore` to close the journal. When you delete the active profile, `default` (or the first remaining profile) becomes active first.
+
+## `swofty saves`
+
+| Command | Purpose |
+|---|---|
+| `swofty saves list` | List the profile save backups in `$DATA/save-backups/`, newest first, with the profile, why each was taken, the addons the session left out, and the file count and size |
+| `swofty saves restore <backup>` | Copy a backup back over the profile save. It refuses while F1 25 runs and backs up the current save first |
+
+Before a session whose profile leaves out an installed addon with [`saves.affects`](/reference/addons/manifest#saves), `swofty run` copies the Steam profile save (`savegame@profile#*` in `userdata/<id>/3059520/remote`) into `$DATA/save-backups/<time>-<profile>/` with a `manifest.json` of the files' sizes and SHA-256 hashes, and prints `saves: backed up the profile save before a session without <addon ids> (their careers are removed if the game saves): <folder>`. It keeps the newest 10 backups. The EA app copy's saves are not backed up.
+
+When the session leaves the profile save changed and at least 24 KB smaller than its backup, `swofty run` prints `saves: the profile save shrank from <before> to <after> bytes in a session without <addon ids>; ...` with the backup's name and the restore command, and the Addons page shows the same notice with **Restore** and **Dismiss**.
+
+After a restore, Steam may ask which copy to keep the next time F1 25 starts; keep the local files.
 
 ## `swofty postfx`
 

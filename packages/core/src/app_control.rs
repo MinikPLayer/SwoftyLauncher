@@ -116,12 +116,7 @@ impl Block {
                  Whoever manages this PC can allow the folder {}. Until then, Swofty can't run on it.",
                 self.folder()
             ),
-            Some(Blocker::Antivirus) => format!(
-                "Swofty's programs aren't code-signed, and some antivirus programs flag them for it. \
-                 Restore it in Windows Security > Virus & threat protection > Protection history, or in \
-                 your antivirus, add an exclusion for the folder {}, then try again.",
-                self.folder()
-            ),
+            Some(Blocker::Antivirus) => restore(&self.folder()),
             _ => format!(
                 "{turn_off} If it is already off, an app control policy set by whoever manages this PC \
                  blocked it."
@@ -129,6 +124,29 @@ impl Block {
         };
         format!("{what} (error {}). {fix}", self.code)
     }
+}
+
+fn restore(folder: &str) -> String {
+    format!(
+        "Swofty's programs aren't code-signed, and some antivirus programs flag them for it. Restore it in \
+         Windows Security > Virus & threat protection > Protection history, or in your antivirus, add an \
+         exclusion for the folder {folder}, then try again."
+    )
+}
+
+/// What to do about a Swofty program missing from its folder, which an
+/// antivirus most likely removed.
+pub fn missing(program: &Path) -> String {
+    let path = program.to_string_lossy();
+    let (folder, name) = path.rsplit_once(['/', '\\']).unwrap_or((".", &path));
+    if !cfg!(windows) {
+        return format!("{name} is missing from {folder}. Reinstall Swofty Launcher, then try again.");
+    }
+    format!(
+        "{name} is missing from {folder}, so F1 25 can't be started. An antivirus most likely removed it. {} \
+         If it isn't there, reinstall Swofty Launcher after adding the exclusion.",
+        restore(folder)
+    )
 }
 
 #[cfg(test)]
@@ -207,6 +225,37 @@ mod tests {
             text.contains("add an exclusion for the folder /data/extensions/offline-play, then try again"),
             "{text}"
         );
+    }
+
+    #[test]
+    fn a_missing_program_says_how_to_get_it_back() {
+        let text = missing(Path::new(CLI));
+        let folder = r"C:\Users\Berni\AppData\Local\Programs\SwoftyLauncher\bin";
+        if cfg!(windows) {
+            assert!(
+                text.starts_with(&format!(
+                    "swofty.exe is missing from {folder}, so F1 25 can't be started."
+                )),
+                "{text}"
+            );
+            assert!(text.contains("An antivirus most likely removed it."), "{text}");
+            assert!(text.contains("Protection history"), "{text}");
+            assert!(
+                text.contains(&format!(
+                    "add an exclusion for the folder {folder}, then try again"
+                )),
+                "{text}"
+            );
+            assert!(
+                text.ends_with("reinstall Swofty Launcher after adding the exclusion."),
+                "{text}"
+            );
+        } else {
+            assert_eq!(
+                missing(Path::new("/opt/swofty/bin/swofty")),
+                "swofty is missing from /opt/swofty/bin. Reinstall Swofty Launcher, then try again."
+            );
+        }
     }
 
     #[test]

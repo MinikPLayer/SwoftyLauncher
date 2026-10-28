@@ -1,0 +1,13 @@
+{
+ "seasons": {
+  "2016": {"game": "F1 2016", "bundle": "audio/bundles/{maker}_2016.bdl"},
+  "2017": {"game": "F1 2017", "bundle": "audio/bundles/{maker}_2017.bdl"},
+  "2018": {"game": "F1 2018", "bundle": "audio/2018/bundles/{maker}_2018.bdl"},
+  "2019": {"game": "F1 2019", "bundle": "audio/2019/bundles/{maker}_2019.bdl"},
+  "2020": {"game": "F1 2020", "bundle": "audio/2020/bundles/{maker}_2020.bdl"},
+  "2021": {"game": "F1 2021", "bundle": "audio/2021/bundles/{maker}_2020.bdl"},
+  "2022": {"game": "F1 2022", "bundle": "audio/2022/bundles/{maker}_2022.bdl"},
+  "2023": {"game": "F1 23", "bundle": "audio/2023/bundles/{maker}_2023.bdl"},
+  "2024": {"stock": "{maker}_2024"}
+ }
+}

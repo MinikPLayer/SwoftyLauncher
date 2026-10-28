@@ -1,0 +1,128 @@
+name: Release binaries
+
+# The release build of the swofty CLI, the launcher and Swofty UI for Linux and Windows. CI calls it on every
+# push to main: the run saves the release cache, and a tag on that commit takes the binaries from it instead
+# of building again (release.yml). The release workflow calls it itself only when it finds none.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: The commit, branch or tag to build
+        type: string
+        required: true
+      retention-days:
+        description: How long the binaries stay on the run
+        type: number
+        default: 1
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux-build:
+    name: Linux build
+    # The oldest supported runner gives the oldest glibc baseline, for SteamOS.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          cache: false
+
+      # Only a run on main saves; a tag's own cache would be of no use to the next tag.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          add-rust-environment-hash-key: false
+          shared-key: release
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: GPUI system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libfontconfig-dev libfreetype-dev libwayland-dev \
+            libxkbcommon-dev libxkbcommon-x11-dev libx11-xcb-dev libxcb1-dev libvulkan-dev
+
+      # Only the two binaries the release ships, not the installer or the addon template.
+      # The log server "Send Logs to Developers" uploads to; without it the button is disabled.
+      # The usage address is where anonymised usage reports go; builds without it send none.
+      - name: Build
+        run: cargo build --release -p swofty-cli -p swofty-launcher
+        env:
+          SWOFTY_LOGS_URL: https://api.f1.swofty.net/v1/logs
+          SWOFTY_USAGE_URL: https://api.f1.swofty.net
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+
+      - name: Build Swofty UI
+        run: |
+          python -m pip install pyinstaller==6.22.3
+          python tools/swofty-ui/build.py
+          dist/swofty-ui/swofty-ui --self-test
+
+      # Artefacts drop the executable bit, so the binaries travel in a tar.
+      - name: Bundle the binaries
+        run: tar cf linux-binaries.tar target/release/swofty target/release/swofty-launcher dist/swofty-ui/swofty-ui
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: linux-binaries
+          path: linux-binaries.tar
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention-days }}
+
+  windows-build:
+    name: Windows build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v2
+        with:
+          cache: false
+
+      # Only a run on main saves; a tag's own cache would be of no use to the next tag.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          add-rust-environment-hash-key: false
+          shared-key: release
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      # Only the two binaries the release ships, not the installer or the addon template.
+      # The log server "Send Logs to Developers" uploads to; without it the button is disabled.
+      # The usage address is where anonymised usage reports go; builds without it send none.
+      - name: Build
+        run: cargo build --release -p swofty-cli -p swofty-launcher
+        env:
+          SWOFTY_LOGS_URL: https://api.f1.swofty.net/v1/logs
+          SWOFTY_USAGE_URL: https://api.f1.swofty.net
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.14'
+
+      - name: Install PyInstaller
+        run: python -m pip install pyinstaller==6.22.3
+
+      - name: Build Swofty UI
+        run: python tools/swofty-ui/build.py
+
+      - name: Self-test Swofty UI
+        run: dist/swofty-ui/swofty-ui.exe --self-test
+
+      # The artefact keeps the paths below the checkout, target/release/ and dist/swofty-ui/.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows-binaries
+          path: |
+            target/release/swofty.exe
+            target/release/swofty-launcher.exe
+            dist/swofty-ui/swofty-ui.exe
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention-days }}

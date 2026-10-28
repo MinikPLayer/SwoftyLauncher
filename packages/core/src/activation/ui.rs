@@ -84,6 +84,7 @@ pub struct UiBuild {
     pub dir: PathBuf,
     pub replaced: BTreeMap<String, PathBuf>,
     pub lists: BTreeMap<String, BTreeSet<String>>,
+    pub kept: Kept,
     pub notes: Vec<String>,
 }
 
@@ -248,6 +249,28 @@ fn upsert(items: &mut Vec<Node>, name: &str, entry: Node) -> usize {
     }
 }
 
+fn put_slice(data: &mut Vec<u8>, slices: &mut u32, index: usize, pixels: &[u8], blank: Option<usize>) {
+    let size = pixels.len();
+    let count = *slices as usize;
+    if index > count {
+        let fill = blank
+            .filter(|b| *b < count)
+            .and_then(|b| data.get(b * size..(b + 1) * size))
+            .map(<[u8]>::to_vec)
+            .unwrap_or_else(|| vec![0; size]);
+        for _ in count..index {
+            data.extend_from_slice(&fill);
+        }
+        *slices = index as u32;
+    }
+    if index < *slices as usize {
+        data[index * size..(index + 1) * size].copy_from_slice(pixels);
+    } else {
+        data.extend_from_slice(pixels);
+        *slices += 1;
+    }
+}
+
 fn edit_pkg(res: &mut Resource, edit: impl FnOnce(&mut Pkg) -> Result<()>) -> Result<()> {
     let mut pkg = Pkg::parse(&res.fragments[0].data()?)?;
     edit(&mut pkg)?;
@@ -408,6 +431,43 @@ pub fn stamp(maps: &[MapUi], original: &dyn Fn(&str) -> PathBuf) -> Result<Strin
 
 pub type Lists = BTreeMap<String, BTreeSet<String>>;
 
+pub type Kept = BTreeMap<(String, String), BTreeSet<String>>;
+
+fn kept(maps: &[MapUi], lists: &Lists, array_erps: &BTreeMap<String, Vec<&str>>) -> Kept {
+    let mut kept = Kept::new();
+    let pictured: BTreeSet<String> = lists
+        .iter()
+        .filter(|(_, s)| !s.is_empty())
+        .map(|(c, _)| c.clone())
+        .collect();
+    if !pictured.is_empty() {
+        kept.insert((ui_file("databases.erp"), OVERRIDES.into()), pictured);
+    }
+    let mapped: BTreeSet<String> = maps
+        .iter()
+        .filter(|m| m.pkg.ui.as_ref().is_some_and(|u| u.minimap_file.is_some()))
+        .map(|m| m.pkg.track_code.clone())
+        .collect();
+    if !mapped.is_empty() {
+        for rel in ["databases.erp", "flow_race.erp"] {
+            kept.insert((ui_file(rel), MINIMAP.into()), mapped.clone());
+        }
+    }
+    for (rel, ls) in array_erps {
+        for list in ls {
+            let codes: BTreeSet<String> = lists
+                .iter()
+                .filter(|(_, s)| s.contains(*list))
+                .map(|(c, _)| c.clone())
+                .collect();
+            for name in [texarray(list), format!("{}.image", texarray(list))] {
+                kept.insert((rel.clone(), name), codes.clone());
+            }
+        }
+    }
+    kept
+}
+
 pub fn plan_lists(maps: &[MapUi], original: &dyn Fn(&str) -> PathBuf) -> Result<(Lists, Vec<String>)> {
     let mut lists = BTreeMap::new();
     let mut notes = Vec::new();
@@ -483,6 +543,7 @@ pub fn build_ui(maps: &[MapUi], original: &dyn Fn(&str) -> PathBuf, cache: &Path
             }
         }
     }
+    build.kept = kept(maps, &lists, &array_erps);
     targets.extend(array_erps.keys().cloned());
     targets.sort();
     targets.dedup();
@@ -493,6 +554,7 @@ pub fn build_ui(maps: &[MapUi], original: &dyn Fn(&str) -> PathBuf, cache: &Path
 
         let mut overrides = load_one(&original(&ui_file("databases.erp")), OVERRIDES)?;
         let mut order: BTreeMap<&str, Vec<(usize, &Map)>> = BTreeMap::new();
+        let mut listed: BTreeMap<&str, (usize, Option<usize>)> = BTreeMap::new();
         edit_pkg(&mut overrides, |pkg| {
             for m in &loaded {
                 for (list, key) in ARRAY_SLOTS {
@@ -507,6 +569,12 @@ pub fn build_ui(maps: &[MapUi], original: &dyn Fn(&str) -> PathBuf, cache: &Path
                     .as_arr_mut()
                     .ok_or_else(|| Error::Map(format!("overrides {list} is not a list")))?
                     .items;
+                    listed.entry(list).or_insert_with(|| {
+                        (
+                            items.len(),
+                            items.iter().position(|n| name_of(n) == Some("blank")),
+                        )
+                    });
                     let mut entry = items
                         .first()
                         .cloned()
@@ -531,6 +599,7 @@ pub fn build_ui(maps: &[MapUi], original: &dyn Fn(&str) -> PathBuf, cache: &Path
         }
 
         let mut arrays: HashMap<&str, (Resource, Resource)> = HashMap::new();
+        let mut pads = Vec::new();
         for (rel, ls) in &array_erps {
             for list in ls {
                 if !arrays.contains_key(list) {
@@ -541,6 +610,8 @@ pub fn build_ui(maps: &[MapUi], original: &dyn Fn(&str) -> PathBuf, cache: &Path
                     let mut data = surf.fragments[1].data()?;
                     let mut slices = surface(&head)?.slices;
                     let size = data.len() / slices.max(1) as usize;
+                    let (entries, blank) = listed[*list];
+                    let had = slices as usize;
                     for (index, m) in &order[*list] {
                         let key = ARRAY_SLOTS.iter().find(|(l, _)| l == list).expect("known").1;
                         let (_, img) = m.image(key)?.expect("planned");
@@ -552,15 +623,17 @@ pub fn build_ui(maps: &[MapUi], original: &dyn Fn(&str) -> PathBuf, cache: &Path
                                 pixels.len()
                             )));
                         }
-                        let at = index * size;
-                        if (*index as u32) < slices {
-                            data[at..at + size].copy_from_slice(&pixels);
-                        } else if *index as u32 == slices {
-                            data.extend_from_slice(&pixels);
-                            slices += 1;
-                        } else {
-                            return Err(Error::Map(format!("{list}: slice {index} is past the end")));
-                        }
+                        put_slice(&mut data, &mut slices, *index, &pixels, blank);
+                    }
+                    let blanks = (had..slices as usize)
+                        .filter(|i| !order[*list].iter().any(|(at, _)| at == i))
+                        .count();
+                    if blanks > 0 {
+                        pads.push(format!(
+                            "{list}: the game's list has {entries} entries but only {had} pictures; \
+                             {blanks} blank picture(s) fill the gap. Repair the game files if a menu shows \
+                             the wrong picture"
+                        ));
                     }
                     put_u32(&mut head, 28, slices);
                     set_fragment(&mut surf, 0, &head, 19)?;
@@ -662,11 +735,73 @@ pub fn build_ui(maps: &[MapUi], original: &dyn Fn(&str) -> PathBuf, cache: &Path
         let dir = dst.parent().expect("has parent");
         std::fs::create_dir_all(dir).map_err(io_err(dir))?;
         file.write(entries, &dst)?;
-        std::fs::write(&done, b"").map_err(io_err(&done))?;
+        std::fs::write(&done, pads.join("\n")).map_err(io_err(&done))?;
     }
+    let pads = std::fs::read_to_string(&done).map_err(io_err(&done))?;
+    build.notes.extend(pads.lines().map(str::to_owned));
     for rel in targets {
         build.replaced.insert(rel.clone(), out.join(&rel));
     }
     let _ = (ASSET_ROOT, SLOT_DIR);
     Ok(build)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn array(slices: u8, size: usize) -> Vec<u8> {
+        (0..slices).flat_map(|i| vec![i; size]).collect()
+    }
+
+    fn slice(data: &[u8], index: usize, size: usize) -> &[u8] {
+        &data[index * size..(index + 1) * size]
+    }
+
+    #[test]
+    fn stock_arrays_overwrite_and_append_in_place() {
+        let mut data = array(32, 4);
+        let mut slices = 32;
+        put_slice(&mut data, &mut slices, 15, &[0xaa; 4], Some(2));
+        put_slice(&mut data, &mut slices, 32, &[0xbb; 4], Some(2));
+        put_slice(&mut data, &mut slices, 33, &[0xcc; 4], Some(2));
+        assert_eq!(slices, 34);
+        assert_eq!(data.len(), 34 * 4);
+        assert_eq!(slice(&data, 14, 4), [14; 4]);
+        assert_eq!(slice(&data, 15, 4), [0xaa; 4]);
+        assert_eq!(slice(&data, 32, 4), [0xbb; 4]);
+        assert_eq!(slice(&data, 33, 4), [0xcc; 4]);
+    }
+
+    #[test]
+    fn a_list_longer_than_its_array_pads_with_the_blank_picture() {
+        let mut data = array(34, 4);
+        let mut slices = 34;
+        put_slice(&mut data, &mut slices, 15, &[0xdd; 4], Some(2));
+        put_slice(&mut data, &mut slices, 35, &[0xaa; 4], Some(2));
+        put_slice(&mut data, &mut slices, 36, &[0xbb; 4], Some(2));
+        assert_eq!(slices, 37);
+        assert_eq!(data.len(), 37 * 4);
+        assert_eq!(slice(&data, 15, 4), [0xdd; 4]);
+        assert_eq!(slice(&data, 33, 4), [33; 4]);
+        assert_eq!(slice(&data, 34, 4), [2; 4]);
+        assert_eq!(slice(&data, 35, 4), [0xaa; 4]);
+        assert_eq!(slice(&data, 36, 4), [0xbb; 4]);
+        put_slice(&mut data, &mut slices, 34, &[0xcc; 4], Some(2));
+        assert_eq!(slices, 37);
+        assert_eq!(slice(&data, 34, 4), [0xcc; 4]);
+    }
+
+    #[test]
+    fn padding_without_a_blank_entry_is_zeroed() {
+        let mut data = array(4, 2);
+        let mut slices = 4;
+        put_slice(&mut data, &mut slices, 7, &[9; 2], None);
+        assert_eq!(slices, 8);
+        assert_eq!(&data[8..], [0, 0, 0, 0, 0, 0, 9, 9]);
+        let mut data = array(4, 2);
+        let mut slices = 4;
+        put_slice(&mut data, &mut slices, 6, &[9; 2], Some(10));
+        assert_eq!(&data[8..], [0, 0, 0, 0, 9, 9]);
+    }
 }

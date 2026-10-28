@@ -63,7 +63,8 @@ impl App {
     }
 
     /// The launcher names the game copy that is running, or the one Play
-    /// uses, so the mailbox follows a switch between copies.
+    /// uses, so the mailbox follows a switch between copies, and the data
+    /// folder in a session where the game can't write in its folder.
     fn locate(&mut self, host: &mut Host) {
         match host.call("addon_game_dir", Value::Null) {
             Ok(v) => {

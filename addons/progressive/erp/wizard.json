@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "ops": [
+    {
+      "op": "patch-pkg",
+      "erp": "2025_asset_groups/ui_package/persistent.erp",
+      "resource": "eaid://ui_package/routes/routes_career_customisation.uir",
+      "fragment": 0,
+      "edits": [
+        {
+          "op": "clone-entry",
+          "at": "RouteGroupings[Id=driver_career_driver_select].Routes",
+          "src": "[Id=screen_group_back]",
+          "as": "screen_group_back_progressive",
+          "set": {
+            "Commands[0].Attributes[Id=SubRoute].Value": "back_progressive"
+          }
+        },
+        {
+          "op": "clone-entry",
+          "at": "RouteGroupings[Id=driver_career_driver_select_header].Routes",
+          "src": "[Id=back_1]",
+          "as": "back_progressive",
+          "set": {
+            "Attributes[Id=Destination].Value": "career_wizard_settings_select",
+            "Commands[0].Attributes[Id=To].Value": "career_wizard_settings_select",
+            "Commands[1].Attributes[Id=Target].Value": "career_wizard_settings_select",
+            "Commands[1].Attributes[Id=From].Value": "fe_career_dlc_select"
+          }
+        }
+      ]
+    },
+    {
+      "op": "patch-pkg",
+      "erp": "2025_asset_groups/ui_package/persistent.erp",
+      "resource": "eaid://ui_package/routes/routes_frontend_general.uir",
+      "fragment": 0,
+      "edits": [
+        {
+          "op": "clone-entry",
+          "at": "RouteGroupings[Id=career_continue_driver].Routes",
+          "src": "[Id=career_wizard_season_length_select]",
+          "as": "career_wizard_driver_career_progressive",
+          "set": {
+            "Attributes[Id=Destination].Value": "swofty_setup_career_wizard_driver_career_progressive",
+            "Commands[Dependencies=3].Attributes[Id=To].Value": "swofty_setup_career_wizard_driver_career_progressive",
+            "Commands[Dependencies=5].Attributes[Id=Flow].Value": "options_flow",
+            "Commands[Dependencies=6].Attributes[Id=Target].Value": "swofty_setup_career_wizard_driver_career_progressive",
+            "Commands[Dependencies=6].Attributes[Id=SubRoute].Value": "open"
+          }
+        }
+      ]
+    }
+  ]
+}

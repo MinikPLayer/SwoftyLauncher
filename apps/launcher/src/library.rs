@@ -1,8 +1,10 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
 use gpui_kit::{Image, ImageFormat};
 use swofty_core::asset::{AssetOp, OpFile};
+use swofty_core::folders::{Entry, Folders, Key};
 use swofty_core::launcher::Summary;
 use swofty_core::manifest::{AddonManifest, Category};
 use swofty_core::ops::ErpOp;
@@ -202,6 +204,10 @@ fn tracks_page(sections: &[SectionItem]) -> Option<usize> {
         .position(|s| s.spec.id == TRACKS_SECTION && !s.is_importer_tracks())
 }
 
+fn place(folders: &Folders, a: &AddonItem) -> Option<Key> {
+    folders.place(&a.manifest.id, a.source == Source::Builtin, a.category())
+}
+
 fn listed(addons: &[AddonItem], tracks_page: Option<usize>) -> impl Iterator<Item = &AddonItem> {
     addons.iter().filter(move |m| !(m.track && tracks_page.is_some()))
 }
@@ -247,6 +253,11 @@ pub struct Library {
     pub error: Option<String>,
     /// Installed addons this launcher can't read, with why.
     pub broken: Vec<Unreadable>,
+    pub folders: Folders,
+    /// The profile's addons in load order, then the installed ones it doesn't
+    /// list, grouped into folders; folders of the player's own that hold none
+    /// come last.
+    pub entries: Vec<Entry>,
     pub loaded: Instant,
 }
 
@@ -263,13 +274,13 @@ impl Library {
             Registry::default()
         });
         let manifests = registry.manifests();
-        let enabled: Vec<&str> = profile.enabled().collect();
+        let enabled: std::collections::HashSet<String> = profile.enabled().map(str::to_owned).collect();
         let mut addons: Vec<AddonItem> = manifests
             .values()
             .map(|m| {
                 let package = !m.is_builtin() && swofty_core::dbedit::package::is_package(store, &m.id);
                 AddonItem {
-                    enabled: enabled.contains(&m.id.as_str()),
+                    enabled: enabled.contains(&m.id),
                     locked: registry.get(&m.id).is_some_and(|e| e.locked),
                     icon: addon_icon(store, &registry, m),
                     track: !m.is_builtin()
@@ -291,6 +302,41 @@ impl Library {
             let declared = registry.get(&m.manifest.id).is_none_or(|e| e.declared);
             (!m.manifest.is_builtin(), declared, m.manifest.name.to_lowercase())
         });
+        let folders = store.folders();
+        let mut profile = profile;
+        let places: HashMap<&str, Option<Key>> = addons
+            .iter()
+            .map(|a| (a.manifest.id.as_str(), place(&folders, a)))
+            .collect();
+        let place_of = |id: &str| {
+            places
+                .get(id)
+                .cloned()
+                .unwrap_or_else(|| folders.place(id, false, None))
+        };
+        if swofty_core::folders::arrange(&mut profile.clone(), place_of) {
+            match store.update_profile(&profile.name, |p| {
+                swofty_core::folders::arrange(p, place_of);
+                Ok(p.clone())
+            }) {
+                Ok(p) => profile = p,
+                Err(e) => note(e),
+            }
+        }
+        let listed: std::collections::HashSet<&str> = profile.addons.iter().map(|a| a.id.as_str()).collect();
+        let order = profile.addons.iter().map(|a| a.id.clone()).chain(
+            addons
+                .iter()
+                .filter(|a| !listed.contains(a.manifest.id.as_str()))
+                .map(|a| a.manifest.id.clone()),
+        );
+        let mut entries = swofty_core::folders::group(order, place_of);
+        for f in &folders.folders {
+            let key = Key::Own(f.id.clone());
+            if !entries.iter().any(|e| e.folder() == Some(&key)) {
+                entries.push(Entry::Folder(key, Vec::new()));
+            }
+        }
         let profiles = store
             .profile_names()
             .unwrap_or_default()
@@ -310,7 +356,7 @@ impl Library {
             .collect();
         let sections: Vec<SectionItem> = registry
             .iter()
-            .filter(|e| !e.declared && enabled.contains(&e.id()))
+            .filter(|e| !e.declared && enabled.contains(e.id()))
             .flat_map(|e| {
                 e.addon.sections().into_iter().map(|spec| SectionItem {
                     addon: e.id().to_owned(),
@@ -330,7 +376,16 @@ impl Library {
             registry,
             error,
             broken: store.unreadable_addons(),
+            folders,
+            entries,
             loaded: Instant::now(),
+        }
+    }
+
+    pub fn place(&self, id: &str) -> Option<Key> {
+        match self.addons.iter().find(|a| a.manifest.id == id) {
+            Some(a) => place(&self.folders, a),
+            None => self.folders.place(id, false, None),
         }
     }
 

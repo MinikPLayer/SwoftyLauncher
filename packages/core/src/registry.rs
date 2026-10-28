@@ -317,13 +317,7 @@ impl GameFiles for GameDir {
     }
 
     fn addon_dir(&self, addon: &str) -> swofty_addon::Result<Option<PathBuf>> {
-        let own = || {
-            self.game
-                .dir
-                .join(crate::install::LOADER_DIR)
-                .join(crate::build::ADDONS_DIR)
-                .join(addon)
-        };
+        let own = || crate::addon_storage::live_dir(&self.data, &self.game.dir, addon);
         if !cfg!(target_os = "linux") {
             return Ok(Some(own()));
         }
@@ -354,6 +348,15 @@ impl GameFiles for GameDir {
         profile: &str,
     ) -> swofty_addon::Result<Option<swofty_addon::launcher::ProfileTracks>> {
         crate::tracks::for_profile(&self.data, &self.game, profile)
+            .map(Some)
+            .map_err(other)
+    }
+
+    fn profile_heads(
+        &self,
+        profile: &str,
+    ) -> swofty_addon::Result<Option<swofty_addon::launcher::ProfileHeads>> {
+        crate::heads::for_profile(&Store::new(self.data.clone()), &self.game, profile)
             .map(Some)
             .map_err(other)
     }

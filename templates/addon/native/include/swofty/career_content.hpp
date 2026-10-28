@@ -8,13 +8,14 @@
 #include <string_view>
 #include <swofty/career.hpp>
 
-// Extra career contents: a tile on the career content select after the stock 2025 and 2026 ones,
-// with its own save slots. Register one from the init check of your addon (the function you pass
-// to SWOFTY_ADDON), before the core's mixin commit; the core then builds the tile, presses it,
-// routes it into the career wizard, passes its mode through the driver-career gate and answers the
-// save-slot predicate for its data group. The data side (mode row, entrant list, official entrant
-// lists, championship components) comes from your database operations; the core checks it once the
-// database has loaded and turns a content off with a log line when something is missing.
+// Extra career contents: a tile in the Addons row of the career content select, under the stock 2025
+// and 2026 tiles, in Driver Career, My Team or both, with its own save slots. Register one from the
+// init check of your addon (the function you pass to SWOFTY_ADDON), before the core's mixin commit;
+// the core then builds the tile, presses it, routes it into the career wizard, passes its mode
+// through the driver-career gate and answers the save-slot predicate for its data group. The data
+// side (mode row, entrant list, official entrant lists, championship components) comes from your
+// database operations; the core checks it once the database has loaded and turns a content off with
+// a log line when something is missing.
 //
 // data_group(), is() and current_data_group() tell which career a career entity is, by the data
 // group its save slot is filed under, so one DLL can act on one career only.
@@ -30,6 +31,13 @@ namespace content {
 using swofty::career::Result;
 
 enum class Model : uint32_t { f1_2026 = SWOFTY_CAREER_CONTENT_MODEL_2026, f1_2025 = SWOFTY_CAREER_CONTENT_MODEL_2025 };
+
+// The careers whose content select shows the tile: Driver Career, My Team or both.
+enum class Career : uint32_t {
+    driver = SWOFTY_CAREER_CONTENT_DRIVER,
+    my_team = SWOFTY_CAREER_CONTENT_MY_TEAM,
+    both = SWOFTY_CAREER_CONTENT_DRIVER | SWOFTY_CAREER_CONTENT_MY_TEAM,
+};
 
 enum class State : uint32_t {
     queued = SWOFTY_CAREER_CONTENT_QUEUED,
@@ -48,13 +56,15 @@ inline constexpr const char *pressed_event = SWOFTY_EVENT_CAREER_CONTENT_PRESSED
 // whose statId the core reads at runtime. model is the stock tile it copies (route, menu systems,
 // vtable, press fallback). car_group is the customisation car group stat_id its press selects, -1
 // for the model tile's pick. badge is the tile's notification value (0 none). entitlement replaces
-// the 2026 model's entitlement string (empty keeps the model's).
+// the 2026 model's entitlement string (empty keeps the model's). careers picks the content selects
+// that show the tile, in the Addons row under the stock tiles.
 struct Content {
     std::string_view id, title, description, data_group, suffix, mode;
     Model model = Model::f1_2026;
     int32_t car_group = -1;
     uint32_t badge = 0;
     std::string_view entitlement = {};
+    Career careers = Career::driver;
 };
 
 namespace detail {
@@ -102,7 +112,8 @@ inline Result add(const Content &c)
                               mode.c_str(),
                               entitlement.c_str(),
                               c.car_group,
-                              c.badge};
+                              c.badge,
+                              static_cast<uint32_t>(c.careers)};
     return swofty::career::detail::result(t->add(&d));
 }
 

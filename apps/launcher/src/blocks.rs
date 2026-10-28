@@ -18,9 +18,10 @@ use gpui_kit::*;
 use serde_json::{Map, Value};
 use swofty_core::view::{
     Align, Block, Body, Card, Cell, Choice, DropZone, Field, Fit, Form, Grid, Hero, Image as ImageBlock,
-    Meter, Pill, Search, SelectField, Table, TableRow, Tabs, Tile, Tone, View,
+    Meter, Pill, Search, SelectField, Table, TableRow, Tabs, Tile, Tone, View, colour_hex, parse_colour,
 };
 
+use crate::colour::{ColourEvent, ColourPicker, hsla_of};
 use crate::pages::label;
 use crate::sections::{art, icon, tone};
 use crate::shell::Shell;
@@ -324,16 +325,42 @@ pub(crate) struct SearchSlot {
 }
 
 pub(crate) struct CellEdit {
-    key: String,
-    addon: String,
-    section: String,
-    table: String,
-    row: String,
-    column: String,
+    target: CellTarget,
     field: Field,
     original: Value,
     input: Entity<InputState>,
     _subs: Vec<Subscription>,
+}
+
+pub(crate) struct ColourEdit {
+    key: String,
+    target: ColourTarget,
+    picker: Entity<ColourPicker>,
+    trigger: Rc<std::cell::Cell<Bounds<Pixels>>>,
+    _subs: Vec<Subscription>,
+}
+
+#[derive(Clone)]
+enum ColourTarget {
+    Form {
+        key: String,
+        field: String,
+        addon: String,
+        section: String,
+        form: String,
+    },
+    Cell {
+        target: CellTarget,
+        original: Value,
+    },
+}
+
+fn swatch(rgb: Option<[u8; 3]>, size: f32, p: Palette) -> Div {
+    let dot = div().size(px(size)).flex_shrink_0().rounded_full();
+    match rgb {
+        Some(c) => dot.bg(hsla_of(c)).border_1().border_color(hsla(0., 0., 1., 0.12)),
+        None => dot.border_1().border_color(p.text_placeholder),
+    }
 }
 
 pub(crate) fn pill(p: &Pill, pal: Palette) -> Div {
@@ -524,6 +551,7 @@ impl Shell {
             self.forms.clear();
             self.searches.clear();
             self.cell = None;
+            self.colour = None;
             return;
         };
         let prefix = format!("{addon}/{section}/");
@@ -559,8 +587,15 @@ impl Shell {
         }
         self.forms.retain(|k, s| k.starts_with(&prefix) && s.seen);
         self.searches.retain(|k, s| k.starts_with(&prefix) && s.seen);
-        if self.cell.as_ref().is_some_and(|c| !c.key.starts_with(&prefix)) {
+        if self
+            .cell
+            .as_ref()
+            .is_some_and(|c| !c.target.key.starts_with(&prefix))
+        {
             self.cell = None;
+        }
+        if self.colour.as_ref().is_some_and(|c| !c.key.starts_with(&prefix)) {
+            self.colour = None;
         }
     }
 
@@ -840,7 +875,7 @@ impl Shell {
                         );
                     }
                 }
-                Field::Toggle(_) => {
+                Field::Toggle(_) | Field::Colour(_) => {
                     if force || slot.picks.get(&id) == Some(&value) {
                         slot.picks.remove(&id);
                     }
@@ -881,7 +916,7 @@ impl Shell {
                 }
                 Some(Value::String(text))
             }
-            Field::Select(_) | Field::Toggle(_) => {
+            Field::Select(_) | Field::Toggle(_) | Field::Colour(_) => {
                 Some(slot.picks.get(id).cloned().unwrap_or_else(|| field.value()))
             }
         }
@@ -1276,7 +1311,8 @@ impl Shell {
     fn image(&self, at: At, i: &ImageBlock, p: Palette) -> AnyElement {
         let width = i.width.clamp(0., at.width.max(0.));
         let height = i.height.max(0.);
-        let inner = ((width - 2.).max(1.), (height - 2.).max(1.));
+        let border = if i.transparent { 0. } else { 2. };
+        let inner = ((width - border).max(1.), (height - border).max(1.));
         let fit = match i.fit {
             Fit::Cover => ObjectFit::Cover,
             Fit::Contain => ObjectFit::Contain,
@@ -1290,9 +1326,9 @@ impl Shell {
                     .h(px(height))
                     .rounded(px(6.))
                     .overflow_hidden()
-                    .bg(p.surface)
-                    .border_1()
-                    .border_color(p.border_variant)
+                    .when(!i.transparent, |d| {
+                        d.bg(p.surface).border_1().border_color(p.border_variant)
+                    })
                     .when_some(self.image_roots(at.addon).allow(&i.path), |d, path| {
                         d.child(
                             img(path)
@@ -1583,6 +1619,55 @@ impl Shell {
                 }
                 None => div().into_any_element(),
             },
+            Field::Colour(cf) => {
+                let colour_key = format!("{key}/{id}");
+                let rgb = self.colour_shown(&colour_key, cx).or_else(|| {
+                    slot.and_then(|s| s.picks.get(&id))
+                        .cloned()
+                        .unwrap_or_else(|| field.value())
+                        .as_str()
+                        .and_then(parse_colour)
+                });
+                let open = self.colour.as_ref().is_some_and(|c| c.key == colour_key);
+                let overlay = self.colour_overlay(&colour_key, cx);
+                let target = ColourTarget::Form {
+                    key: key.to_owned(),
+                    field: id.clone(),
+                    addon: at.addon.to_owned(),
+                    section: at.section.to_owned(),
+                    form: form.id.clone(),
+                };
+                let start = rgb.unwrap_or([0xFF, 0xFF, 0xFF]);
+                h_flex()
+                    .id(control_id)
+                    .relative()
+                    .h(px(24.))
+                    .px(px(9.))
+                    .gap(px(8.))
+                    .rounded(px(5.))
+                    .border_1()
+                    .border_color(if open { p.accent } else { p.border })
+                    .bg(p.background)
+                    .child(swatch(rgb, 12., p))
+                    .when(cf.hex, |d| {
+                        d.child(
+                            div()
+                                .text_size(px(13.))
+                                .text_color(if rgb.is_some() { p.text } else { p.text_placeholder })
+                                .child(rgb.map_or_else(|| "None".to_owned(), colour_hex)),
+                        )
+                    })
+                    .map(|d| match disabled {
+                        true => d.opacity(0.5),
+                        false => d
+                            .cursor_pointer()
+                            .on_click(cx.listener(move |this, _, window, cx| {
+                                this.open_colour(colour_key.clone(), target.clone(), start, window, cx)
+                            })),
+                    })
+                    .children(overlay)
+                    .into_any_element()
+            }
             Field::Toggle(_) => {
                 let on = slot
                     .and_then(|s| s.picks.get(&id))
@@ -2006,7 +2091,7 @@ impl Shell {
         let c = cell.spec();
         let key = format!("{table_key}/{row_id}/{column}");
         let color = c.tone.or(row_tone).map_or(p.text, |t| tone(t, p));
-        if let Some(edit) = self.cell.as_ref().filter(|e| e.key == key) {
+        if let Some(edit) = self.cell.as_ref().filter(|e| e.target.key == key) {
             let input = edit.input.clone();
             return div()
                 .id(SharedString::from(format!("edit-{key}")))
@@ -2065,6 +2150,10 @@ impl Shell {
         if let Some(image) = &c.image {
             let (w, h) = image.size((row_h - 8.).max(16.));
             let (w, h) = (w.clamp(1., 512.), h.clamp(1., (row_h - 4.).max(1.)));
+            let fit = match image.fit() {
+                Fit::Cover => ObjectFit::Cover,
+                Fit::Contain => ObjectFit::Contain,
+            };
             content = content.child(
                 div()
                     .w(px(w))
@@ -2072,9 +2161,9 @@ impl Shell {
                     .flex_shrink_0()
                     .rounded(px(if h > 24. { 6. } else { 2. }))
                     .overflow_hidden()
-                    .bg(p.elevated)
+                    .when(!image.transparent(), |d| d.bg(p.elevated))
                     .when_some(self.image_roots(at.addon).allow(image.path()), |d, path| {
-                        d.child(img(path).w(px(w)).h(px(h)).object_fit(ObjectFit::Cover))
+                        d.child(img(path).w(px(w)).h(px(h)).object_fit(fit))
                     }),
             );
         }
@@ -2117,6 +2206,51 @@ impl Shell {
                 content = content.child(text_el);
             }
             return content.into_any_element();
+        }
+        if let Some(Field::Colour(cf)) = &c.edit {
+            let target = CellTarget {
+                key: key.clone(),
+                addon: at.addon.to_owned(),
+                section: at.section.to_owned(),
+                table: t.id().to_owned(),
+                row: row_id.to_owned(),
+                column: column.to_owned(),
+            };
+            let original = match cf.rgb().or_else(|| parse_colour(&c.text)) {
+                Some(rgb) => Value::String(colour_hex(rgb)),
+                None => Value::Null,
+            };
+            let rgb = self
+                .colour_shown(&key, cx)
+                .or_else(|| parse_colour(&shown).filter(|_| pending))
+                .or_else(|| original.as_str().and_then(parse_colour));
+            let (busy, disabled) = (self.busy.contains(&key), cf.disabled);
+            let start = rgb.unwrap_or([0xFF, 0xFF, 0xFF]);
+            let open_key = key.clone();
+            return content
+                .id(SharedString::from(format!("cell-{key}")))
+                .relative()
+                .px(px(6.))
+                .mx(px(-6.))
+                .h(px(size + 12.))
+                .rounded(px(4.))
+                .child(swatch(rgb, 14., p))
+                .when(cf.hex, |d| d.child(text_el))
+                .when(!disabled, |d| d.cursor_pointer())
+                .when(!busy && !disabled, |d| d.hover(move |s| s.bg(p.hover)))
+                .on_click(cx.listener(move |this, _, window, cx| {
+                    cx.stop_propagation();
+                    if disabled || this.busy.contains(&open_key) {
+                        return;
+                    }
+                    let target = ColourTarget::Cell {
+                        target: target.clone(),
+                        original: original.clone(),
+                    };
+                    this.open_colour(open_key.clone(), target, start, window, cx)
+                }))
+                .children(self.colour_overlay(&key, cx))
+                .into_any_element();
         }
         if let Some(f) = c.bar {
             content = content.child(div().w(px(56.)).flex_shrink_0().child(bar(
@@ -2216,18 +2350,13 @@ impl Shell {
         let key = target.key.clone();
         let sub = cx.subscribe_in(&input, window, move |this, _, ev: &InputEvent, window, cx| {
             if matches!(ev, InputEvent::PressEnter { .. } | InputEvent::Blur)
-                && this.cell.as_ref().is_some_and(|c| c.key == key)
+                && this.cell.as_ref().is_some_and(|c| c.target.key == key)
             {
                 this.commit_cell(window, cx);
             }
         });
         self.cell = Some(CellEdit {
-            key: target.key,
-            addon: target.addon,
-            section: target.section,
-            table: target.table,
-            row: target.row,
-            column: target.column,
+            target,
             field,
             original,
             input,
@@ -2260,20 +2389,139 @@ impl Shell {
         if value == edit.original || value.is_null() {
             return;
         }
-        self.pending_cells
-            .insert(edit.key.clone(), field_text(&edit.field, &value));
+        let text = field_text(&edit.field, &value);
+        self.submit_cell(edit.target, value, text, window, cx);
+    }
+
+    fn submit_cell(
+        &mut self,
+        target: CellTarget,
+        value: Value,
+        text: String,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.pending_cells.insert(target.key.clone(), text);
         let mut values = Map::new();
-        values.insert(edit.column.clone(), value);
+        values.insert(target.column.clone(), value);
         let event = swofty_core::view::Event::Submit {
-            form: edit.table.clone(),
-            row: Some(edit.row.clone()),
+            form: target.table,
+            row: Some(target.row),
             values,
-            changed: vec![edit.column.clone()],
+            changed: vec![target.column],
         };
-        self.send(&edit.addon, &edit.section, edit.key.clone(), event, window, cx);
+        self.send(&target.addon, &target.section, target.key, event, window, cx);
+    }
+
+    fn colour_shown(&self, key: &str, cx: &App) -> Option<[u8; 3]> {
+        let edit = self.colour.as_ref().filter(|c| c.key == key)?;
+        Some(edit.picker.read(cx).rgb())
+    }
+
+    fn colour_overlay(&self, key: &str, cx: &mut Context<Self>) -> Vec<AnyElement> {
+        let Some(edit) = self.colour.as_ref().filter(|c| c.key == key) else {
+            return Vec::new();
+        };
+        let trigger = edit.trigger.clone();
+        let picker = edit.picker.clone();
+        vec![
+            canvas(move |b, _, _| trigger.set(b), |_, _, _, _| {})
+                .absolute()
+                .size_full()
+                .into_any_element(),
+            div()
+                .absolute()
+                .top_full()
+                .left_0()
+                .child(
+                    deferred(
+                        anchored().snap_to_window_with_margin(px(8.)).child(
+                            div()
+                                .id("colour-overlay")
+                                .mt(px(6.))
+                                .occlude()
+                                .on_mouse_down_out(cx.listener(|this, ev: &MouseDownEvent, window, cx| {
+                                    let on_trigger = this
+                                        .colour
+                                        .as_ref()
+                                        .is_some_and(|c| c.trigger.get().contains(&ev.position));
+                                    if !on_trigger {
+                                        this.close_colour(true, window, cx);
+                                    }
+                                }))
+                                .child(picker),
+                        ),
+                    )
+                    .with_priority(1),
+                )
+                .into_any_element(),
+        ]
+    }
+
+    fn open_colour(
+        &mut self,
+        key: String,
+        target: ColourTarget,
+        start: [u8; 3],
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.colour.as_ref().is_some_and(|c| c.key == key) {
+            self.close_colour(true, window, cx);
+            return;
+        }
+        self.close_colour(true, window, cx);
+        let picker = cx.new(|cx| ColourPicker::new(start, window, cx));
+        let subs = vec![
+            cx.subscribe_in(&picker, window, |this, _, ev: &ColourEvent, window, cx| {
+                this.close_colour(matches!(ev, ColourEvent::Commit), window, cx)
+            }),
+            cx.observe(&picker, |_, _, cx| cx.notify()),
+        ];
+        self.colour = Some(ColourEdit {
+            key,
+            target,
+            picker,
+            trigger: Rc::default(),
+            _subs: subs,
+        });
+        cx.notify();
+    }
+
+    fn close_colour(&mut self, commit: bool, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(edit) = self.colour.take() else {
+            return;
+        };
+        cx.notify();
+        if !commit {
+            return;
+        }
+        let hex = colour_hex(edit.picker.read(cx).rgb());
+        match edit.target {
+            ColourTarget::Form {
+                key,
+                field,
+                addon,
+                section,
+                form,
+            } => {
+                let live = self
+                    .find_form(&addon, &section, &form)
+                    .filter(|f| f.live)
+                    .map(|f| (addon, section, f));
+                self.pick(&key, &field, Value::String(hex), live, window, cx);
+            }
+            ColourTarget::Cell { target, original } => {
+                let value = Value::String(hex.clone());
+                if value != original {
+                    self.submit_cell(target, value, hex, window, cx);
+                }
+            }
+        }
     }
 }
 
+#[derive(Clone)]
 pub(crate) struct CellTarget {
     key: String,
     addon: String,

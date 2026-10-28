@@ -4,6 +4,7 @@
 #include <swofty/mem.hpp>
 #include <swofty/mixin.hpp>
 
+#include <atomic>
 #include <mutex>
 #include <string>
 
@@ -39,6 +40,7 @@ std::mutex lock;
 cs::Blocks blocks;
 uint64_t last_popup[3];
 bool live, diag;
+std::atomic<uint32_t> picked{0};
 
 const char *mode_name(uint32_t m)
 {
@@ -59,6 +61,8 @@ bool route_name(void *name, std::string &out)
 
 bool gate(const cs::Route &r)
 {
+    if (r.kind == SWOFTY_CAREER_START_PICK)
+        picked = r.mode;
     std::string by, title, body;
     bool blocked = false, popup = false;
     {
@@ -98,8 +102,11 @@ void run_route_hook(void *ui, void *node, void *name, void *group, int32_t flags
     const cs::Route *r = nullptr;
     {
         perf::Scope p(probe);
-        if (route_name(name, text))
+        if (route_name(name, text)) {
+            if (runtime::wizard_route_running(text, name))
+                route_name(name, text);
             r = cs::classify(text);
+        }
         if (!r && diag)
             swofty::log("[career] route '%s' (not a career start)", text.c_str());
         if (r && gate(*r))
@@ -170,6 +177,11 @@ void career_start_drop_module(void *module)
 bool career_start_live()
 {
     return live;
+}
+
+uint32_t career_start_picked()
+{
+    return picked;
 }
 
 namespace {

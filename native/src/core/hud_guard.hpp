@@ -142,4 +142,12 @@ inline bool removal_after_draw(uint64_t now_ms, uint64_t last_draw_ms)
     return last_draw_ms && now_ms >= last_draw_ms && now_ms - last_draw_ms <= REMOVED_AFTER_DRAW_MS;
 }
 
+// Whether a COM object's own vtable sends this slot to fn. A hook's trampoline runs the hooked
+// implementation's body, which reads its this pointer as its own object type, so the core calls it only
+// for an object of that type; a wrapper such as Streamline's queue proxy goes through its own vtable.
+inline bool vtable_slot_is(const void *object, size_t slot, const void *fn)
+{
+    return object && fn && (*static_cast<const void *const *const *>(object))[slot] == fn;
+}
+
 }

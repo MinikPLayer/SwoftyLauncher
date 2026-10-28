@@ -96,6 +96,13 @@ int main()
     ok(full("entrants.teams.team_28.stat_id") == 0x83a0da0da7de0118ull, "fnv64 team_28.stat_id");
     ok(full("ai.general_ai_settings.max_test_time") == 0x2273a5bae867b23bull, "fnv64 max_test_time");
 
+    // The game database map grows at 80% of its slots: 2^20 slots grow at the 838,861st record.
+    ok(dbread::grows_at(1ull << 20) == 838860, "grows_at 2^20");
+    ok(dbread::grows_at(1ull << 21) == 1677721, "grows_at 2^21");
+    ok(dbread::fits_without_growing(742857, 90000, 1ull << 20, 1024), "742,857 + 90,000 fits under 838,860");
+    ok(!dbread::fits_without_growing(758755, 82446, 1ull << 20, 1024), "758,755 + 82,446 (the reported crash) does not fit");
+    ok(dbread::fits_without_growing(838860, 0, 1ull << 20, 0), "a full map with nothing added fits");
+
     // Incremental continuation of a prefix state equals hashing the whole string.
     uint64_t pref = dbread::fnv64("entrants.teams");
     ok(dbread::fnv_cont(pref, ".team_28.stat_id") == full("entrants.teams.team_28.stat_id"), "incremental continuation");

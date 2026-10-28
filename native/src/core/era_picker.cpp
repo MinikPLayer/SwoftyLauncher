@@ -50,9 +50,13 @@ std::string settings_addon(const void *from, std::string &dll);
 // Narrowing (Game_F1WorldActivityContainer_SelectEntrantList, wrapped): every addon list shares the one
 // host setup mode, whose entrant setup modes list all of them. Time Trial loads every car of every list
 // the entrant setup mode offers and the Grand Prix takes its first list, so a press on an addon box
-// leaves only that box's list in each swofty_f1 entrant setup mode until another box is pressed or the
-// boxes are built again, and every press clears the setup's selected list, which the setup refill takes
-// from the entrant setup mode's first list only while it is empty.
+// leaves only that box's list in each swofty_f1 entrant setup mode until another box is pressed, and
+// every press clears the setup's selected list, which the setup refill takes from the entrant setup
+// mode's first list only while it is empty. A build of the boxes puts every list back for the
+// availability checks, then narrows again to the addon list the setup has selected (setup +0xe18), or
+// to the last addon box pressed while nothing is selected: a session can start from a rebuilt picker
+// without a new press, and a Time Trial that loads all nine Classic Seasons lists overflows the fixed
+// 43 MiB AUDIO_BUNDLE heap with their engine sound bundles.
 //
 // The three hooks are one core mixin set, offered at the first mixin commit after a box was registered,
 // so a game without registered boxes runs none of them.
@@ -137,6 +141,8 @@ Set set;
 Built built;
 Narrowed narrowed[4];
 size_t narrowed_count;
+std::string last_pick;
+uint32_t logged_renarrow;
 FeTile_Press_EraTile_t *press_orig;
 Game_F1WorldActivityContainer_SelectEntrantList_t *select_orig;
 uint32_t logged_builds, logged_narrow, logged_refused, logged_detached;
@@ -222,6 +228,26 @@ void narrow(void *mode, const char *list)
         if (logged_narrow++ < LOG_FIRST)
             swofty::log("[era] %s offers only %s (of %lld lists)", logic::HOST, list, (long long)count);
     });
+}
+
+bool is_ours(const char *list)
+{
+    return list && std::find(built.lists.begin(), built.lists.end(), list) != built.lists.end();
+}
+
+void renarrow(void *mode)
+{
+    auto *modes = setup_owner(mode);
+    if (!modes)
+        return;
+    const char *selected = name_of(at<void *>(modes, SELECTED_LIST), LIST_NAME);
+    std::string list = is_ours(selected) ? selected : selected ? std::string() : last_pick;
+    if (list.empty() || !is_ours(list.c_str()))
+        return;
+    narrow(mode, list.c_str());
+    if (logged_renarrow++ < LOG_FIRST)
+        swofty::log("[era] picker built with %s still selected (%s): %s narrowed to it again", list.c_str(),
+                    selected ? "the setup's selected list" : "the last addon box pressed", logic::HOST);
 }
 
 void *registry()
@@ -311,6 +337,7 @@ void site_entry(SwoftyContext *c)
         built.boxes++;
     }
     ref<uint8_t *>(vm, VM_TILES_NODE) = tiles_node;
+    renarrow(mode);
     if (auto *root = at<uint8_t *>(vm, VM_ROOT)) {
         uint8_t visible = built.boxes > 0;
         reinterpret_cast<Vm_Set_Bool_t *>(b.set_bool)(registry(), root + 8, logic::ADDON_TILES_VISIBLE, &visible, 1);
@@ -357,6 +384,9 @@ void select_entry(void *container, const char *entrant_list)
         narrow(mode, entrant_list);
     else
         restore();
+    if (ours && !mode && logged_narrow++ < LOG_FIRST)
+        swofty::log("[era] %s pressed but the container has no mode; %s is not narrowed", entrant_list, logic::HOST);
+    last_pick = ours ? entrant_list : "";
     if (auto *modes = setup_owner(mode))
         ref<void *>(modes, SELECTED_LIST) = nullptr;
     select_orig(container, entrant_list);
@@ -448,6 +478,12 @@ namespace runtime {
 const SwoftyEra *era_table()
 {
     return &table;
+}
+
+std::vector<era::Box> era_boxes()
+{
+    std::lock_guard<std::mutex> g(lock);
+    return logic::ordered(boxes);
 }
 
 std::vector<CoreMixins> era_mixins()

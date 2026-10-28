@@ -72,6 +72,12 @@
           "link": "/reference/game/career#CareerTimeComponent"
         },
         {
+          "name": "CarNumberComponent",
+          "kind": "struct",
+          "status": null,
+          "link": "/reference/game/career#CarNumberComponent"
+        },
+        {
           "name": "Championship",
           "kind": "struct",
           "status": null,
@@ -136,6 +142,12 @@
           "kind": "struct",
           "status": null,
           "link": "/reference/game/career#DriverContract"
+        },
+        {
+          "name": "DriverContractChangedMessage",
+          "kind": "struct",
+          "status": null,
+          "link": "/reference/game/career#DriverContractChangedMessage"
         },
         {
           "name": "DriverContractsMyTeamComponent",
@@ -478,6 +490,12 @@
           "kind": "func",
           "status": "experimental",
           "link": "/reference/game/career#Career_Decide_ContractNegotiation"
+        },
+        {
+          "name": "Career_DriverNumbers_CheckExisting",
+          "kind": "func",
+          "status": "experimental",
+          "link": "/reference/game/career#Career_DriverNumbers_CheckExisting"
         },
         {
           "name": "Career_Eval_Curve",
@@ -826,6 +844,12 @@
           "kind": "vtable",
           "status": "experimental",
           "link": "/reference/game/career#vt_Career_FacilityNode"
+        },
+        {
+          "name": "vt_Career_MessageDriverContractChanged",
+          "kind": "vtable",
+          "status": "experimental",
+          "link": "/reference/game/career#vt_Career_MessageDriverContractChanged"
         },
         {
           "name": "vt_Career_MessageDriverMoveConfirmed",
@@ -2292,6 +2316,12 @@
           "link": "/reference/game/game#Game_Career_IsDriverCareerMode"
         },
         {
+          "name": "Game_CareerSetup_ResetEntrants",
+          "kind": "func",
+          "status": "experimental",
+          "link": "/reference/game/game#Game_CareerSetup_ResetEntrants"
+        },
+        {
           "name": "Game_CareerWizard_PushNextStep",
           "kind": "func",
           "status": "experimental",
@@ -2398,6 +2428,12 @@
           "kind": "data",
           "status": "experimental",
           "link": "/reference/game/game#k_Game_TrackListComponentDesc"
+        },
+        {
+          "name": "vt_Game_CareerDLCSelectViewModel",
+          "kind": "vtable",
+          "status": "experimental",
+          "link": "/reference/game/game#vt_Game_CareerDLCSelectViewModel"
         },
         {
           "name": "vt_Game_CareerWizardSettingsSelectViewModel",

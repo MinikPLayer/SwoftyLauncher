@@ -121,6 +121,10 @@ fn cstr<'a>(blob: &'a [u8], off: u32, what: &str) -> Result<&'a str> {
 
 impl Lng {
     pub fn parse(data: &[u8]) -> Result<Self> {
+        Self::parse_with_warnings(data).map(|(lng, _)| lng)
+    }
+
+    pub fn parse_with_warnings(data: &[u8]) -> Result<(Self, Vec<String>)> {
         if !is_lng(data) {
             return Err(Error::Magic {
                 offset: 0,
@@ -128,12 +132,15 @@ impl Lng {
             });
         }
         let total = be32(data, 4)? as usize;
-        if total != data.len() {
-            return Err(Error::Format(format!(
-                "LNGT size {total} is not the file size {}",
-                data.len()
-            )));
+        if total == data.len() {
+            return Ok((Self::read(data)?, Vec::new()));
         }
+        let size = format!("LNGT size {total} is not the file size {}", data.len());
+        let lng = Self::read(data).map_err(|e| Error::Format(format!("{size}: {e}")))?;
+        Ok((lng, vec![format!("{size}; its chunks end at the file size")]))
+    }
+
+    fn read(data: &[u8]) -> Result<Self> {
         let mut c = Chunks { data, pos: 8 };
         let hshs = c.chunk("HSHS")?;
         if hshs.len() != 12 {
@@ -398,5 +405,42 @@ mod tests {
         range[36..40].copy_from_slice(&100u32.to_be_bytes());
         range[40..44].copy_from_slice(&1u32.to_be_bytes());
         assert!(Lng::parse(&range).is_err());
+    }
+
+    #[test]
+    fn a_wrong_header_size_is_a_warning_when_the_chunks_fill_the_file() {
+        let lng = sample();
+        let bytes = lng.to_bytes();
+        for total in [bytes.len() + 13, bytes.len() - 13] {
+            let mut off = bytes.clone();
+            off[4..8].copy_from_slice(&(total as u32).to_be_bytes());
+            let (back, warnings) = Lng::parse_with_warnings(&off).unwrap();
+            assert_eq!(back, lng);
+            assert_eq!(
+                warnings,
+                [format!(
+                    "LNGT size {total} is not the file size {}; its chunks end at the file size",
+                    bytes.len()
+                )]
+            );
+            assert_eq!(Lng::parse(&off).unwrap(), lng);
+            assert_eq!(back.to_bytes(), bytes);
+        }
+        assert!(Lng::parse_with_warnings(&bytes).unwrap().1.is_empty());
+    }
+
+    #[test]
+    fn a_wrong_header_size_still_rejects_short_or_padded_files() {
+        let bytes = sample().to_bytes();
+        let mut short = bytes[..bytes.len() - 13].to_vec();
+        let err = Lng::parse(&short).unwrap_err().to_string();
+        assert!(err.contains("LNGB"), "{err}");
+        let n = short.len() as u32;
+        short[4..8].copy_from_slice(&n.to_be_bytes());
+        assert!(Lng::parse(&short).is_err());
+        let mut padded = bytes.clone();
+        padded.extend_from_slice(&[0; 13]);
+        let err = Lng::parse(&padded).unwrap_err().to_string();
+        assert!(err.contains("trailing bytes"), "{err}");
     }
 }

@@ -15,7 +15,8 @@
       "label": "Show launcher panel",
       "description": "Show the \"Launched with Swofty Launcher\" panel on the home screen.",
       "default": true,
-      "binds": "native"
+      "binds": "native",
+      "multiplayer": "cosmetic"
     }
   ],
   "operations": {

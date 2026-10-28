@@ -63,7 +63,159 @@ pub struct AddonManifest {
     /// Post-process passes run on the game's picture after its tonemap and before the HUD.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub postfx: Vec<PostFx>,
+    /// A settings page in game between a Driver Career tile and the new-career wizard.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub career_setup: Option<CareerSetup>,
+    /// A settings tab in the career hub's laptop (Team HQ) for careers of one data group.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hub_tab: Option<HubTab>,
+    /// Whether players in a multiplayer session must match on the addon; see
+    /// [`AddonManifest::multiplayer`] for the default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub multiplayer: Option<Multiplayer>,
+    /// What the addon adds to the race HUD.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hud: Option<Hud>,
 }
+
+/// What an addon, or one of its options, is to a multiplayer session.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "lowercase")]
+pub enum Multiplayer {
+    /// Every player needs it at the host's version, with the host's settings.
+    Gameplay,
+    /// Players may differ on it.
+    Cosmetic,
+}
+
+/// Most options a hub tab shows: one per cell of the laptop's stat grid.
+pub const HUB_TAB_OPTIONS: usize = 6;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct HubTab {
+    pub name: String,
+    pub title: String,
+    pub options: Vec<String>,
+    pub data_group: String,
+}
+
+impl HubTab {
+    pub fn template(&self) -> String {
+        format!("swofty_hub_{}", self.name)
+    }
+
+    pub fn view_model(&self) -> String {
+        format!("view_model_data.hud_swofty_hub_{}", self.name)
+    }
+
+    fn validate(&self, options: &[AddonOption]) -> std::result::Result<(), String> {
+        if !valid_screen_name(&self.name) || self.name.len() > 40 {
+            return Err(format!(
+                "name {:?} must be [a-z0-9_], at most 40 characters",
+                self.name
+            ));
+        }
+        if self.title.trim().is_empty() {
+            return Err("title is empty".into());
+        }
+        if !valid_screen_name(&self.data_group) {
+            return Err(format!("data_group {:?} must be [a-z0-9_]", self.data_group));
+        }
+        if self.options.is_empty() || self.options.len() > HUB_TAB_OPTIONS {
+            return Err(format!("options must name 1 to {HUB_TAB_OPTIONS} options"));
+        }
+        own_options(&self.options, options)
+    }
+}
+
+fn own_options(ids: &[String], options: &[AddonOption]) -> std::result::Result<(), String> {
+    for (i, id) in ids.iter().enumerate() {
+        if !options.iter().any(|o| &o.id == id) {
+            return Err(format!("option {id} is not one of the addon's options"));
+        }
+        if ids[..i].contains(id) {
+            return Err(format!("option {id} is listed twice"));
+        }
+    }
+    Ok(())
+}
+
+/// The wizard screen a career setup page's CONFIRM opens unless `next` names another.
+pub const CAREER_SETUP_NEXT: &str = "career_wizard_season_length_select";
+/// The screen a career setup page's Back opens.
+pub const CAREER_SETUP_BACK: &str = "fe_career_dlc_select";
+/// Longest `career_setup.route`.
+pub const CAREER_SETUP_ROUTE_LEN: usize = 48;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct CareerSetup {
+    pub route: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    pub options: Vec<String>,
+    #[serde(default = "career_setup_next", skip_serializing_if = "is_career_setup_next")]
+    pub next: String,
+}
+
+fn career_setup_next() -> String {
+    CAREER_SETUP_NEXT.into()
+}
+
+fn is_career_setup_next(next: &String) -> bool {
+    next == CAREER_SETUP_NEXT
+}
+
+impl CareerSetup {
+    pub fn screen(&self) -> String {
+        format!("swofty_setup_{}", self.route)
+    }
+
+    pub fn back_route(&self) -> String {
+        format!("back_{}", self.route)
+    }
+
+    fn validate(&self, options: &[AddonOption]) -> std::result::Result<(), String> {
+        if !valid_screen_name(&self.route) || self.route.len() > CAREER_SETUP_ROUTE_LEN {
+            return Err(format!(
+                "route {:?} must be [a-z0-9_], at most {CAREER_SETUP_ROUTE_LEN} characters",
+                self.route
+            ));
+        }
+        if !valid_screen_name(&self.next) {
+            return Err(format!("next {:?} must be [a-z0-9_]", self.next));
+        }
+        if self.title.as_deref().is_some_and(|t| t.trim().is_empty()) {
+            return Err("title is empty".into());
+        }
+        if self.options.is_empty() {
+            return Err("options names no option".into());
+        }
+        own_options(&self.options, options)
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct Hud {
+    /// Rows on the ADDONS page of the race MFD.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mfd: Option<HudMfd>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct HudMfd {
+    /// The group title the page shows above the addon's rows; the addon name when unset.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    /// Option ids, in page order; each is a toggle or choice option of this addon.
+    pub rows: Vec<String>,
+}
+
+pub const MFD_ROWS_MAX: usize = 8;
+pub const MFD_TEXT_MAX: usize = 32;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(rename_all = "kebab-case")]
@@ -444,6 +596,13 @@ pub struct AddonOption {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub step: Option<f64>,
     pub binds: Binds,
+    /// Kept off the addon's ADDON SETTINGS page in game, such as a developer option or one only a career setup
+    /// page or hub tab shows.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub hidden: bool,
+    /// `cosmetic` leaves the option out of the multiplayer match of a gameplay addon.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub multiplayer: Option<Multiplayer>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
@@ -538,6 +697,27 @@ impl AddonManifest {
         self.id == crate::CORE_ID
     }
 
+    /// `multiplayer` when set; otherwise cosmetic for a `helmets`, `shaders` or `performance`
+    /// addon and for one that ships only a `shader` look or `postfx` passes, and gameplay for the
+    /// rest.
+    pub fn multiplayer(&self) -> Multiplayer {
+        if let Some(m) = self.multiplayer {
+            return m;
+        }
+        let look_only = (self.shader.is_some() || !self.postfx.is_empty())
+            && self.operations == Operations::default()
+            && !self.launcher.as_ref().is_some_and(|l| l.build);
+        let cosmetic = matches!(
+            self.category,
+            Some(Category::Helmets | Category::Shaders | Category::Performance)
+        );
+        if look_only || cosmetic {
+            Multiplayer::Cosmetic
+        } else {
+            Multiplayer::Gameplay
+        }
+    }
+
     pub fn validate(&self) -> Result<()> {
         let fail = |m: String| Err(Error::Manifest(format!("{}: {m}", self.id)));
         if self.schema_version != SCHEMA_VERSION {
@@ -610,6 +790,14 @@ impl AddonManifest {
         if let Some(p) = paths.into_iter().find(|p| !relative_inside(p)) {
             return fail(format!("{p} must be a relative path inside the addon"));
         }
+        if let Some(c) = &self.career_setup {
+            c.validate(&self.options)
+                .or_else(|e| fail(format!("career_setup: {e}")))?;
+        }
+        if let Some(h) = &self.hub_tab {
+            h.validate(&self.options)
+                .or_else(|e| fail(format!("hub_tab: {e}")))?;
+        }
         if let Some(s) = &self.shader {
             self.validate_shader(s)
                 .or_else(|e| fail(format!("shader: {e}")))?;
@@ -617,6 +805,9 @@ impl AddonManifest {
         for (i, p) in self.postfx.iter().enumerate() {
             self.validate_postfx(p)
                 .or_else(|e| fail(format!("postfx[{i}]: {e}")))?;
+        }
+        if let Some(m) = self.hud.as_ref().and_then(|h| h.mfd.as_ref()) {
+            self.validate_mfd(m).or_else(|e| fail(format!("hud.mfd: {e}")))?;
         }
         if let Some(l) = &self.launcher {
             if l.program.is_empty() {
@@ -667,6 +858,35 @@ impl AddonManifest {
                 None => return Err(format!("{{{{{id}}}}} names no option")),
                 Some(o) if o.binds != Binds::Db => return Err(format!("option {id} must bind db")),
                 Some(_) => {}
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_mfd(&self, m: &HudMfd) -> std::result::Result<(), String> {
+        if m.rows.is_empty() || m.rows.len() > MFD_ROWS_MAX {
+            return Err(format!("rows must list 1 to {MFD_ROWS_MAX} options"));
+        }
+        if let Some(t) = &m.title
+            && (t.trim().is_empty() || t.chars().count() > MFD_TEXT_MAX)
+        {
+            return Err(format!("title must be 1 to {MFD_TEXT_MAX} characters"));
+        }
+        let mut seen = BTreeMap::new();
+        for r in &m.rows {
+            if seen.insert(r.as_str(), ()).is_some() {
+                return Err(format!("row {r} is listed twice"));
+            }
+            let Some(o) = self.options.iter().find(|o| &o.id == r) else {
+                return Err(format!("row {r} names no option of this addon"));
+            };
+            if o.kind == OptionType::Slider {
+                return Err(format!("row {r}: only toggle and choice options can be MFD rows"));
+            }
+            if o.label.as_deref().unwrap_or(&o.id).chars().count() > MFD_TEXT_MAX {
+                return Err(format!(
+                    "row {r}: the option label is longer than {MFD_TEXT_MAX} characters"
+                ));
             }
         }
         Ok(())
@@ -752,6 +972,53 @@ mod tests {
                     "values": ["titlesponsor", { "value": "tier01", "label": "Tier 1" }, "replica"], "binds": "db" }],
       "operations": { "database": ["db/grid24.json"] }
     }"#;
+
+    #[test]
+    fn hud_mfd_rows_name_toggle_or_choice_options() {
+        let with = |hud: &str| GRID24.replace(r#""operations":"#, &format!(r#""hud": {hud}, "operations":"#));
+        let m = AddonManifest::parse(&with(
+            r#"{ "mfd": { "title": "LIVERY", "rows": ["team_livery"] } }"#,
+        ))
+        .unwrap();
+        let mfd = m.hud.unwrap().mfd.unwrap();
+        assert_eq!(mfd.title.as_deref(), Some("LIVERY"));
+        assert_eq!(mfd.rows, ["team_livery"]);
+        for (bad, why) in [
+            (r#"{ "mfd": { "rows": [] } }"#, "rows must list"),
+            (r#"{ "mfd": { "rows": ["missing"] } }"#, "names no option"),
+            (
+                r#"{ "mfd": { "rows": ["team_livery", "team_livery"] } }"#,
+                "listed twice",
+            ),
+            (
+                r#"{ "mfd": { "title": "", "rows": ["team_livery"] } }"#,
+                "title must be",
+            ),
+            (
+                r#"{ "mfd": { "rows": ["team_livery"], "page": 2 } }"#,
+                "unknown field",
+            ),
+        ] {
+            let e = AddonManifest::parse(&with(bad)).unwrap_err().to_string();
+            assert!(e.contains(why), "{bad}: {e}");
+        }
+        let slider = GRID24
+            .replace(
+                r#""type": "choice", "default": "titlesponsor","#,
+                r#""type": "slider", "default": 1, "min": 0, "max": 2, "step": 1,"#,
+            )
+            .replace(
+                r#""values": ["titlesponsor", { "value": "tier01", "label": "Tier 1" }, "replica"], "#,
+                "",
+            );
+        let e = AddonManifest::parse(&slider.replace(
+            r#""operations":"#,
+            r#""hud": { "mfd": { "rows": ["team_livery"] } }, "operations":"#,
+        ))
+        .unwrap_err()
+        .to_string();
+        assert!(e.contains("only toggle and choice"), "{e}");
+    }
 
     #[test]
     fn parses_design_example() {
@@ -1144,5 +1411,166 @@ mod tests {
     fn rejects_unknown_fields() {
         let bad = GRID24.replace("\"kind\"", "\"kinds\"");
         assert!(AddonManifest::parse(&bad).is_err());
+    }
+
+    #[test]
+    fn a_career_setup_names_a_route_and_options_of_its_addon() {
+        let with = |setup: &str| {
+            GRID24.replace(
+                r#""operations": { "database": ["db/grid24.json"] }"#,
+                &format!(r#""operations": {{ "database": ["db/grid24.json"] }}, "career_setup": {setup}"#),
+            )
+        };
+        let m = AddonManifest::parse(&with(
+            r#"{ "route": "career_wizard_driver_career_grid", "title": "Grid Career", "options": ["team_livery"] }"#,
+        ))
+        .unwrap();
+        let c = m.career_setup.as_ref().unwrap();
+        assert_eq!(c.next, CAREER_SETUP_NEXT);
+        assert_eq!(c.screen(), "swofty_setup_career_wizard_driver_career_grid");
+        assert_eq!(c.back_route(), "back_career_wizard_driver_career_grid");
+        let json = serde_json::to_value(&m).unwrap();
+        assert!(json["career_setup"].get("next").is_none());
+        assert_eq!(json["career_setup"]["options"][0], "team_livery");
+        let m = AddonManifest::parse(&with(
+            r#"{ "route": "grid", "options": ["team_livery"], "next": "career_wizard_settings_select" }"#,
+        ))
+        .unwrap();
+        let c = m.career_setup.unwrap();
+        assert_eq!(
+            (c.title, c.next.as_str()),
+            (None, "career_wizard_settings_select")
+        );
+
+        let at = |m: &str| format!("invalid manifest: swofty.f1-2026-grid24: career_setup: {m}");
+        for (setup, why) in [
+            (
+                r#"{ "route": "Grid", "options": ["team_livery"] }"#,
+                r#"route "Grid" must be [a-z0-9_], at most 48 characters"#.to_owned(),
+            ),
+            (
+                &format!(
+                    r#"{{ "route": "{}", "options": ["team_livery"] }}"#,
+                    "r".repeat(49)
+                ),
+                format!(
+                    r#"route "{}" must be [a-z0-9_], at most 48 characters"#,
+                    "r".repeat(49)
+                ),
+            ),
+            (
+                r#"{ "route": "grid", "options": [] }"#,
+                "options names no option".to_owned(),
+            ),
+            (
+                r#"{ "route": "grid", "options": ["nope"] }"#,
+                "option nope is not one of the addon's options".to_owned(),
+            ),
+            (
+                r#"{ "route": "grid", "options": ["team_livery", "team_livery"] }"#,
+                "option team_livery is listed twice".to_owned(),
+            ),
+            (
+                r#"{ "route": "grid", "title": " ", "options": ["team_livery"] }"#,
+                "title is empty".to_owned(),
+            ),
+            (
+                r#"{ "route": "grid", "options": ["team_livery"], "next": "a-b" }"#,
+                r#"next "a-b" must be [a-z0-9_]"#.to_owned(),
+            ),
+        ] {
+            assert_eq!(
+                AddonManifest::parse(&with(setup)).unwrap_err().to_string(),
+                at(&why),
+                "{setup}"
+            );
+        }
+        assert!(
+            AddonManifest::parse(&with(
+                r#"{ "route": "grid", "options": ["team_livery"], "back": "fe_career" }"#
+            ))
+            .is_err()
+        );
+        let hidden = with(r#"{ "route": "grid", "options": ["team_livery"] }"#)
+            .replace(r#""binds": "db" }]"#, r#""binds": "db", "hidden": true }]"#);
+        let m = AddonManifest::parse(&hidden).unwrap();
+        assert!(m.options[0].hidden);
+        assert_eq!(m.career_setup.unwrap().options, ["team_livery"]);
+    }
+
+    #[test]
+    fn a_hub_tab_names_its_template_view_model_and_shown_options() {
+        let with = |tab: &str| {
+            GRID24.replace(
+                r#""operations": { "database": ["db/grid24.json"] }"#,
+                &format!(r#""operations": {{ "database": ["db/grid24.json"] }}, "hub_tab": {tab}"#),
+            )
+        };
+        let m = AddonManifest::parse(&with(
+            r#"{ "name": "progressive", "title": "Progressive Settings", "options": ["team_livery"],
+                 "data_group": "f1_career_progressive" }"#,
+        ))
+        .unwrap();
+        let h = m.hub_tab.as_ref().unwrap();
+        assert_eq!(h.template(), "swofty_hub_progressive");
+        assert_eq!(h.view_model(), "view_model_data.hud_swofty_hub_progressive");
+        assert_eq!(
+            serde_json::to_value(&m).unwrap()["hub_tab"]["data_group"],
+            "f1_career_progressive"
+        );
+        let at = |m: &str| format!("invalid manifest: swofty.f1-2026-grid24: hub_tab: {m}");
+        let tab = |name: &str, title: &str, options: &str, group: &str| {
+            format!(
+                r#"{{ "name": "{name}", "title": "{title}", "options": {options}, "data_group": "{group}" }}"#
+            )
+        };
+        for (t, why) in [
+            (
+                tab("Pro", "T", r#"["team_livery"]"#, "g"),
+                r#"name "Pro" must be [a-z0-9_], at most 40 characters"#,
+            ),
+            (tab("p", " ", r#"["team_livery"]"#, "g"), "title is empty"),
+            (
+                tab("p", "T", r#"["team_livery"]"#, "a.b"),
+                r#"data_group "a.b" must be [a-z0-9_]"#,
+            ),
+            (tab("p", "T", "[]", "g"), "options must name 1 to 6 options"),
+            (
+                tab("p", "T", r#"["nope"]"#, "g"),
+                "option nope is not one of the addon's options",
+            ),
+            (
+                tab("p", "T", r#"["team_livery", "team_livery"]"#, "g"),
+                "option team_livery is listed twice",
+            ),
+        ] {
+            assert_eq!(
+                AddonManifest::parse(&with(&t)).unwrap_err().to_string(),
+                at(why),
+                "{t}"
+            );
+        }
+        let hidden = with(&tab("p", "T", r#"["team_livery"]"#, "g"))
+            .replace(r#""binds": "db" }]"#, r#""binds": "db", "hidden": true }]"#);
+        let m = AddonManifest::parse(&hidden).unwrap();
+        assert!(m.options[0].hidden);
+        assert_eq!(m.hub_tab.unwrap().options, ["team_livery"]);
+    }
+
+    #[test]
+    fn an_option_can_be_hidden_from_addon_settings() {
+        let m = AddonManifest::parse(GRID24).unwrap();
+        assert!(!m.options[0].hidden);
+        assert!(
+            serde_json::to_value(&m).unwrap()["options"][0]
+                .get("hidden")
+                .is_none()
+        );
+        let m = AddonManifest::parse(
+            &GRID24.replace(r#""binds": "db" }]"#, r#""binds": "db", "hidden": true }]"#),
+        )
+        .unwrap();
+        assert!(m.options[0].hidden);
+        assert_eq!(serde_json::to_value(&m).unwrap()["options"][0]["hidden"], true);
     }
 }

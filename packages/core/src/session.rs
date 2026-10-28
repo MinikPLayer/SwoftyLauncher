@@ -466,6 +466,9 @@ pub struct LaunchRequest {
     pub profile: Option<String>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub apply: bool,
+    /// `SWOFTY_NETPLAY` for the game, for a wrapper Steam starts without the caller's environment.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub netplay: Option<String>,
 }
 
 pub const END_FILE: &str = "end.json";
@@ -532,10 +535,28 @@ impl SessionEnd {
             crash_code,
             reason,
         };
+        let named = |x: u32| {
+            crate::crash::fatal_name(x)
+                .map(|n| format!("{n}, "))
+                .unwrap_or_default()
+        };
         let Some(c) = code else {
-            return match stopped {
-                Some(who) => end(Ending::Stopped, None, format!("{who}; {unread}")),
-                None => end(Ending::Unknown, None, unread.to_owned()),
+            return match (stopped, loader.unhandled) {
+                (Some(who), _) => end(Ending::Stopped, None, format!("{who}; {unread}")),
+                (None, Some(x)) => end(
+                    Ending::Crash,
+                    Some(x),
+                    format!(
+                        "the mod loader saw an unhandled exception ({}{x:#010x}); {unread}",
+                        named(x)
+                    ),
+                ),
+                (None, None) if loader.low_disk => end(
+                    Ending::Crash,
+                    None,
+                    format!("F1 25 closed after its Insufficient Storage dialog; {unread}"),
+                ),
+                (None, None) => end(Ending::Unknown, None, unread.to_owned()),
             };
         };
         if let Some(who) = stopped {
@@ -548,11 +569,6 @@ impl SessionEnd {
         if c == 0 {
             return end(Ending::Quit, None, "F1 25 exited with code 0".into());
         }
-        let named = |x: u32| {
-            crate::crash::fatal_name(x)
-                .map(|n| format!("{n}, "))
-                .unwrap_or_default()
-        };
         if let Some(x) = loader.unhandled {
             return end(
                 Ending::Crash,
@@ -564,6 +580,13 @@ impl SessionEnd {
             );
         }
         let u = c as u32;
+        if loader.low_disk {
+            return end(
+                Ending::Crash,
+                None,
+                format!("F1 25 closed with code {c} after its Insufficient Storage dialog"),
+            );
+        }
         if crash_code(u) {
             return end(
                 Ending::Crash,
@@ -635,16 +658,15 @@ impl SessionRecord {
         }
     }
 
-    /// Whether to show the session as a crash. A stop or a quit is not one,
-    /// and an end without an exit code tells nothing.
+    /// Whether to show the session as a crash: only an end with evidence of
+    /// one, a crash exit code, an exception the mod loader saw or the game's
+    /// Insufficient Storage dialog. F1 25 also
+    /// leaves -1 and other codes when it is closed, so an `Unknown` end shows
+    /// as closed, not crashed.
     pub fn crashed(&self) -> bool {
         match &self.end {
-            Some(e) => match e.end {
-                Ending::Crash => true,
-                Ending::Unknown => e.exit_code.is_some_and(|c| c != 0),
-                Ending::Quit | Ending::Stopped => false,
-            },
-            None => self.exit_code.is_some_and(|c| c != 0),
+            Some(e) => e.end == Ending::Crash,
+            None => self.exit_code.is_some_and(|c| crash_code(c as u32)),
         }
     }
 
@@ -988,7 +1010,12 @@ mod tests {
         assert_eq!((live.started, live.exit_code), (Some(100.5), None));
         assert!(!live.crashed());
         std::fs::write(dir.join("exit_code"), "3\n").unwrap();
-        assert!(SessionRecord::read(&dir).crashed());
+        assert!(
+            !SessionRecord::read(&dir).crashed(),
+            "a code that is not a crash code"
+        );
+        std::fs::write(dir.join("exit_code"), "-1073741819\n").unwrap();
+        assert!(SessionRecord::read(&dir).crashed(), "an access violation");
         std::fs::remove_dir_all(&dir).ok();
     }
 
@@ -1038,6 +1065,22 @@ mod tests {
         );
         let end = SessionEnd::resolve(Some(-1), "", None, None);
         assert!(end.reason.contains("not attached"), "{}", end.reason);
+        let full = format!(
+            "{ATTACHED}[3820] dialog shown: Insufficient Storage: 652/2048 MiB available on 'C:\\', please free \
+             some space.\n[stub] [offline] game exited with code 4294967295\n"
+        );
+        let end = SessionEnd::resolve(Some(-1), "", None, Some(&seen(&full)));
+        assert_eq!((end.end, end.crash_code), (Ending::Crash, None));
+        assert!(end.reason.contains("Insufficient Storage"), "{}", end.reason);
+        let end = SessionEnd::resolve(None, "no code", None, Some(&seen(&full)));
+        assert_eq!(end.end, Ending::Crash);
+        let stopped = SessionEnd::resolve(
+            Some(-1),
+            "",
+            Some("Stop in the launcher closed F1 25"),
+            Some(&seen(&full)),
+        );
+        assert_eq!(stopped.end, Ending::Stopped);
         for code in [1, 0x4001_0004, 255] {
             assert_eq!(
                 SessionEnd::resolve(Some(code), "", None, None).end,
@@ -1065,6 +1108,24 @@ mod tests {
                 reason: "the EA app started F1 25".into(),
             }
         );
+    }
+
+    #[test]
+    fn an_unhandled_exception_is_a_crash_when_the_ea_app_started_the_game() {
+        let log = format!("{ATTACHED}{UNHANDLED}");
+        let end = SessionEnd::resolve(None, "the EA app started F1 25", None, Some(&seen(&log)));
+        assert_eq!(
+            (end.end, end.exit_code, end.crash_code),
+            (Ending::Crash, None, Some(0xc000_0005))
+        );
+        assert!(end.reason.contains("access violation"), "{}", end.reason);
+        let stopped = SessionEnd::resolve(
+            None,
+            "",
+            Some("Stop in the launcher closed F1 25"),
+            Some(&seen(&log)),
+        );
+        assert_eq!(stopped.end, Ending::Stopped);
     }
 
     #[test]
@@ -1101,8 +1162,8 @@ mod tests {
         std::fs::write(dir.join("exit_code"), "-1\n").unwrap();
         std::fs::write(dir.join("game_end"), "200\n").unwrap();
         assert!(
-            SessionRecord::read(&dir).crashed(),
-            "no end file: any non-zero code"
+            !SessionRecord::read(&dir).crashed(),
+            "no end file: -1 is not a crash code"
         );
         let mut end = SessionEnd::resolve(Some(-1), "", Some("Stop in the launcher closed F1 25"), None);
         end.write(&dir).unwrap();
@@ -1111,7 +1172,7 @@ mod tests {
         assert!(!record.crashed());
         for (ending, code, shown) in [
             (Ending::Crash, Some(-1), true),
-            (Ending::Unknown, Some(-1), true),
+            (Ending::Unknown, Some(-1), false),
             (Ending::Unknown, None, false),
             (Ending::Quit, Some(0), false),
         ] {

@@ -34,6 +34,8 @@ python3 tools/erp.py <archive> '*'
 
 `erp` paths are relative to the game folder. `source` paths are relative to your addon folder.
 
+The build skips an operation whose `erp` archive isn't in the game folder and no earlier addon adds, and warns `<addon>: archive changes skipped; <path> is not a file in F1 25`. Check each `erp` path against the game folder, such as `2025_asset_groups/environment_package/tracks/...`.
+
 ## Operations
 
 | Operation | Fields | Purpose |

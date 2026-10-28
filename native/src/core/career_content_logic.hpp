@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#include <swofty_api.h>
 
 // Pure logic of the career content library (career_content.cpp): the descriptor check, the save-slot
 // data group walk, the car group pick and the database requirements of a content. No game calls:
@@ -17,6 +18,81 @@ constexpr size_t SUFFIX_MAX = 8;
 constexpr size_t TEXT_MAX = 96;
 constexpr uint32_t MODEL_2026 = 0;
 constexpr uint32_t MODEL_2025 = 1;
+constexpr uint32_t CAREER_DRIVER = 1;
+constexpr uint32_t CAREER_MY_TEAM = 2;
+constexpr uint32_t CAREER_ALL = CAREER_DRIVER | CAREER_MY_TEAM;
+
+// The career content select's Addons row (fe_career_dlc_select): the content tiles' view model nodes go
+// in the list addon_buttons next to the stock buttons list, and the row raises its own press and focus
+// commands, which run the stock select_pressed and focus_changed paths on the row's part of the tile list.
+constexpr const char *ADDON_BUTTONS = "addon_buttons";
+constexpr const char *ADDON_BUTTONS_VISIBLE = "addon_buttons_visible";
+constexpr const char *ADDON_TEMPLATE = "addon_tile_button_default";
+constexpr uint32_t BUTTONS = 0x94eb0e14;
+constexpr uint32_t ADDON_BUTTONS_HASH = 0xc2ec2239;
+constexpr uint32_t SELECT_PRESSED = 0x2b0357a;
+constexpr uint32_t FOCUS_CHANGED = 0x70d928ee;
+constexpr uint32_t ADDON_SELECT_PRESSED = 0x8fb68dff;
+constexpr uint32_t ADDON_FOCUS_CHANGED = 0x088404d3;
+constexpr size_t LIST_BUTTONS = 0x38;
+constexpr size_t LIST_ITEMS_BEGIN = 0x78;
+constexpr size_t LIST_ITEMS_END = 0x80;
+constexpr size_t VM_ROOT = 0x10;
+constexpr size_t VM_TILE_LIST = 0x2c8;
+constexpr size_t STACK_SCAN = 0x1000;
+
+constexpr uint32_t djb2(const char *s)
+{
+    uint32_t h = 5381;
+    while (*s)
+        h = h * 33 + uint8_t(*s++);
+    return h;
+}
+
+static_assert(djb2("buttons") == BUTTONS && djb2(ADDON_BUTTONS) == ADDON_BUTTONS_HASH &&
+              djb2("select_pressed") == SELECT_PRESSED && djb2("focus_changed") == FOCUS_CHANGED &&
+              djb2("addon_select_pressed") == ADDON_SELECT_PRESSED && djb2("addon_focus_changed") == ADDON_FOCUS_CHANGED);
+
+// The career a content select belongs to, from the pick route that opened it (career_dlc_select_my_team
+// or career_dlc_select_driver, career_start.hpp); Driver Career before any pick. The stock tiles carry
+// no route (+0x178 is unset on both screens).
+inline uint32_t career_of(uint32_t picked)
+{
+    return picked == SWOFTY_CAREER_MY_TEAM ? CAREER_MY_TEAM : CAREER_DRIVER;
+}
+
+inline const char *career_name(uint32_t career)
+{
+    return career == CAREER_MY_TEAM ? "My Team" : "Driver Career";
+}
+
+// The stock command an Addons row command stands for, or 0 for any other command.
+inline uint32_t stock_command(uint32_t hash)
+{
+    return hash == ADDON_SELECT_PRESSED ? SELECT_PRESSED : hash == ADDON_FOCUS_CHANGED ? FOCUS_CHANGED : 0;
+}
+
+// FeTile_Build_List's showroom case (menu kind 4, fe_showroom) ends through the career content case's
+// closing jmp, so site_FeTile_CareerContentEnd runs for both. A list is the content select's when its view
+// model has the content select vtable or it holds a stock career tile (item ids of FeTile_Build_List case 6).
+constexpr const char *ITEM_ID_2025 = "career_default_content";
+constexpr const char *ITEM_ID_2026 = "career_dlc_content";
+constexpr size_t SELECT_SCAN_TILES = 16;
+
+inline bool career_tile_id(const char *id)
+{
+    return id && (!std::strcmp(id, ITEM_ID_2025) || !std::strcmp(id, ITEM_ID_2026));
+}
+
+inline bool content_select(uintptr_t owner_vtable, uintptr_t select_vtable, const char *const *ids, size_t n)
+{
+    if (owner_vtable && owner_vtable == select_vtable)
+        return true;
+    for (size_t i = 0; i < n; i++)
+        if (career_tile_id(ids[i]))
+            return true;
+    return false;
+}
 
 // A career (the championship entity, or the career a save-slot predicate is asked about) lists its
 // championships at +0x1040..+0x1048 (16-byte entries, championship at +8). Each championship's
@@ -88,6 +164,7 @@ struct Desc {
     uint32_t model = MODEL_2026;
     int32_t car_group = -1;
     uint32_t badge = 0;
+    uint32_t careers = CAREER_DRIVER;
 };
 
 inline bool token(const std::string &s, size_t max, bool upper_ok)
@@ -131,6 +208,8 @@ template <class Taken> std::string check(const Desc &d, Taken taken)
         return "car_group must be -1 or a customisation car group stat_id (0..65535)";
     if (d.badge > 0xff)
         return "badge must be 0 (none) or a notification value below 256";
+    if (!d.careers || (d.careers & ~CAREER_ALL))
+        return "careers must be SWOFTY_CAREER_CONTENT_DRIVER, SWOFTY_CAREER_CONTENT_MY_TEAM or both";
     if (taken("id", d.id))
         return "another content already has id " + d.id;
     if (taken("data_group", d.data_group))

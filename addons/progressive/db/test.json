@@ -1,0 +1,18 @@
+{
+ "schema_version": 1,
+ "fields": {},
+ "ops": [
+  {
+   "op": "set",
+   "select": "schedule.dynamic_event_data.default_ui_track_list_data.custom_dynamic_available_track_list_data[_metadata_=F1_2026_Short]",
+   "field": "max_num_tracks",
+   "value": "{{test_calendar}}"
+  },
+  {
+   "op": "set",
+   "select": "schedule.track_lists.track_event_list[_metadata_=F1_2026_10]",
+   "field": "_fixed_event_reference_instancecount_",
+   "value": "{{test_calendar}}"
+  }
+ ]
+}

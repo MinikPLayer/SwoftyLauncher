@@ -150,6 +150,54 @@ fn walk(base: &Path, dir: &Path, out: &mut BTreeMap<String, String>) {
 }
 
 #[test]
+fn a_stock_file_missing_from_the_game_folder_goes_back_from_its_backup() {
+    let f = Fixture::new("missing-backed-up");
+    let game = f.game("1");
+    let inst = Installer::new(&f.data, &game);
+    inst.apply(&f.plan("b")).unwrap();
+    inst.apply(&Plan::vanilla()).unwrap();
+    std::fs::remove_dir_all(f.game.join("2025_asset_groups/ui_package")).unwrap();
+
+    inst.apply(&f.plan("b")).unwrap();
+    assert_eq!(f.read(UI), "ui-B");
+    inst.apply(&Plan::vanilla()).unwrap();
+    assert_eq!(f.read(UI), "ui-v1");
+    assert_eq!(inst.verify().unwrap(), []);
+}
+
+#[test]
+fn a_stock_file_missing_with_no_backup_stops_with_what_puts_it_back() {
+    let f = Fixture::new("missing-no-backup");
+    let game = f.game("1");
+    let inst = Installer::new(&f.data, &game);
+    inst.apply(&f.plan("b")).unwrap();
+    inst.apply(&Plan::vanilla()).unwrap();
+    std::fs::remove_dir_all(f.game.join("2025_asset_groups/ui_package")).unwrap();
+    std::fs::remove_dir_all(f.data.join("baseline/objects")).unwrap();
+    let before = f.snapshot();
+
+    let err = inst.apply(&f.plan("b")).unwrap_err();
+    assert!(
+        matches!(&err, swofty_core::Error::MissingStock { files, version: None } if files == &[UI.to_owned()]),
+        "{err}"
+    );
+    let text = err.to_string();
+    assert!(
+        text.starts_with(
+            "flow_frontend.erp is missing from the game folder; nothing in the game folder was changed"
+        ),
+        "{text}"
+    );
+    assert!(
+        text.contains("update F1 25 in Steam or the EA app, then verify"),
+        "{text}"
+    );
+    assert!(text.contains("steam://validate/3059520"), "{text}");
+    assert_eq!(f.snapshot(), before);
+    assert!(Journal::open(&f.data).unwrap().is_empty());
+}
+
+#[test]
 fn profile_switches_return_to_the_baseline() {
     let f = Fixture::new("switch");
     let original = f.snapshot();

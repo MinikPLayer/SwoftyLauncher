@@ -22,6 +22,7 @@ pub fn sha256_bytes(data: &[u8]) -> String {
 }
 
 pub fn sha256_file(path: &Path) -> Result<String> {
+    crate::worked();
     let mut f = std::fs::File::open(path).map_err(io_err(path))?;
     let mut h = Sha256::new();
     let mut buf = [0; 1 << 16];
@@ -101,7 +102,11 @@ pub struct Hashes {
 
 impl Hashes {
     pub fn load(data: &Path) -> Self {
-        let path = data.join(HASHES_FILE);
+        Self::open(data.join(HASHES_FILE))
+    }
+
+    /// The digests kept in `path` rather than [`HASHES_FILE`].
+    pub fn open(path: PathBuf) -> Self {
         let files = crate::read_json(&path).unwrap_or_default();
         Self {
             path,
@@ -215,7 +220,16 @@ impl Objects {
                 dst.display()
             )));
         }
-        std::fs::rename(&tmp, dst).map_err(io_err(dst))?;
+        let renamed = match std::fs::rename(&tmp, dst) {
+            Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied && crate::clear_readonly(dst) => {
+                std::fs::rename(&tmp, dst)
+            }
+            r => r,
+        };
+        if let Err(e) = renamed {
+            std::fs::remove_file(&tmp).ok();
+            return Err(io_err(dst)(e));
+        }
         crate::sync_dir(dst.parent());
         Ok(())
     }
@@ -499,7 +513,7 @@ pub fn original_lang(data: &Path, game: &Path, id: &Identity, code: &str) -> Res
 pub fn extract_lang(game: &Path, dir: &Path) -> Result<Vec<String>> {
     let exe_path = game.join(crate::GAME_EXE);
     let mut exe = std::fs::File::open(&exe_path).map_err(io_err(&exe_path))?;
-    let archive = swofty_formats::nefs::Archive::open_exe(&mut exe)?;
+    let archive = swofty_formats::nefs::Archive::open_exe(&mut exe).map_err(crate::formats_at(&exe_path))?;
     let data_path = game.join(&archive.volume);
     let mut data = std::fs::File::open(&data_path).map_err(io_err(&data_path))?;
     let tmp = dir.with_extension(format!("tmp-{}", std::process::id()));
@@ -516,7 +530,9 @@ pub fn extract_lang(game: &Path, dir: &Path) -> Result<Vec<String>> {
         else {
             continue;
         };
-        let bytes = archive.read(entry, &mut data)?;
+        let bytes = archive
+            .read(entry, &mut data)
+            .map_err(crate::formats_at(&data_path))?;
         if !swofty_formats::lng::is_lng(&bytes) {
             std::fs::remove_dir_all(&tmp).ok();
             return Err(Error::Other(format!(

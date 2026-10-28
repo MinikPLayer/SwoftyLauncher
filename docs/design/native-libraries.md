@@ -87,8 +87,9 @@ Status: stub. `native/src/core/events.cpp` returns `unavailable` from every call
 | `size(paint, w, h)` | drawable size in pixels |
 | `rect` / `rect_outline` / `line` / `text` | draw into the current frame |
 | `measure(paint, size, utf8, w, h)` | text bounds |
-| `load_image(id, file)` | `ok`, or `invalid` for a bad id or missing file |
+| `load_image(id, file)` | `ok`, or `invalid` for a bad id, a missing file or a file that is not PNG or uncompressed DDS |
 | `image(paint, id, ...)` | `ok`, or `invalid` for an unknown id |
+| v2: shapes, styled text, `image_uv` / `image_nine` / `image_size`, clip / transform / opacity stacks, `safe_area`, `ui_scale` | present when the core exports `SwoftyCoreOverlayVersion` returning 2 or more |
 
 Drawing uses immediate mode:
 
@@ -124,7 +125,13 @@ presents them. A swapchain whose creation passed through Streamline's frame gene
 (`sl.dlss_g.dll`) is drawn on only while the game's hardware settings have `frame_gen mode="0"`. Submissions use a ring of three command lists behind one fence and never wait in
 `Present`. A device removal stops the overlay for the rest of the session.
 
-Status: rectangles, outlines, lines and text draw; `image()` draws nothing.
+Paint callbacks tessellate into one vertex list (`hud_drawlist.hpp`) split into batches that share a
+texture and a clip rect. Text is Titillium Web SemiBold from a signed distance field atlas generated
+by `native/tools/hud_font_sdf.py`. Images decode with stb_image (PNG) or the core's DDS reader and
+upload once to a shader-visible heap of 256 descriptors. An addon id in `overlay_off` in
+`swofty/assets.json` gets `unavailable` from `on_paint` and its callbacks are skipped.
+
+Status: every v1 and v2 call draws.
 
 ## 3. Telemetry
 

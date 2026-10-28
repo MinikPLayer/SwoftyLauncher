@@ -5,6 +5,7 @@ cd "$(dirname "$SELF")"
 if ! command -v zig >/dev/null; then
     exec nix shell nixpkgs#zig -c "$SELF" "$@"
 fi
+. ./game_lock.sh
 export ZIG_GLOBAL_CACHE_DIR=$PWD/../build/zig-cache ZIG_LOCAL_CACHE_DIR=$PWD/../build/zig-cache
 OUT=${1:-$PWD/../build/scan-test}
 EXE=${SWOFTY_TEST_EXE:-$PWD/../../work/exe/F1_25.exe}

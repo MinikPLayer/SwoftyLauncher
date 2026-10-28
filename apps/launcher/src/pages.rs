@@ -810,7 +810,10 @@ impl Shell {
                             };
                             window.push_notification(Notification::success(text), cx);
                         }
-                        Err(e) => window.push_notification(Notification::error(e), cx),
+                        Err(e) => {
+                            crate::app_log::action("delete profile").failed(&e);
+                            window.push_notification(Notification::error(e), cx)
+                        }
                     }
                     shell.update(cx, |s, cx| s.reload(cx)).ok();
                     true

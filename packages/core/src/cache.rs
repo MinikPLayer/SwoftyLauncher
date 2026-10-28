@@ -66,6 +66,37 @@ pub fn prune(cache: &Path, profile: &str, used: &[PathBuf]) -> usize {
 
 pub const PACKED_DIR: &str = "zstd";
 
+/// Rebuilt archives kept between builds, linked into each overlay that needs
+/// the same archive again.
+pub const ARCHIVES_DIR: &str = "archives";
+
+/// Drop cached archives not used for `max_age`, then the least recently used
+/// until the rest fit in `max_bytes`. An archive an overlay still links keeps
+/// its bytes there.
+pub fn prune_archives(dir: &Path, max_age: std::time::Duration, max_bytes: u64) -> usize {
+    let mut files: Vec<(std::time::SystemTime, u64, PathBuf)> = children(dir)
+        .iter()
+        .flat_map(|sub| std::fs::read_dir(sub).into_iter().flatten().flatten())
+        .filter_map(|e| {
+            let meta = e.metadata().ok()?;
+            Some((meta.modified().ok()?, meta.len(), e.path()))
+        })
+        .collect();
+    files.sort_by_key(|f| std::cmp::Reverse(f.0));
+    let (mut kept, mut removed) = (0u64, 0);
+    for (at, len, path) in files {
+        let stale = at.elapsed().is_ok_and(|age| age > max_age);
+        if stale || kept + len > max_bytes {
+            if std::fs::remove_file(&path).is_ok() {
+                removed += 1;
+            }
+        } else {
+            kept += len;
+        }
+    }
+    removed
+}
+
 pub fn prune_packed(dir: &Path, max_age: std::time::Duration) -> usize {
     let mut removed = 0;
     for sub in children(dir) {

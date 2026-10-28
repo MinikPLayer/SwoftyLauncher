@@ -57,7 +57,7 @@ GAME=()
 [[ -n ${GAME_INCLUDE:-} ]] && GAME=(-I"$GAME_INCLUDE")
 "${PIN[@]}" "${CXX[@]}" -O2 -Wall -Wextra "${DEFS[@]}" -I$SDK "${GAME[@]}" -Iinclude -I$SH -I$ZS -shared -o "$OUT/swofty_core.dll" \
     src/core/manager.cpp src/core/crash.cpp src/core/settings.cpp src/core/swofty_core.cpp src/core/ui.cpp src/core/ui_vm.cpp src/core/items.cpp \
-    src/core/stage.cpp src/core/assets.cpp src/core/resources.cpp src/core/gamedb.cpp src/core/overlay.cpp src/core/events.cpp src/core/hud.cpp src/core/telemetry.cpp src/core/dbread.cpp src/core/storage.cpp src/core/career.cpp src/core/career_content.cpp src/core/career_start.cpp src/core/popup.cpp src/core/sdk.cpp src/core/perf.cpp src/core/lang_override.cpp src/core/characters.cpp src/core/career_wizard.cpp src/core/era_picker.cpp build/safetyhook.o \
+    src/core/stage.cpp src/core/assets.cpp src/core/resources.cpp src/core/gamedb.cpp src/core/overlay.cpp src/core/events.cpp src/core/hud.cpp src/core/focus.cpp src/core/d3d12_hooks.cpp src/core/grade.cpp src/core/postfx.cpp src/core/telemetry.cpp src/core/dbread.cpp src/core/storage.cpp src/core/career.cpp src/core/career_content.cpp src/core/career_start.cpp src/core/popup.cpp src/core/mfd.cpp src/core/sdk.cpp src/core/perf.cpp src/core/lang_override.cpp src/core/characters.cpp src/core/career_wizard.cpp src/core/era_picker.cpp src/core/save_splice.cpp src/core/ers_newlap.cpp src/core/track_acclim.cpp src/core/netplay.cpp src/core/netplay_drive.cpp src/core/netplay_bridge.cpp src/core/net_trace.cpp build/safetyhook.o \
     build/Zydis.o "${ZOBJ[@]}" "${STATIC[@]}"
 
 "${PIN[@]}" "${CXX[@]}" -O2 -Wall -Wextra -I$SDK -Iinclude -shared -o "$OUT/swofty_gamelog.dll" src/gamelog/gamelog.cpp "${STATIC[@]}"

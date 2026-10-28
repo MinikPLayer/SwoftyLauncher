@@ -3,11 +3,13 @@ use std::path::PathBuf;
 use serde_json::{Value, json};
 
 use crate::assets::Files;
-use crate::game::{self, GameData};
+use crate::game::{self, Choice, GameData};
 use crate::host::Host;
 use crate::loader::{self, Loading};
 use crate::model::{Driver, Roster};
 use crate::preview::{self, Building, Previews};
+
+pub const PROFILE_HEADS: &str = "profile_heads";
 
 pub struct Edit {
     pub draft: Driver,
@@ -32,6 +34,8 @@ pub struct App {
     pub previews_tried: bool,
     pub files: Files,
     pub stock: Option<crate::stock::Editing>,
+    pub host_calls: Vec<String>,
+    pub added_heads: Vec<Choice>,
 }
 
 impl App {
@@ -54,6 +58,13 @@ impl App {
             previews_tried: false,
             files: Files::default(),
             stock: None,
+            host_calls: params["host_calls"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|c| c.as_str().map(str::to_owned))
+                .collect(),
+            added_heads: Vec::new(),
         }
     }
 
@@ -124,11 +135,23 @@ impl App {
         }
         let addons = host.call("addons", Value::Null).unwrap_or(Value::Null);
         self.files = Files::new(self.game_dir.clone(), &addons);
+        self.added_heads = self.profile_heads(host);
         self.apply_files();
+    }
+
+    fn profile_heads(&self, host: &mut Host) -> Vec<Choice> {
+        if !self.host_calls.iter().any(|c| c == PROFILE_HEADS) {
+            return Vec::new();
+        }
+        let Ok(reply) = host.call(PROFILE_HEADS, Value::Null) else {
+            return Vec::new();
+        };
+        heads_from(&reply)
     }
 
     fn apply_files(&mut self) {
         if let Some(game) = self.game.as_mut() {
+            game.add_heads(&self.added_heads);
             preview::mark_missing(game, &self.files);
         }
     }
@@ -243,5 +266,67 @@ impl App {
         if self.game.is_none() {
             self.previews_tried = false;
         }
+    }
+}
+
+pub fn heads_from(reply: &Value) -> Vec<Choice> {
+    reply["heads"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|h| {
+            let value = h["label"].as_str().filter(|l| !l.is_empty())?.to_owned();
+            let label = h["name"]
+                .as_str()
+                .filter(|n| !n.trim().is_empty())
+                .map_or_else(|| game::title_case(&value), str::to_owned);
+            Some(Choice { value, label })
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn choice(value: &str) -> Choice {
+        Choice {
+            value: value.into(),
+            label: value.into(),
+        }
+    }
+
+    #[test]
+    fn heads_the_profile_adds_join_the_list_once_and_go_when_they_leave() {
+        let reply = json!({ "heads": [
+            { "label": "rio_haryanto", "addon": "mod.rio" },
+            { "label": "lando_norris", "name": "Lando" },
+            { "label": "" },
+        ]});
+        let added = heads_from(&reply);
+        assert_eq!(added[0].label, "Rio Haryanto");
+        assert_eq!(added.len(), 2);
+
+        let mut g = GameData {
+            heads: vec![choice("male_ls1"), choice("lando_norris")],
+            ..GameData::default()
+        };
+        g.add_heads(&added);
+        g.add_heads(&added);
+        let values: Vec<&str> = g.heads.iter().map(|c| c.value.as_str()).collect();
+        assert_eq!(values, ["male_ls1", "lando_norris", "rio_haryanto"]);
+        assert!(g.has(game::List::Head, "rio_haryanto"));
+
+        g.add_heads(&[]);
+        assert!(!g.has(game::List::Head, "rio_haryanto"));
+        assert!(g.has(game::List::Head, "lando_norris"));
+    }
+
+    #[test]
+    fn asks_for_profile_heads_only_when_the_launcher_answers_it() {
+        let old = App::new(&json!({ "data_dir": "/d", "cache_dir": "/c", "host_calls": ["tasks"] }));
+        assert!(!old.host_calls.iter().any(|c| c == PROFILE_HEADS));
+        let new = App::new(&json!({ "host_calls": ["tasks", PROFILE_HEADS] }));
+        assert!(new.host_calls.iter().any(|c| c == PROFILE_HEADS));
     }
 }

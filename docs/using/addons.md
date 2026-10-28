@@ -35,7 +35,7 @@ On a window less than 760 pixels tall, the install cards shrink to one row.
 
 ## Turn addons on or off
 
-The list has two groups for the active [profile](/using/profiles): **On** and **Off**. Use the switch on a row, or drag the row into the other group, to turn it on or off. Dropped on a row that is on, an addon turns on in that place in the load order. The next time you press **Play**, the launcher builds the profile with the change.
+Use the switch on a row to turn an addon on or off in the active [profile](/using/profiles). An addon keeps its place in the list when it is off; its row is dimmed and has no load order number. A new addon starts off in every profile. The next time you press **Play**, the launcher builds the profile with the change.
 
 Some addons, such as Driver Manager, change what your careers store. Turning one of those off asks first: careers you played with it may not load without it. Select **Turn off anyway** to go ahead, or **Cancel** to leave it on.
 
@@ -43,11 +43,30 @@ Some addons, such as Driver Manager, change what your careers store. Turning one
 
 In the `vanilla` profile the list is read-only. Switch to a modded profile to turn addons on.
 
+## Folders
+
+The list groups addons into folders:
+
+- **Built In** holds SwoftyMod and Simplified for Swofty. It is always first and its addons can't be moved.
+- Each category with an addon gets a folder of the same name, such as **Seasons** or **AI**. A new addon goes into its category's folder.
+- Uncategorised addons sit outside the folders.
+- **New folder**, above the list, makes a folder of your own. A new folder starts at the end of the list. The pencil on its row renames it, and the bin removes it; its addons go back to their category's folder or out of folders.
+
+Drag an addon onto a folder to put it at the end of that folder, or between two of its rows to put it there. Drag it between two rows outside a folder, or onto **Drop here to move to the end**, to take it out. An addon you move into another folder stays there; one you take out stays out of folders.
+
+Select a folder to close or open it. Folders stay closed between launches, and a search or filter opens them all.
+
+Folders are shared by every profile. The launcher saves them in `$DATA/folders.json`.
+
 ## Load order
 
-Addons that are on are listed first, in load order. When two addons change the same thing, the one lower in the list wins. Drag a row, or use the arrows in its panel, to move it. Rows that are always on have no drag handle. Built-in addons can be dragged between **On** and **Off** but keep their place in the load order. SwoftyMod and Simplified for Swofty always load first: nothing can be dragged above them.
+The list is the load order, top to bottom, and the number on a row is its place among the addons that are on. When two addons change the same thing, the one lower in the list wins. A folder's addons load together. Dragging a folder by its handle moves all of them and keeps their order. Drag a row, or use the arrows in its panel, to move an addon. The arrows move it within its folder. Rows that are always on have no drag handle. SwoftyMod and Simplified for Swofty always load first: nothing can be dragged above them.
+
+When the launcher opens a profile whose addons aren't grouped by folder, it moves each folder's addons up to the first of them and keeps their order. That can change which addon wins between two in different folders.
 
 After a conflict check, a row that is on shows **Loses to** with the number of addons lower in the list that replace some of its changes, or **Wins over** with the number it replaces. The badges go away when an addon is turned on, turned off or moved, until the next check.
+
+An addon loads after every addon it requires, whatever their places in the list. A row that is on and listed above an addon it requires shows **Loads after** with that addon's name. A row that is on whose required addon isn't installed, is off, or has a version outside the range shows **Needs** with its name, and **Play** stops until that addon is on. The panel's **Requires** line says which.
 
 A row whose addon asks to remove records the game's database ships with shows a badge such as **12 removals skipped**. The build leaves those records in place, and the panel's **Conflicts** section says so. See [Removing stock records](/reference/ops/database#removing-stock-records).
 

@@ -87,6 +87,10 @@ To fix it:
 
 The next launch checks the game again and continues once it matches Steam's copy.
 
+## If an addon needs a newer F1 25
+
+Addons are made for the latest F1 25 update. When an addon's changes don't apply to an older F1 25, F1 25 is not started and the play bar names the addon, your F1 25 version and the version it needs. Update F1 25 in Steam or the EA app, then press **Play** again. The original error is in the launch log, under **View log**.
+
 ## If the game closes as it starts
 
 F1 25 runs one copy at a time. A copy started while another runs closes itself before its window opens.

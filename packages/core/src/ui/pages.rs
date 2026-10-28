@@ -4,7 +4,7 @@ use swofty_formats::pkg::{Node, Pkg, Val, Value};
 
 use super::node::*;
 use crate::Result;
-use crate::manifest::{Binds, OptionType};
+use crate::manifest::{Binds, CareerSetup, OptionType};
 use crate::settings::{SessionAddon, SessionMap, SessionMod, SessionOption};
 
 pub const HOME: &str = "swofty_settings";
@@ -84,6 +84,9 @@ pub struct Entry<'a> {
     pub description: &'a str,
     pub id: &'a str,
     pub options: Vec<Opt<'a>>,
+    /// Every option of the addon, hidden ones too, for its career setup page.
+    pub all: Vec<Opt<'a>>,
+    pub setup: Option<&'a CareerSetup>,
 }
 
 pub struct Opt<'a> {
@@ -120,13 +123,22 @@ pub fn entries<'a>(
     let mut k = 0;
     let mut out = Vec::new();
     for (i, (full, m)) in addons.iter().enumerate().filter(|(_, m)| m.enabled).enumerate() {
-        let options = m
+        let all: Vec<Opt> = m
             .options
             .iter()
             .enumerate()
             .map(|(local, o)| {
                 k += 1;
                 Opt { k: k - 1, local, o }
+            })
+            .collect();
+        let options = all
+            .iter()
+            .filter(|o| !o.o.hidden)
+            .map(|o| Opt {
+                k: o.k,
+                local: o.local,
+                o: o.o,
             })
             .collect();
         out.push(Entry {
@@ -139,6 +151,8 @@ pub fn entries<'a>(
             description: &m.description,
             id: &m.id,
             options,
+            all,
+            setup: m.career_setup.as_ref(),
         });
     }
     for (j, mp) in maps.iter().enumerate() {
@@ -152,6 +166,8 @@ pub fn entries<'a>(
             description: &mp.description,
             id: &mp.code,
             options: Vec::new(),
+            all: Vec::new(),
+            setup: None,
         });
     }
     for (j, md) in mods.iter().enumerate() {
@@ -165,6 +181,8 @@ pub fn entries<'a>(
             description: &md.description,
             id: &md.id,
             options: Vec::new(),
+            all: Vec::new(),
+            setup: None,
         });
     }
     out
@@ -269,7 +287,7 @@ impl Sources {
     }
 }
 
-fn as_group(n: &mut Node) -> Result<()> {
+pub(super) fn as_group(n: &mut Node) -> Result<()> {
     let keep = [
         "id", "version", "type", "nameId", "name", "animData", "enabled", "visible",
     ];
@@ -652,18 +670,41 @@ fn vm_page(scr: &mut Node, e: &Entry) -> Result<()> {
 
 fn tile(src: &Sources, style: &TileStyle, parent: &str, name: &str, row: usize, e: &Entry) -> Result<Node> {
     let title = tagged(&e.upper(), e.kind.tag(), TAG_STYLE);
+    let text = TileText {
+        title: &title,
+        by: &e.details(),
+        description: e.description,
+    };
+    tile_with(src, style, parent, name, row, (style.icon)(e.kind), &text)
+}
+
+struct TileText<'a> {
+    title: &'a str,
+    by: &'a str,
+    description: &'a str,
+}
+
+fn tile_with(
+    src: &Sources,
+    style: &TileStyle,
+    parent: &str,
+    name: &str,
+    row: usize,
+    icon: Icon,
+    text: &TileText,
+) -> Result<Node> {
     let mut t = instance(
         src.t("settings_home_category")?,
         parent,
         name,
-        &[("title", &title), ("subtitle", "")],
+        &[("title", text.title), ("subtitle", "")],
         true,
     )?;
     t.a_mut()?[LAYOUT] = layout_path(&[(style.slot)(row)]);
     for c in t.slot_mut(CHILDREN)? {
         if c.name() == "icon" {
             let p = c.props_mut()?;
-            match (style.icon)(e.kind) {
+            match icon {
                 Icon::Ref(r) => p.set("textureOverride", prop(s(""), Some(r))),
                 Icon::Path(path) => p.set("textureOverride", prop(s(path), None)),
                 Icon::Texture(name) => p.set(
@@ -676,12 +717,12 @@ fn tile(src: &Sources, style: &TileStyle, parent: &str, name: &str, row: usize, 
     }
     let (by, description) = match style.wrap {
         Some((by_width, desc_width)) => (
-            wrap_text(&e.details(), by_width),
-            wrap_text(e.description, desc_width),
+            wrap_text(text.by, by_width),
+            wrap_text(text.description, desc_width),
         ),
-        None => (e.details(), e.description.to_owned()),
+        None => (text.by.to_owned(), text.description.to_owned()),
     };
-    let gap = if style.by_gap && !description.is_empty() {
+    let gap = if style.by_gap && !by.is_empty() && !description.is_empty() {
         "\n"
     } else {
         ""
@@ -923,6 +964,8 @@ pub fn build_options_page(src: &Sources, e: &Entry, screen: &str) -> Result<Vec<
                 o: o.o,
             })
             .collect(),
+        all: Vec::new(),
+        setup: e.setup,
     };
     let rows = addon_rows(&e);
     let mut scr = build_page(src, &e, &rows, !e.options.is_empty())?;
@@ -933,6 +976,146 @@ pub fn build_options_page(src: &Sources, e: &Entry, screen: &str) -> Result<Vec<
     settings_state_matrix(src, &mut scr)?;
     literal_tooltips(&mut scr)?;
     ui_bytes(vec![scr])
+}
+
+pub const SETUP_CONFIRM: &str = "confirm";
+pub const SETUP_OPTIONS: &str = "open_options";
+
+pub fn setup_title<'a>(e: &Entry<'a>, setup: &'a CareerSetup) -> &'a str {
+    setup.title.as_deref().map(str::trim).unwrap_or(e.name)
+}
+
+pub fn setup_rows_screen(e: &Entry, setup: &CareerSetup) -> String {
+    let full = e.screen.trim_start_matches("swofty_addon_");
+    format!("swofty_addon_{}_{full}", setup.route)
+}
+
+fn setup_entry<'a>(e: &Entry<'a>, setup: &'a CareerSetup) -> Entry<'a> {
+    Entry {
+        kind: e.kind,
+        index: e.index,
+        screen: setup_rows_screen(e, setup),
+        name: setup_title(e, setup),
+        author: e.author,
+        version: e.version,
+        description: e.description,
+        id: e.id,
+        options: setup
+            .options
+            .iter()
+            .filter_map(|id| e.all.iter().find(|o| &o.o.id == id))
+            .map(|o| Opt {
+                k: o.k,
+                local: o.local,
+                o: o.o,
+            })
+            .collect(),
+        all: Vec::new(),
+        setup: Some(setup),
+    }
+}
+
+/// A career setup's rows page: the setup's options, as ADDON SETTINGS shows them, under the setup's title.
+pub fn build_setup_page(src: &Sources, e: &Entry, setup: &CareerSetup) -> Result<(String, Vec<u8>)> {
+    let e = setup_entry(e, setup);
+    if e.options.len() != setup.options.len() {
+        return Err(err(format!(
+            "career setup {}: {} names options its addon does not have",
+            setup.route, e.id
+        )));
+    }
+    let rows = addon_rows(&e);
+    let mut scr = build_page(src, &e, &rows, true)?;
+    vm_page(&mut scr, &e)?;
+    settings_state_matrix(src, &mut scr)?;
+    literal_tooltips(&mut scr)?;
+    Ok((e.screen.clone(), ui_bytes(vec![scr])?))
+}
+
+/// A career setup's home: a CONFIRM tile in the first column and one category tile, which opens the rows page.
+pub fn build_setup_home(src: &Sources, e: &Entry, setup: &CareerSetup) -> Result<(String, Vec<u8>)> {
+    let home = setup.screen();
+    let title = setup_title(e, setup).to_uppercase();
+    let scr = src.screen(&home, HOME_LAYOUT)?;
+    let fr = src.frame(&home)?;
+    let mut kids = vec![src.title(&home, "settings_home_screen", &title)?];
+    for n in ["filter", "side_panel", "scroll_bar", "scroll_bar_panel"] {
+        kids.push(hidden(&format!("hide_{n}"), &[n]));
+    }
+    let left = format!("{home}.col_0");
+    let right = format!("{home}.col_1");
+    let confirm_at = format!("{left}.{SETUP_CONFIRM}");
+    let options_at = format!("{right}.options");
+    let press = |key: &str| {
+        event(
+            "pressed",
+            vec![
+                sig(&format!("{home}.audio_theme_trigger"), "confirm", "pressed"),
+                sig_with(
+                    &format!("{home}.Action"),
+                    "route",
+                    "pressed",
+                    &[("key", key.into())],
+                ),
+            ],
+        )
+    };
+    let mut confirm = instance(
+        src.t("settings_home_confirm")?,
+        &left,
+        SETUP_CONFIRM,
+        &[
+            ("title", "CONFIRM"),
+            ("subtitle", ""),
+            ("info_title", ""),
+            ("info_value", ""),
+            ("info_body", ""),
+        ],
+        true,
+    )?;
+    confirm.a_mut()?[LAYOUT] = layout_path(&[(TILES.slot)(0)]);
+    add_events(
+        &mut confirm,
+        vec![
+            press(SETUP_CONFIRM),
+            event("navRight", vec![sig(&options_at, "focus", "navRight")]),
+        ],
+    )?;
+    let labels: Vec<String> = setup_entry(e, setup)
+        .options
+        .iter()
+        .map(|o| label_case(&o.o.label))
+        .collect();
+    let text = TileText {
+        title: &title,
+        by: "",
+        description: &labels.join(", "),
+    };
+    let mut category = tile_with(
+        src,
+        &TILES,
+        &right,
+        "options",
+        0,
+        (TILES.icon)(Kind::Addon),
+        &text,
+    )?;
+    add_events(
+        &mut category,
+        vec![
+            press(SETUP_OPTIONS),
+            event("navLeft", vec![sig(&confirm_at, "focus", "navLeft")]),
+        ],
+    )?;
+    for (name, tile) in [("col_0", confirm), ("col_1", category)] {
+        let mut block = instance(src.t("settings_home_block")?, &home, name, &[], true)?;
+        block.slot_mut(CHILDREN)?.push(tile);
+        kids.push(block);
+    }
+    let mut scr = finish(scr, fr, kids, "col_1.options")?;
+    settings_state_matrix(src, &mut scr)?;
+    literal_tooltips(&mut scr)?;
+    Ok((home, ui_bytes(vec![scr])?))
 }
 
 pub fn build_all(src: &Sources, style: &TileStyle, flow: &[Entry]) -> Result<Screens> {

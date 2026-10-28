@@ -50,6 +50,10 @@ A page shows its rows in a table. Pages with a choice above the table, such as t
 
 **Driver Manager** creates new drivers. The **Drivers**, **Entrants** and **Line-ups** pages link to it: the link opens its page when it's installed, offers to turn it on when it's off, and opens its download page when it isn't installed.
 
+## Heads from addons
+
+The **Head model** choices on **Drivers** and **Characters** also list the heads installed addons add to the game, such as an imported [face mod](/using/mods#face-mods), by the head's name and the addon's name. A head needs its addon on in the profile. When it's off, the driver or character keeps the game's head and the launch log names the addon.
+
 ## Driver Manager drivers
 
 Driver Manager adds its drivers when the profile builds. The DB Editor's pages don't list them as rows, and they can't be edited here: edit them on the **Driver Manager** page.

@@ -27,6 +27,14 @@
    "pattern": "03 8B 42 04 89 05 ?? ?? ?? ?? 48 89 F2 E8 ?? ?? ?? ?? 48 89 F0 48 83 C4 20 5E C3 CC CC CC CC CC 56 57 53 48 83 EC 50",
    "note": "The base pattern fixes the low bytes of the previous function's disp32 (D8 05), which differ on EA. They are wildcarded and anchor 32 is unchanged. This pattern also matches Steam once."
   },
+  "Game_SeasonLength_ApplyPreset": {
+   "pattern": "E9 ?? ?? ?? ?? 78 19 18 8F CC CC 6E F2 7A",
+   "note": "The bytes after the protector thunk's jmp are Steam-only filler. EA's thunk is the target that all 6 Steam callers (4 in .xtls, 2 in .data1 bodies) reach once mapped; the filler is from the EA dump."
+  },
+  "Game_SeasonLength_PushCalendarEntry": {
+   "pattern": "E9 ?? ?? ?? ?? 04 C4 5C E9 28 C5 A5 FC 63",
+   "note": "The bytes after the protector thunk's jmp are Steam-only filler. EA's thunk is the target that all 4 Steam callers (2 in .xtls, 2 in .data1 bodies) reach once mapped; the filler is from the EA dump."
+  },
   "Ne_Detach_ChildNode": {
    "pattern": "E9 ?? ?? ?? ?? 0F 87 B1 E0 9A 01 65 ED E9",
    "note": "The bytes after the protector thunk's jmp are Steam-only filler. EA's thunk is the target that 7 mapped Steam callers reach; the filler is from the EA dump."
@@ -328,10 +336,40 @@
    "expect": "8B 15 DE 9E D2 02",
    "note": "expect holds a Steam rel32/disp32. It is the same instruction on EA with EA's displacement, read from the dump. The base pattern matches EA once."
   },
+  "site_Game_CareerContinue_DriverSlotTitle": {
+   "pattern": "4C 69 EE 40 05 00 00 F6 82 71 01 00 00 20 4A 8D 8C 29 B8 03 00 00 44 88 44 24 37 0F 85 ?? ?? ?? ?? 48 8D 15 ?? ?? ?? ?? E8 ?? ?? ?? ?? C6 84 24 08 04 00 00 01",
+   "expect": "E8 2F 65 DA FE",
+   "note": "expect holds a Steam rel32/disp32. It is the same instruction on EA with EA's displacement, read from the dump. The base pattern matches EA once. The call is Vm_Holder_SetCStr (EA 0x1407b01d0) with rdx \"lng_homescreen_driver_career\". Game_CareerContinue_FillSlot (EA 0x141a09c50) has the same instructions, registers and frame as Steam's, so rcx, rdx, rbx, rdi and sil hold the same values at the site."
+  },
   "site_Game_DriverSelectHeader_BuildTabs": {
    "pattern": "E8 ?? ?? ?? ?? C6 86 10 03 00 00 01 48 8B 86 C0 02 00 00",
    "expect": "E8 09 29 7F 02",
    "note": "expect holds a Steam rel32/disp32. It is the same instruction on EA with EA's displacement, read from the dump. The base pattern matches EA once."
+  },
+  "site_Game_DriverSelect_BadgeFormat": {
+   "pattern": "E8 ?? ?? ?? ?? 48 8D 8E 58 FF FF FF",
+   "expect": "E8 EB 76 AB 02",
+   "note": "expect holds a Steam rel32/disp32. It is the same instruction on EA with EA's displacement, read from the dump. The base pattern matches EA once. The call is Ne_Format_String (EA 0x1441572e0) with the same format string and the same rcx, rdx, r8 setup; the containing function (EA 0x14169f810) has the same instructions as Steam's."
+  },
+  "site_Game_DriverSelect_TeamLogoFormat": {
+   "pattern": "48 8D 4C 24 60 E8 ?? ?? ?? ?? 48 8B 97 B0 00 00 00",
+   "expect": "E8 1D 94 AB 02",
+   "note": "expect holds a Steam rel32/disp32. It is the same instruction on EA with EA's displacement, read from the dump. The base pattern matches EA once. The call is Ne_Format_String (EA 0x1441572e0) with the same format string and the same rcx, rdx, r8 setup; the containing function (EA 0x14169da00) has the same instructions as Steam's."
+  },
+  "site_Game_SaveData_ContainersChildren": {
+   "pattern": "41 89 04 24 85 C0 0F 85 ?? ?? ?? ?? 48 8D 2D",
+   "expect": "48 8D 2D DD D8 C1 02",
+   "note": "expect holds a Steam rel32/disp32. It is the same instruction on EA with EA's displacement, read from the dump. The base pattern matches EA once. Game_SaveData_SerialiseContainer_2 (EA 0x143641230) has the same instructions, registers and frame as Steam's, so r12, r15 and the [rsp+0x30/0x38/0x50/0x58/0x90] slots the save splice reads hold the same values. The lea rbp target is the string64 type record, at the same 0x135c70 data shift as g_Ne_StringTable and k_Ne_PropertyType_Bag."
+  },
+  "site_Game_SaveData_ContainersDone": {
+   "pattern": "80 3D ?? ?? ?? ?? 01 4C 8B 4C 24 30",
+   "expect": "80 3D 41 F9 B3 02 01",
+   "note": "expect holds a Steam rel32/disp32. It is the same instruction on EA with EA's displacement, read from the dump. The base pattern matches EA once. Same function and frame as Steam's (EA 0x143641230), so the splice's redirect here after a failed write finds [rsp+0x30], [rsp+0x38] and r12 as on Steam. The cmp reads the flag at the same 0x135d40 data shift as g_Ne_LogGate."
+  },
+  "site_Game_TeamSelect_TeamLogoFormat": {
+   "pattern": "E8 ?? ?? ?? ?? 48 8D 8F 58 FF FF FF",
+   "expect": "E8 E6 34 8E 02",
+   "note": "expect holds a Steam rel32/disp32. It is the same instruction on EA with EA's displacement, read from the dump. The base pattern matches EA once. The call is Ne_Format_String (EA 0x1441572e0) with the same format string and the same rcx, rdx, r8 setup; the containing function (EA 0x141873860) has the same instructions as Steam's."
   },
   "site_Ne_HwBool_CrowdInShadows": {
    "pattern": "49 8B 4C 24 50 48 8D 15 ?? ?? ?? ?? E8 ?? ?? ?? ?? 85 C0 40 0F 94 D7",
@@ -362,6 +400,9 @@
   "Career_Adjust_RpTeamWallet": {
    "match": "0x34f8740"
   },
+  "Career_Build_DriverContract": {
+   "match": "0xd74020"
+  },
   "Career_Build_LineupChanges": {
    "match": "0x2450e10"
   },
@@ -380,8 +421,35 @@
   "Career_Construct_RnDDeptCard": {
    "match": "0x1c74e80"
   },
+  "Career_ContractIntro_OnEnter": {
+   "match": "0x36b2860"
+  },
+  "Career_ContractIntro_OnUpdate": {
+   "match": "0x36b3000"
+  },
+  "Career_ContractOutro_OnEnter": {
+   "match": "0x36b3570"
+  },
+  "Career_ContractOutro_OnUpdate": {
+   "match": "0x36b3990"
+  },
+  "Career_ContractUpdate_OnEnter": {
+   "match": "0x36b19a0"
+  },
+  "Career_ContractUpdate_OnExit": {
+   "match": "0x36b2200"
+  },
+  "Career_ContractUpdate_OnUpdate": {
+   "match": "0x36b2040"
+  },
   "Career_Create_SeasonWeekend": {
    "match": "0xae49c0"
+  },
+  "Career_Decide_ContractNegotiation": {
+   "match": "0x2d4ba50"
+  },
+  "Career_DriverNumbers_CheckExisting": {
+   "match": "0xc005a0"
   },
   "Career_Eval_Curve": {
    "match": "0x44fd860"
@@ -397,6 +465,9 @@
   },
   "Career_Get_TeamRenownData": {
    "match": "0xf74760"
+  },
+  "Career_Needs_DriverContract": {
+   "match": "0xd7d2e0"
   },
   "Career_Post_UpgradeFittedRatio": {
    "match": "0x3520000"
@@ -428,6 +499,9 @@
   "Career_Set_UpgradesOwner": {
    "match": "0x351e820"
   },
+  "Career_Sign_DriverContract": {
+   "match": "0xd74240"
+  },
   "Career_Start_UpgradeDevelopment": {
    "match": "0x35075e0"
   },
@@ -448,6 +522,9 @@
    "match": "0x1bae090",
    "func_rva": "0x1bae090"
   },
+  "FeTile_Add_EraTile": {
+   "match": "0x1a675d0"
+  },
   "FeTile_Build_List": {
    "match": "0x1738350",
    "func_rva": "0x1738350"
@@ -455,15 +532,33 @@
   "FeTile_CareerDlcItem_Populate": {
    "match": "0x1720a30"
   },
+  "FeTile_Clear_EraTileSet_Thunk": {
+   "match": "0x1a69052"
+  },
   "FeTile_Construct_CareerItem": {
    "match": "0x171f750"
+  },
+  "FeTile_Is_EraScenarioAvailable_Thunk": {
+   "match": "0x1a690ec"
   },
   "FeTile_ItemBase_Populate": {
    "match": "0x1691f60",
    "func_rva": "0x1691f60"
   },
+  "FeTile_Press_EraTile": {
+   "match": "0x1a68910"
+  },
   "FeTile_Route_CareerItem": {
    "match": "0x171f9f0"
+  },
+  "Game_CareerActivities_AddActivity": {
+   "match": "0x1261f40"
+  },
+  "Game_CareerActivities_RemoveActivity": {
+   "match": "0x1262080"
+  },
+  "Game_CareerSetup_ResetEntrants": {
+   "match": "0xc2ebf0"
   },
   "Game_CareerWizard_PushNextStep": {
    "match": "0x385aa60"
@@ -474,14 +569,68 @@
   "Game_Career_IsDriverCareerMode": {
    "match": "0xa8ee83"
   },
+  "Game_ContractTeamSelect_OnEnter": {
+   "match": "0x36b4910"
+  },
+  "Game_ContractTeamSelect_OnExit": {
+   "match": "0x36b5a20"
+  },
+  "Game_ContractTeamSelect_OnUpdate": {
+   "match": "0x36b58e0"
+  },
+  "Game_DriverContracts_AdvanceSecretMeeting": {
+   "match": "0xd7a3e0"
+  },
+  "Game_DriverContracts_BuildOffers": {
+   "match": "0xd7b140"
+  },
+  "Game_DriverContracts_OfferSecretMeeting": {
+   "match": "0xd79780"
+  },
   "Game_DriverSelectHeader_SetTabState": {
    "match": "0x1a544d0"
+  },
+  "Game_EngineMgmt_AddGridPenalty": {
+   "match": "0x11ca990"
+  },
+  "Game_EngineMgmt_ApplySessionWear": {
+   "match": "0x11cb7b0"
   },
   "Game_EntrantsUi_BuildCharacterRef": {
    "match": "0x24eb0f0"
   },
   "Game_EntrantsUi_OnCharacterListLoaded": {
    "match": "0x24b4040"
+  },
+  "Game_F1WorldActivityContainer_SelectEntrantList": {
+   "match": "0x1a735f0"
+  },
+  "Game_PracticeTrackAcclimatisation_RefreshState": {
+   "match": "0x2997720"
+  },
+  "Game_Refresh_PerformanceComparison": {
+   "match": "0x188aee0"
+  },
+  "Game_Rnd_CalcUpgradeTypeProgress": {
+   "match": "0x3516460"
+  },
+  "Game_Rnd_FillVehicleUpgrades": {
+   "match": "0x1232f00"
+  },
+  "Game_SaveData_DeserialiseContainer": {
+   "match": "0x363f5a0"
+  },
+  "Game_SaveData_SerialiseContainer": {
+   "match": "0x363e200"
+  },
+  "Game_SaveData_WriteBag": {
+   "match": "0x3921150"
+  },
+  "Game_SeasonLength_ApplyPreset": {
+   "match": "0xbc8930"
+  },
+  "Game_SeasonLength_PushCalendarEntry": {
+   "match": "0xbc86f0"
   },
   "Game_SpeechSystem_PostLine": {
    "match": "0xa2f4d0"
@@ -494,6 +643,9 @@
   },
   "Ne_Detach_ChildNode": {
    "match": "0x36423b0"
+  },
+  "Ne_Entity_FindComponent": {
+   "match": "0x3f87c90"
   },
   "Ne_Format_String": {
    "match": "0x41572e0"
@@ -514,8 +666,20 @@
   "Ne_Parse_Long": {
    "match": "0x3db14f3"
   },
+  "Ne_Play_FullscreenVideo": {
+   "match": "0x4162040"
+  },
   "Ne_Post_BusMessage": {
    "match": "0x39747b0"
+  },
+  "Ne_StringTable_Lookup": {
+   "match": "0x3917940"
+  },
+  "Sess_Build_GroupResult": {
+   "match": "0xaf8b90"
+  },
+  "Sess_Find_GroupRowPosition": {
+   "match": "0xaf7410"
   },
   "Sess_GameWeatherSystem_SetupSession": {
    "match": "0x38a4520"
@@ -523,15 +687,36 @@
   "Sess_GameWeatherSystem_UpdateRandomSeed": {
    "match": "0x38b52b0"
   },
+  "Sess_Record_GroupTimes": {
+   "match": "0xaf11f0"
+  },
   "Sess_Tod_BuildSessionDataset_Thunk": {
    "match": "0x4792960"
+  },
+  "Sess_TyreAllocation_OnSessionStart": {
+   "match": "0xbcab00"
+  },
+  "Sess_TyreClass_FromName": {
+   "match": "0x2e94be4"
+  },
+  "Sess_Tyres_ClosestAvailableCompound": {
+   "match": "0x2a34dcc"
   },
   "Sess_WeatherComponent_SetSystemRandomSeed": {
    "match": "0xbdcd50"
   },
+  "Sess_Weekend_Start": {
+   "match": "0xaeedd0"
+  },
+  "Vm_GetOrCreate_ListChild": {
+   "match": "0x42a6d50"
+  },
   "Vm_Set_Bool": {
    "match": "0x1691f60",
    "func_rva": "0x1691f60"
+  },
+  "Vm_Set_NodeRef": {
+   "match": "0x1a693a9"
   },
   "Vm_Set_String": {
    "match": "0x1691f60",
@@ -539,6 +724,9 @@
   },
   "Vm_Set_TabEnabled": {
    "match": "0x43133d0"
+  },
+  "g_Career_FlowLinkContinue": {
+   "match": "0x36b30b0"
   },
   "g_Career_RnDOverviewSelectedDept": {
    "match": "0x1c81034"
@@ -552,11 +740,17 @@
   "g_FeTile_SelectedCareerContent": {
    "match": "0x1720a31"
   },
+  "g_Game_FlowLinkStay": {
+   "match": "0x36b309a"
+  },
   "g_Game_Manager": {
    "match": "0xf9934"
   },
   "g_Game_MessageBus": {
    "match": "0x152043"
+  },
+  "g_Game_Root": {
+   "match": "0x267270"
   },
   "g_Ne_DefaultAllocator": {
    "match": "0x1c805d4"
@@ -564,6 +758,18 @@
   "g_Ne_LogGate": {
    "match": "0xaeedec",
    "func_rva": "0xaeedd0"
+  },
+  "g_Ne_StringTable": {
+   "match": "0x3640182"
+  },
+  "g_Sess_TyreRulesActive": {
+   "match": "0x2e7c230"
+  },
+  "g_Sess_TyreRulesMode": {
+   "match": "0x2e7c23f"
+  },
+  "g_Sess_TyreRulesSessionType": {
+   "match": "0x2e7c274"
   },
   "g_Vm_Registry": {
    "match": "0x1691f60",
@@ -665,8 +871,32 @@
   "k_Career_WeatherAndTimeOfDayComponentDesc": {
    "match": "0xb9c77f"
   },
+  "k_Game_TrackListComponentDesc": {
+   "match": "0x385aeba"
+  },
   "k_Gdb_StringXorKey": {
    "match": "0x20d520"
+  },
+  "k_Ne_BagCodecVtbl": {
+   "match": "0x29c7a89"
+  },
+  "k_Ne_CountingStreamVtbl": {
+   "match": "0x29c7a68"
+  },
+  "k_Ne_MemWriteStreamVtbl": {
+   "match": "0x29c7b3d"
+  },
+  "k_Ne_PropertyType_Bag": {
+   "match": "0x392134c"
+  },
+  "k_Ne_TypeChainEnd": {
+   "match": "0x3680072"
+  },
+  "k_Ne_TypeRoot": {
+   "match": "0x3680072"
+  },
+  "k_Sess_TyreComponentType": {
+   "match": "0x3680072"
   },
   "site_Career_ApplyUpgradeBlockNameDefault": {
    "match": "0xe0d5fd6"
@@ -1107,11 +1337,56 @@
   "site_FeTile_CareerContentEnd": {
    "match": "0x173bbf7"
   },
+  "site_FeTile_EraTilesBuilt": {
+   "match": "0x1a69c18"
+  },
+  "site_Game_CareerContinue_DriverSlotTitle": {
+   "match": "0x1a09c74"
+  },
   "site_Game_CareerWizardConfirm_NextRoute": {
    "match": "0x1a1e15d"
   },
+  "site_Game_CareerWizard_BackRoute": {
+   "match": "0xae4ad0d"
+  },
   "site_Game_DriverSelectHeader_BuildTabs": {
    "match": "0x1a536e2"
+  },
+  "site_Game_DriverSelect_BackRoute": {
+   "match": "0x1a58dc4"
+  },
+  "site_Game_DriverSelect_BadgeFormat": {
+   "match": "0x169fbf0"
+  },
+  "site_Game_DriverSelect_NumberResult": {
+   "match": "0x169dc69"
+  },
+  "site_Game_DriverSelect_TeamLogoFormat": {
+   "match": "0x169deb9"
+  },
+  "site_Game_ErsNewLap_NextVehicle": {
+   "match": "0x2511450"
+  },
+  "site_Game_ErsNewLap_VehicleLookup": {
+   "match": "0x2511450"
+  },
+  "site_Game_SaveData_ContainersChildren": {
+   "match": "0x3641dd8"
+  },
+  "site_Game_SaveData_ContainersCount": {
+   "match": "0x3641db3"
+  },
+  "site_Game_SaveData_ContainersDone": {
+   "match": "0x3641ebc"
+  },
+  "site_Game_SaveData_UnclaimedChild": {
+   "match": "0x36400eb"
+  },
+  "site_Game_TeamSelect_NumberResult": {
+   "match": "0x1874242"
+  },
+  "site_Game_TeamSelect_TeamLogoFormat": {
+   "match": "0x1873df5"
   },
   "site_Gdb_DeptCountStore": {
    "match": "0x4598b6f"
@@ -1212,6 +1487,9 @@
   "site_Ne_HwXmlWriteCall": {
    "match": "0x4019d6e"
   },
+  "site_Ne_ReplayAfterRecord": {
+   "match": "0x45c799f"
+  },
   "site_Sess_AiVehicleRegisterCall": {
    "match": "0x603b5d",
    "func_rva": "0x600160"
@@ -1224,6 +1502,9 @@
   },
   "vt_Career_FacilityNode": {
    "match": "0xf9f6d2"
+  },
+  "vt_Career_MessageDriverContractChanged": {
+   "match": "0xd980a5"
   },
   "vt_Career_MessageDriverMoveConfirmed": {
    "match": "0xd895c6"
@@ -1252,8 +1533,23 @@
   "vt_Career_Weekend": {
    "match": "0xaece3f"
   },
+  "vt_Game_CareerDLCSelectViewModel": {
+   "match": "0x1646052"
+  },
+  "vt_Game_CareerWizardSettingsSelectViewModel": {
+   "match": "0x15da8e2"
+  },
+  "vt_Game_DriverCareerDriverSelectViewModel": {
+   "match": "0x15d9b6a"
+  },
   "vt_Game_DriverCareerSlotPredicate": {
    "match": "0x171fa6b"
+  },
+  "vt_Game_SaveDataRootContainer": {
+   "match": "0x3644b57"
+  },
+  "vt_Game_TrackListComponent": {
+   "match": "0xcfb775"
   }
  },
  "unresolvable": {}

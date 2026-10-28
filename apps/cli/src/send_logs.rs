@@ -61,6 +61,7 @@ pub fn send_to(store: &Store, args: SendArgs, to: Option<LogServer>) -> Result<E
         name: name.clone(),
         message,
         game: GameInfo::detect(store),
+        room: None,
     };
     let bundle = Bundle::collect(store, &report);
     if let Some(out) = args.dry_run {

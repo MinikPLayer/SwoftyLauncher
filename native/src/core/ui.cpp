@@ -12,10 +12,12 @@
 
 namespace runtime {
 std::string hook_error(const safetyhook::MidHook::Error &e);
+void netplay_screen(const char *name);
 }
 
 bool ui_vm_init(uintptr_t module_base, const std::wstring &swofty_dir);
 bool ui_vm_attach(const std::string &screen);
+bool ui_vm_ready();
 
 namespace {
 
@@ -37,7 +39,8 @@ struct Screen {
     std::string data;
     void *resid = nullptr, *failed_resid = nullptr, *noted_resid = nullptr;
     State state = State::idle;
-    bool engine = false, started = false, result_seen = false, view_model = false, vm_attached = false;
+    bool engine = false, started = false, result_seen = false, view_model = false, vm_attached = false,
+         vm_noted = false;
     int result = 0;
     unsigned attempts = 0;
 };
@@ -373,6 +376,16 @@ void register_pending(const char *why)
             continue;
         if (s.view_model && !s.vm_attached)
             s.vm_attached = ui_vm_attach(s.name);
+        if (s.view_model && !s.vm_attached) {
+            s.state = State::idle;
+            if (!s.vm_noted)
+                swofty::log("[ui] screen %s (%s) needs a view model and %s; not registered, so routes to it are "
+                            "cancelled and the front end stays where it is",
+                            s.name.c_str(), s.flow.c_str(),
+                            ui_vm_ready() ? "its view model is not attached yet" : "view models are off on this build");
+            s.vm_noted = true;
+            continue;
+        }
         bool ok = false;
         if (screen_lookup(s.hash, &ok)) {
             s.state = State::in_table;
@@ -546,6 +559,8 @@ uint64_t open_hook(void *scene, void *screen, void *a3, void *a4)
             perf_probe("the scene object", scene);
         }
     }
+    if (readable(screen, 0x70) && readable(*reinterpret_cast<void **>(static_cast<uint8_t *>(screen) + 0x68), 10))
+        runtime::netplay_screen(chars(*reinterpret_cast<void **>(static_cast<uint8_t *>(screen) + 0x68)));
     if (screen != last_screen) {
         prev_scene = last_scene;
         prev_screen = last_screen;

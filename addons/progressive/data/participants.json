@@ -1,0 +1,1085 @@
+{
+ "source": "Classic Seasons build/jolpica qualifying-<year>.json (qualifying sessions per constructor); 2025 by hand",
+ "not_in_game": {
+  "pietro_fittipaldi": "Pietro Fittipaldi",
+  "resta": "Paul di Resta"
+ },
+ "years": {
+  "2016": {
+   "mercedes": {
+    "lewis_hamilton": {
+     "sessions": 21,
+     "number": 44
+    },
+    "nico_rosberg": {
+     "sessions": 21,
+     "number": 6
+    }
+   },
+   "ferrari": {
+    "sebastian_vettel": {
+     "sessions": 21,
+     "number": 5
+    },
+    "kimi_raikkonen": {
+     "sessions": 21,
+     "number": 7
+    }
+   },
+   "toro_rosso": {
+    "max_verstappen": {
+     "sessions": 4,
+     "number": 33
+    },
+    "carlos_sainz-jr": {
+     "sessions": 21,
+     "number": 55
+    },
+    "daniil_kvyat": {
+     "sessions": 17,
+     "number": 26
+    }
+   },
+   "williams": {
+    "felipe_massa": {
+     "sessions": 21,
+     "number": 19
+    },
+    "valtteri_bottas": {
+     "sessions": 21,
+     "number": 77
+    }
+   },
+   "redbull": {
+    "daniel_ricciardo": {
+     "sessions": 21,
+     "number": 3
+    },
+    "daniil_kvyat": {
+     "sessions": 4,
+     "number": 26
+    },
+    "max_verstappen": {
+     "sessions": 17,
+     "number": 33
+    }
+   },
+   "force_india": {
+    "sergio_perez": {
+     "sessions": 21,
+     "number": 11
+    },
+    "nico_hulkenberg": {
+     "sessions": 21,
+     "number": 27
+    }
+   },
+   "mclaren": {
+    "fernando_alonso": {
+     "sessions": 19,
+     "number": 14
+    },
+    "jenson_button": {
+     "sessions": 21,
+     "number": 22
+    },
+    "stoffel_vandoorne": {
+     "sessions": 1,
+     "number": 47
+    }
+   },
+   "lotus": {
+    "jolyon_palmer": {
+     "sessions": 20,
+     "number": 30
+    },
+    "kevin_magnussen": {
+     "sessions": 20,
+     "number": 20
+    }
+   },
+   "sauber": {
+    "marcus_ericsson": {
+     "sessions": 20,
+     "number": 9
+    },
+    "felipe_nasr": {
+     "sessions": 21,
+     "number": 12
+    }
+   },
+   "haas": {
+    "romain_grosjean": {
+     "sessions": 21,
+     "number": 8
+    },
+    "esteban_gutierrez": {
+     "sessions": 21,
+     "number": 21
+    }
+   },
+   "manor": {
+    "rio_haryanto": {
+     "sessions": 12,
+     "number": 88
+    },
+    "pascal_wehrlein": {
+     "sessions": 21,
+     "number": 94
+    },
+    "esteban_ocon": {
+     "sessions": 8,
+     "number": 31
+    }
+   }
+  },
+  "2017": {
+   "mercedes": {
+    "lewis_hamilton": {
+     "sessions": 20,
+     "number": 44
+    },
+    "valtteri_bottas": {
+     "sessions": 20,
+     "number": 77
+    }
+   },
+   "ferrari": {
+    "sebastian_vettel": {
+     "sessions": 20,
+     "number": 5
+    },
+    "kimi_raikkonen": {
+     "sessions": 20,
+     "number": 7
+    }
+   },
+   "redbull": {
+    "max_verstappen": {
+     "sessions": 20,
+     "number": 33
+    },
+    "daniel_ricciardo": {
+     "sessions": 20,
+     "number": 3
+    }
+   },
+   "haas": {
+    "romain_grosjean": {
+     "sessions": 20,
+     "number": 8
+    },
+    "kevin_magnussen": {
+     "sessions": 20,
+     "number": 20
+    }
+   },
+   "williams": {
+    "felipe_massa": {
+     "sessions": 19,
+     "number": 19
+    },
+    "lance_stroll": {
+     "sessions": 20,
+     "number": 18
+    },
+    "missing:resta": {
+     "sessions": 1,
+     "number": 40
+    }
+   },
+   "toro_rosso": {
+    "carlos_sainz-jr": {
+     "sessions": 16,
+     "number": 55
+    },
+    "daniil_kvyat": {
+     "sessions": 15,
+     "number": 26
+    },
+    "pierre_gasly": {
+     "sessions": 4,
+     "number": 10
+    },
+    "brendon_hartley": {
+     "sessions": 4,
+     "number": 39
+    }
+   },
+   "force_india": {
+    "sergio_perez": {
+     "sessions": 20,
+     "number": 11
+    },
+    "esteban_ocon": {
+     "sessions": 20,
+     "number": 31
+    }
+   },
+   "lotus": {
+    "nico_hulkenberg": {
+     "sessions": 20,
+     "number": 27
+    },
+    "jolyon_palmer": {
+     "sessions": 15,
+     "number": 30
+    },
+    "carlos_sainz-jr": {
+     "sessions": 4,
+     "number": 55
+    }
+   },
+   "mclaren": {
+    "fernando_alonso": {
+     "sessions": 19,
+     "number": 14
+    },
+    "stoffel_vandoorne": {
+     "sessions": 20,
+     "number": 2
+    },
+    "jenson_button": {
+     "sessions": 1,
+     "number": 22
+    }
+   },
+   "sauber": {
+    "marcus_ericsson": {
+     "sessions": 20,
+     "number": 9
+    },
+    "antonio_giovinazzi": {
+     "sessions": 2,
+     "number": 36
+    },
+    "pascal_wehrlein": {
+     "sessions": 18,
+     "number": 94
+    }
+   }
+  },
+  "2018": {
+   "mercedes": {
+    "lewis_hamilton": {
+     "sessions": 21,
+     "number": 44
+    },
+    "valtteri_bottas": {
+     "sessions": 21,
+     "number": 77
+    }
+   },
+   "ferrari": {
+    "kimi_raikkonen": {
+     "sessions": 21,
+     "number": 7
+    },
+    "sebastian_vettel": {
+     "sessions": 21,
+     "number": 5
+    }
+   },
+   "redbull": {
+    "max_verstappen": {
+     "sessions": 21,
+     "number": 33
+    },
+    "daniel_ricciardo": {
+     "sessions": 21,
+     "number": 3
+    }
+   },
+   "haas": {
+    "kevin_magnussen": {
+     "sessions": 21,
+     "number": 20
+    },
+    "romain_grosjean": {
+     "sessions": 21,
+     "number": 8
+    }
+   },
+   "lotus": {
+    "nico_hulkenberg": {
+     "sessions": 21,
+     "number": 27
+    },
+    "carlos_sainz-jr": {
+     "sessions": 21,
+     "number": 55
+    }
+   },
+   "mclaren": {
+    "fernando_alonso": {
+     "sessions": 21,
+     "number": 14
+    },
+    "stoffel_vandoorne": {
+     "sessions": 21,
+     "number": 2
+    }
+   },
+   "force_india": {
+    "sergio_perez": {
+     "sessions": 21,
+     "number": 11
+    },
+    "esteban_ocon": {
+     "sessions": 21,
+     "number": 31
+    }
+   },
+   "williams": {
+    "lance_stroll": {
+     "sessions": 21,
+     "number": 18
+    },
+    "sergey_sirotkin": {
+     "sessions": 21,
+     "number": 35
+    }
+   },
+   "toro_rosso": {
+    "brendon_hartley": {
+     "sessions": 21,
+     "number": 28
+    },
+    "pierre_gasly": {
+     "sessions": 21,
+     "number": 10
+    }
+   },
+   "sauber": {
+    "marcus_ericsson": {
+     "sessions": 21,
+     "number": 9
+    },
+    "charles_leclerc": {
+     "sessions": 21,
+     "number": 16
+    }
+   }
+  },
+  "2019": {
+   "mercedes": {
+    "lewis_hamilton": {
+     "sessions": 21,
+     "number": 44
+    },
+    "valtteri_bottas": {
+     "sessions": 21,
+     "number": 77
+    }
+   },
+   "ferrari": {
+    "sebastian_vettel": {
+     "sessions": 21,
+     "number": 5
+    },
+    "charles_leclerc": {
+     "sessions": 21,
+     "number": 16
+    }
+   },
+   "redbull": {
+    "max_verstappen": {
+     "sessions": 21,
+     "number": 33
+    },
+    "pierre_gasly": {
+     "sessions": 12,
+     "number": 10
+    },
+    "alex_albon": {
+     "sessions": 9,
+     "number": 23
+    }
+   },
+   "haas": {
+    "romain_grosjean": {
+     "sessions": 21,
+     "number": 8
+    },
+    "kevin_magnussen": {
+     "sessions": 21,
+     "number": 20
+    }
+   },
+   "mclaren": {
+    "lando_norris": {
+     "sessions": 21,
+     "number": 4
+    },
+    "carlos_sainz-jr": {
+     "sessions": 21,
+     "number": 55
+    }
+   },
+   "sauber": {
+    "kimi_raikkonen": {
+     "sessions": 21,
+     "number": 7
+    },
+    "antonio_giovinazzi": {
+     "sessions": 20,
+     "number": 99
+    }
+   },
+   "force_india": {
+    "sergio_perez": {
+     "sessions": 21,
+     "number": 11
+    },
+    "lance_stroll": {
+     "sessions": 21,
+     "number": 18
+    }
+   },
+   "lotus": {
+    "nico_hulkenberg": {
+     "sessions": 21,
+     "number": 27
+    },
+    "daniel_ricciardo": {
+     "sessions": 21,
+     "number": 3
+    }
+   },
+   "toro_rosso": {
+    "alex_albon": {
+     "sessions": 11,
+     "number": 23
+    },
+    "daniil_kvyat": {
+     "sessions": 21,
+     "number": 26
+    },
+    "pierre_gasly": {
+     "sessions": 9,
+     "number": 10
+    }
+   },
+   "williams": {
+    "george_russell": {
+     "sessions": 21,
+     "number": 63
+    },
+    "robert_kubica": {
+     "sessions": 21,
+     "number": 88
+    }
+   }
+  },
+  "2020": {
+   "mercedes": {
+    "valtteri_bottas": {
+     "sessions": 17,
+     "number": 77
+    },
+    "lewis_hamilton": {
+     "sessions": 16,
+     "number": 44
+    },
+    "george_russell": {
+     "sessions": 1,
+     "number": 63
+    }
+   },
+   "redbull": {
+    "max_verstappen": {
+     "sessions": 17,
+     "number": 33
+    },
+    "alex_albon": {
+     "sessions": 17,
+     "number": 23
+    }
+   },
+   "mclaren": {
+    "lando_norris": {
+     "sessions": 17,
+     "number": 4
+    },
+    "carlos_sainz-jr": {
+     "sessions": 17,
+     "number": 55
+    }
+   },
+   "force_india": {
+    "sergio_perez": {
+     "sessions": 15,
+     "number": 11
+    },
+    "lance_stroll": {
+     "sessions": 16,
+     "number": 18
+    },
+    "nico_hulkenberg": {
+     "sessions": 3,
+     "number": 27
+    }
+   },
+   "ferrari": {
+    "charles_leclerc": {
+     "sessions": 17,
+     "number": 16
+    },
+    "sebastian_vettel": {
+     "sessions": 17,
+     "number": 5
+    }
+   },
+   "lotus": {
+    "daniel_ricciardo": {
+     "sessions": 17,
+     "number": 3
+    },
+    "esteban_ocon": {
+     "sessions": 17,
+     "number": 31
+    }
+   },
+   "toro_rosso": {
+    "pierre_gasly": {
+     "sessions": 17,
+     "number": 10
+    },
+    "daniil_kvyat": {
+     "sessions": 17,
+     "number": 26
+    }
+   },
+   "haas": {
+    "romain_grosjean": {
+     "sessions": 15,
+     "number": 8
+    },
+    "kevin_magnussen": {
+     "sessions": 17,
+     "number": 20
+    },
+    "missing:pietro_fittipaldi": {
+     "sessions": 2,
+     "number": 51
+    }
+   },
+   "williams": {
+    "george_russell": {
+     "sessions": 16,
+     "number": 63
+    },
+    "nicholas_latifi": {
+     "sessions": 17,
+     "number": 6
+    },
+    "jack_aitken": {
+     "sessions": 1,
+     "number": 89
+    }
+   },
+   "sauber": {
+    "antonio_giovinazzi": {
+     "sessions": 17,
+     "number": 99
+    },
+    "kimi_raikkonen": {
+     "sessions": 17,
+     "number": 7
+    }
+   }
+  },
+  "2021": {
+   "redbull": {
+    "max_verstappen": {
+     "sessions": 22,
+     "number": 33
+    },
+    "sergio_perez": {
+     "sessions": 22,
+     "number": 11
+    }
+   },
+   "mercedes": {
+    "lewis_hamilton": {
+     "sessions": 22,
+     "number": 44
+    },
+    "valtteri_bottas": {
+     "sessions": 22,
+     "number": 77
+    }
+   },
+   "ferrari": {
+    "charles_leclerc": {
+     "sessions": 22,
+     "number": 16
+    },
+    "carlos_sainz-jr": {
+     "sessions": 22,
+     "number": 55
+    }
+   },
+   "toro_rosso": {
+    "pierre_gasly": {
+     "sessions": 22,
+     "number": 10
+    },
+    "yuki_tsunoda": {
+     "sessions": 22,
+     "number": 22
+    }
+   },
+   "mclaren": {
+    "daniel_ricciardo": {
+     "sessions": 22,
+     "number": 3
+    },
+    "lando_norris": {
+     "sessions": 22,
+     "number": 4
+    }
+   },
+   "lotus": {
+    "fernando_alonso": {
+     "sessions": 22,
+     "number": 14
+    },
+    "esteban_ocon": {
+     "sessions": 22,
+     "number": 31
+    }
+   },
+   "force_india": {
+    "lance_stroll": {
+     "sessions": 22,
+     "number": 18
+    },
+    "sebastian_vettel": {
+     "sessions": 22,
+     "number": 5
+    }
+   },
+   "sauber": {
+    "antonio_giovinazzi": {
+     "sessions": 22,
+     "number": 99
+    },
+    "kimi_raikkonen": {
+     "sessions": 20,
+     "number": 7
+    },
+    "robert_kubica": {
+     "sessions": 2,
+     "number": 88
+    }
+   },
+   "williams": {
+    "george_russell": {
+     "sessions": 22,
+     "number": 63
+    },
+    "nicholas_latifi": {
+     "sessions": 22,
+     "number": 6
+    }
+   },
+   "haas": {
+    "mick_schumacher": {
+     "sessions": 21,
+     "number": 47
+    },
+    "nikita_mazepin": {
+     "sessions": 22,
+     "number": 9
+    }
+   }
+  },
+  "2022": {
+   "ferrari": {
+    "charles_leclerc": {
+     "sessions": 22,
+     "number": 16
+    },
+    "carlos_sainz-jr": {
+     "sessions": 22,
+     "number": 55
+    }
+   },
+   "redbull": {
+    "max_verstappen": {
+     "sessions": 22,
+     "number": 1
+    },
+    "sergio_perez": {
+     "sessions": 22,
+     "number": 11
+    }
+   },
+   "mercedes": {
+    "lewis_hamilton": {
+     "sessions": 22,
+     "number": 44
+    },
+    "george_russell": {
+     "sessions": 22,
+     "number": 63
+    }
+   },
+   "sauber": {
+    "valtteri_bottas": {
+     "sessions": 22,
+     "number": 77
+    },
+    "guanyu_zhou": {
+     "sessions": 22,
+     "number": 24
+    }
+   },
+   "haas": {
+    "kevin_magnussen": {
+     "sessions": 22,
+     "number": 20
+    },
+    "mick_schumacher": {
+     "sessions": 22,
+     "number": 47
+    }
+   },
+   "lotus": {
+    "fernando_alonso": {
+     "sessions": 22,
+     "number": 14
+    },
+    "esteban_ocon": {
+     "sessions": 22,
+     "number": 31
+    }
+   },
+   "toro_rosso": {
+    "pierre_gasly": {
+     "sessions": 22,
+     "number": 10
+    },
+    "yuki_tsunoda": {
+     "sessions": 22,
+     "number": 22
+    }
+   },
+   "mclaren": {
+    "lando_norris": {
+     "sessions": 22,
+     "number": 4
+    },
+    "daniel_ricciardo": {
+     "sessions": 22,
+     "number": 3
+    }
+   },
+   "williams": {
+    "alex_albon": {
+     "sessions": 21,
+     "number": 23
+    },
+    "nicholas_latifi": {
+     "sessions": 22,
+     "number": 6
+    },
+    "nyck_de-vries": {
+     "sessions": 1,
+     "number": 45
+    }
+   },
+   "force_india": {
+    "nico_hulkenberg": {
+     "sessions": 2,
+     "number": 27
+    },
+    "lance_stroll": {
+     "sessions": 22,
+     "number": 18
+    },
+    "sebastian_vettel": {
+     "sessions": 20,
+     "number": 5
+    }
+   }
+  },
+  "2023": {
+   "redbull": {
+    "max_verstappen": {
+     "sessions": 22,
+     "number": 1
+    },
+    "sergio_perez": {
+     "sessions": 22,
+     "number": 11
+    }
+   },
+   "ferrari": {
+    "charles_leclerc": {
+     "sessions": 22,
+     "number": 16
+    },
+    "carlos_sainz-jr": {
+     "sessions": 22,
+     "number": 55
+    }
+   },
+   "force_india": {
+    "fernando_alonso": {
+     "sessions": 22,
+     "number": 14
+    },
+    "lance_stroll": {
+     "sessions": 22,
+     "number": 18
+    }
+   },
+   "mercedes": {
+    "george_russell": {
+     "sessions": 22,
+     "number": 63
+    },
+    "lewis_hamilton": {
+     "sessions": 22,
+     "number": 44
+    }
+   },
+   "lotus": {
+    "esteban_ocon": {
+     "sessions": 22,
+     "number": 31
+    },
+    "pierre_gasly": {
+     "sessions": 22,
+     "number": 10
+    }
+   },
+   "haas": {
+    "nico_hulkenberg": {
+     "sessions": 22,
+     "number": 27
+    },
+    "kevin_magnussen": {
+     "sessions": 22,
+     "number": 20
+    }
+   },
+   "mclaren": {
+    "lando_norris": {
+     "sessions": 22,
+     "number": 4
+    },
+    "oscar_piastri": {
+     "sessions": 22,
+     "number": 81
+    }
+   },
+   "sauber": {
+    "valtteri_bottas": {
+     "sessions": 22,
+     "number": 77
+    },
+    "guanyu_zhou": {
+     "sessions": 22,
+     "number": 24
+    }
+   },
+   "toro_rosso": {
+    "yuki_tsunoda": {
+     "sessions": 22,
+     "number": 22
+    },
+    "nyck_de-vries": {
+     "sessions": 10,
+     "number": 21
+    },
+    "daniel_ricciardo": {
+     "sessions": 7,
+     "number": 3
+    },
+    "liam_lawson": {
+     "sessions": 5,
+     "number": 40
+    }
+   },
+   "williams": {
+    "alex_albon": {
+     "sessions": 22,
+     "number": 23
+    },
+    "logan_sargeant": {
+     "sessions": 22,
+     "number": 2
+    }
+   }
+  },
+  "2024": {
+   "redbull": {
+    "max_verstappen": {
+     "sessions": 24,
+     "number": 1
+    },
+    "sergio_perez": {
+     "sessions": 24,
+     "number": 11
+    }
+   },
+   "ferrari": {
+    "charles_leclerc": {
+     "sessions": 24,
+     "number": 16
+    },
+    "carlos_sainz-jr": {
+     "sessions": 23,
+     "number": 55
+    },
+    "oliver_bearman": {
+     "sessions": 1,
+     "number": 38
+    }
+   },
+   "mercedes": {
+    "george_russell": {
+     "sessions": 24,
+     "number": 63
+    },
+    "lewis_hamilton": {
+     "sessions": 24,
+     "number": 44
+    }
+   },
+   "force_india": {
+    "fernando_alonso": {
+     "sessions": 24,
+     "number": 14
+    },
+    "lance_stroll": {
+     "sessions": 24,
+     "number": 18
+    }
+   },
+   "mclaren": {
+    "lando_norris": {
+     "sessions": 24,
+     "number": 4
+    },
+    "oscar_piastri": {
+     "sessions": 24,
+     "number": 81
+    }
+   },
+   "haas": {
+    "nico_hulkenberg": {
+     "sessions": 24,
+     "number": 27
+    },
+    "kevin_magnussen": {
+     "sessions": 22,
+     "number": 20
+    },
+    "oliver_bearman": {
+     "sessions": 2,
+     "number": 50
+    }
+   },
+   "toro_rosso": {
+    "yuki_tsunoda": {
+     "sessions": 24,
+     "number": 22
+    },
+    "daniel_ricciardo": {
+     "sessions": 18,
+     "number": 3
+    },
+    "liam_lawson": {
+     "sessions": 6,
+     "number": 30
+    }
+   },
+   "williams": {
+    "alex_albon": {
+     "sessions": 24,
+     "number": 23
+    },
+    "logan_sargeant": {
+     "sessions": 14,
+     "number": 2
+    },
+    "franco_colapinto": {
+     "sessions": 9,
+     "number": 43
+    }
+   },
+   "sauber": {
+    "valtteri_bottas": {
+     "sessions": 24,
+     "number": 77
+    },
+    "guanyu_zhou": {
+     "sessions": 24,
+     "number": 24
+    }
+   },
+   "lotus": {
+    "esteban_ocon": {
+     "sessions": 23,
+     "number": 31
+    },
+    "pierre_gasly": {
+     "sessions": 24,
+     "number": 10
+    },
+    "jack_doohan": {
+     "sessions": 1,
+     "number": 61
+    }
+   }
+  },
+  "2025": {
+   "redbull": {
+    "max_verstappen": {
+     "sessions": 24,
+     "number": 1
+    },
+    "yuki_tsunoda": {
+     "sessions": 22,
+     "number": 22
+    },
+    "liam_lawson": {
+     "sessions": 2,
+     "number": 30
+    }
+   },
+   "toro_rosso": {
+    "isack_hadjar": {
+     "sessions": 24,
+     "number": 6
+    },
+    "liam_lawson": {
+     "sessions": 22,
+     "number": 30
+    },
+    "yuki_tsunoda": {
+     "sessions": 2,
+     "number": 22
+    }
+   },
+   "lotus": {
+    "pierre_gasly": {
+     "sessions": 24,
+     "number": 10
+    },
+    "franco_colapinto": {
+     "sessions": 18,
+     "number": 43
+    },
+    "jack_doohan": {
+     "sessions": 6,
+     "number": 7
+    }
+   }
+  }
+ }
+}

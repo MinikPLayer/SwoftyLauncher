@@ -1,0 +1,8 @@
+{
+  "finalise": "auto",
+  "patch_weekend": true,
+  "seats": [
+    { "driver": "george_russell", "vehicle_ref": "mercedes_2025" },
+    { "driver": "lewis_hamilton", "look": "2024-mercedes_lewis_hamilton" }
+  ]
+}

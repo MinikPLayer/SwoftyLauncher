@@ -18,6 +18,33 @@ const LEGACY_ADDONS_DIR: &str = "mods";
 
 static PROFILE_WRITE: Mutex<()> = Mutex::new(());
 
+/// Deletes an addon's folder, waiting out a file that is still briefly in use
+/// once its helper has exited.
+fn delete_addon_dir(
+    dir: &Path,
+    name: &str,
+    mut delete: impl FnMut(&Path) -> std::io::Result<()>,
+) -> Result<()> {
+    const DELAYS_MS: [u64; 5] = [50, 150, 300, 600, 1000];
+    let mut attempt = 0;
+    loop {
+        match delete(dir) {
+            Ok(()) => return Ok(()),
+            Err(e) if crate::is_locked_file_error(&e) && attempt < DELAYS_MS.len() => {
+                std::thread::sleep(std::time::Duration::from_millis(DELAYS_MS[attempt]));
+                attempt += 1;
+            }
+            Err(e) if crate::is_locked_file_error(&e) => {
+                return Err(Error::Other(format!(
+                    "{name}'s files are still in use, so they couldn't be deleted. Close F1 25 and try \
+                     again. If it still fails, restart the launcher first."
+                )));
+            }
+            Err(e) => return Err(Error::Other(format!("Couldn't delete {name}'s files: {e}"))),
+        }
+    }
+}
+
 fn profile_write() -> MutexGuard<'static, ()> {
     PROFILE_WRITE.lock().unwrap_or_else(|e| e.into_inner())
 }
@@ -77,6 +104,14 @@ impl Store {
 
     pub fn addon_cache_dir(&self, id: &str) -> PathBuf {
         self.root.join("cache/addons").join(id)
+    }
+
+    /// Where an Addon Browser install records the download it installed `id` from; any other
+    /// install or removal of `id` deletes it.
+    pub fn registry_install_path(&self, id: &str) -> PathBuf {
+        self.root
+            .join("state/registry-installs")
+            .join(format!("{id}.json"))
     }
 
     pub fn profiles_dir(&self) -> PathBuf {
@@ -331,7 +366,10 @@ impl Store {
         }
         let src = &crate::import::addon_root(src).unwrap_or_else(|| src.to_path_buf());
         if src.join(crate::dbedit::package::MARKER).is_file() {
-            return crate::dbedit::package::install(self, src).map(|(p, _)| p.manifest);
+            return crate::dbedit::package::install(self, src).map(|(p, _)| {
+                std::fs::remove_file(self.registry_install_path(&p.manifest.id)).ok();
+                p.manifest
+            });
         }
         let m = AddonManifest::load(src).map_err(|e| {
             let u = Unreadable::of(src, &e, launcher);
@@ -360,13 +398,31 @@ impl Store {
         if let Some(why) = crate::resolver::launcher_refusal(&m, launcher) {
             return Err(Error::Other(why));
         }
+        crate::busy::refuse_change(&self.root, &m.id, &m.name)?;
         let dest = self.addons_dir().join(&m.id);
         self.helpers.forget(&m.id);
-        if dest.exists() {
-            std::fs::remove_dir_all(&dest).map_err(io_err(&dest))?;
+        let staging = self.addons_dir().join(format!(".installing-{}", m.id));
+        if staging.exists() {
+            std::fs::remove_dir_all(&staging).map_err(io_err(&staging))?;
         }
-        copy_dir(src, &dest)?;
+        let moved = self.in_scratch(src) && std::fs::rename(src, &staging).is_ok();
+        if !moved && let Err(e) = copy_dir(src, &staging) {
+            std::fs::remove_dir_all(&staging).ok();
+            return Err(e);
+        }
+        if dest.exists() {
+            delete_addon_dir(&dest, &m.name, |d| std::fs::remove_dir_all(d))?;
+        }
+        std::fs::remove_file(self.registry_install_path(&m.id)).ok();
+        std::fs::rename(&staging, &dest).map_err(io_err(&dest))?;
         Ok(m)
+    }
+
+    fn in_scratch(&self, path: &Path) -> bool {
+        path.strip_prefix(self.addons_dir())
+            .ok()
+            .and_then(|rest| rest.components().next())
+            .is_some_and(|c| c.as_os_str().to_string_lossy().starts_with(".importing-"))
     }
 
     fn scratch_dir(&self) -> PathBuf {
@@ -396,6 +452,14 @@ impl Store {
     }
 
     pub fn remove_addon(&self, id: &str) -> Result<()> {
+        self.remove_addon_with(id, |d| std::fs::remove_dir_all(d))
+    }
+
+    pub(crate) fn remove_addon_with(
+        &self,
+        id: &str,
+        delete: impl FnMut(&Path) -> std::io::Result<()>,
+    ) -> Result<()> {
         if self.is_builtin(id) {
             return Err(Error::Other(format!("{id} is built in and cannot be removed")));
         }
@@ -408,9 +472,12 @@ impl Store {
         if !dir.exists() {
             return Err(Error::Other(format!("no addon named {id} is installed")));
         }
+        let name = AddonManifest::load(&dir).map_or_else(|_| id.to_owned(), |m| m.name);
+        crate::busy::refuse_change(&self.root, id, &name)?;
         let _write = profile_write();
-        std::fs::remove_dir_all(&dir).map_err(io_err(&dir))?;
         self.helpers.forget(id);
+        delete_addon_dir(&dir, &name, delete)?;
+        std::fs::remove_file(self.registry_install_path(id)).ok();
         for name in self.profile_names()? {
             let path = self.profiles_dir().join(format!("{name}.json"));
             if name == profile::VANILLA || !path.is_file() {
@@ -633,6 +700,21 @@ impl Store {
         crate::write_json(&self.config_path(), config)
     }
 
+    pub fn folders_path(&self) -> PathBuf {
+        self.root.join(crate::folders::FILE)
+    }
+
+    pub fn folders(&self) -> crate::folders::Folders {
+        match crate::load_json(&self.folders_path()) {
+            Ok(crate::Loaded::Found(f)) => f,
+            _ => Default::default(),
+        }
+    }
+
+    pub fn save_folders(&self, folders: &crate::folders::Folders) -> Result<()> {
+        crate::write_json(&self.folders_path(), folders)
+    }
+
     pub fn active_profile(&self) -> String {
         let names = self.profile_names().unwrap_or_default();
         self.config()
@@ -717,7 +799,7 @@ pub struct Unreadable {
     pub name: String,
     pub version: Option<String>,
     pub dir: PathBuf,
-    /// Why, after "it": "needs a newer Swofty Launcher (unknown field `hud`)".
+    /// Why, after "it": "needs a newer Swofty Launcher (unknown field `widgets`)".
     pub reason: String,
     /// Made for a newer launcher rather than damaged.
     pub newer: bool,
@@ -777,7 +859,7 @@ impl Unreadable {
         }
     }
 
-    /// "Race HUD (w3.hud) needs a newer Swofty Launcher (unknown field `hud`)".
+    /// "Race HUD (w3.hud) needs a newer Swofty Launcher (unknown field `widgets`)".
     pub fn line(&self) -> String {
         if self.name == self.id {
             format!("{} {}", self.id, self.reason)
@@ -883,6 +965,34 @@ mod tests {
         std::fs::remove_dir_all(&root).ok();
     }
 
+    #[test]
+    fn an_addon_in_a_running_build_is_not_replaced_or_removed() {
+        let root = tmp("busy-addon");
+        let store = Store::new(&root);
+        let src = root.join("src");
+        for id in ["t.used", "t.other"] {
+            put_addon(&store, id, &manifest_json(id));
+            std::fs::create_dir_all(src.join(id)).unwrap();
+            std::fs::write(src.join(id).join(MANIFEST_FILE), manifest_json(id)).unwrap();
+        }
+        let busy = crate::busy::Busy {
+            pid: std::process::id().wrapping_add(1),
+            ..crate::busy::Busy::new("default", vec!["t.used".into()])
+        };
+        busy.write(&root).unwrap();
+        let lock = crate::recovery::SessionLock::try_acquire(&root).unwrap().unwrap();
+        let err = store.install_addon(&src.join("t.used")).unwrap_err().to_string();
+        assert!(err.contains("is in the build that is running"), "{err}");
+        let err = store.remove_addon("t.used").unwrap_err().to_string();
+        assert!(err.contains("is in the build that is running"), "{err}");
+        assert!(store.addons_dir().join("t.used").join(MANIFEST_FILE).is_file());
+        store.install_addon(&src.join("t.other")).unwrap();
+        drop(lock);
+        store.install_addon(&src.join("t.used")).unwrap();
+        store.remove_addon("t.used").unwrap();
+        std::fs::remove_dir_all(&root).ok();
+    }
+
     fn put_addon(store: &Store, folder: &str, json: &str) -> PathBuf {
         let dir = store.addons_dir().join(folder);
         std::fs::create_dir_all(&dir).unwrap();
@@ -922,7 +1032,7 @@ mod tests {
                 format!(
                     "Look (t.look) needs Swofty Launcher >=9.0.0; this is {launcher} (unknown value `holograms`)"
                 ),
-                "Race HUD (w3.hud) needs a newer Swofty Launcher (unknown field `hud`)".to_owned(),
+                "Race HUD (w3.hud) needs a newer Swofty Launcher (unknown field `widgets`)".to_owned(),
             ]
         );
         assert_eq!(
@@ -944,7 +1054,7 @@ mod tests {
             .unwrap_err();
         assert_eq!(
             err.to_string(),
-            "Race HUD (w3.hud) needs a newer Swofty Launcher (unknown field `hud`)"
+            "Race HUD (w3.hud) needs a newer Swofty Launcher (unknown field `widgets`)"
         );
         store.remove_addon("w3.hud").unwrap();
         assert!(store.unreadable_addons().iter().all(|u| u.id != "w3.hud"));
@@ -1014,6 +1124,52 @@ mod tests {
             .finish()
             .unwrap();
         assert!(store.install_addon(&bare).is_err());
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_failed_install_keeps_the_previous_version() {
+        let root = tmp("failed-install");
+        let store = Store::new(&root);
+        let good = root.join("good");
+        std::fs::create_dir_all(good.join("track")).unwrap();
+        std::fs::write(good.join(MANIFEST_FILE), manifest_json("a.sochi")).unwrap();
+        std::fs::write(good.join("track/sochi.erp"), b"v1").unwrap();
+        store.install_addon(&good).unwrap();
+        let broken = root.join("broken");
+        std::fs::create_dir_all(broken.join("track")).unwrap();
+        std::fs::write(
+            broken.join(MANIFEST_FILE),
+            manifest_json("a.sochi").replace("1.0.0", "1.1.0"),
+        )
+        .unwrap();
+        std::os::unix::fs::symlink(root.join("nowhere"), broken.join("track/sochi.erp")).unwrap();
+        assert!(store.install_addon(&broken).is_err());
+        let dest = store.addons_dir().join("a.sochi");
+        assert_eq!(std::fs::read(dest.join("track/sochi.erp")).unwrap(), b"v1");
+        assert_eq!(store.addons().unwrap()["a.sochi"].version.to_string(), "1.0.0");
+        let left = std::fs::read_dir(store.addons_dir())
+            .unwrap()
+            .flatten()
+            .filter(|e| e.file_name().to_string_lossy().starts_with(".installing"))
+            .count();
+        assert_eq!(left, 0);
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_failed_first_install_leaves_nothing_listed() {
+        let root = tmp("failed-first-install");
+        let store = Store::new(&root);
+        let broken = root.join("broken");
+        std::fs::create_dir_all(broken.join("track")).unwrap();
+        std::fs::write(broken.join(MANIFEST_FILE), manifest_json("a.sochi")).unwrap();
+        std::os::unix::fs::symlink(root.join("nowhere"), broken.join("track/sochi.erp")).unwrap();
+        assert!(store.install_addon(&broken).is_err());
+        assert!(!store.addons().unwrap().contains_key("a.sochi"));
+        assert!(!store.addons_dir().join("a.sochi").exists());
         std::fs::remove_dir_all(&root).ok();
     }
 
@@ -1533,5 +1689,39 @@ mod tests {
         store.delete_profile("grid").unwrap();
         assert!(!store.overlays_dir("grid").exists());
         std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn waits_out_a_locked_addon_folder_and_names_the_addon() {
+        let dir = Path::new("/data/Users/someone/addons/t.locked");
+        let denied = || std::io::Error::from(std::io::ErrorKind::PermissionDenied);
+        let mut tries = 0;
+        delete_addon_dir(dir, "Locked", |_| {
+            tries += 1;
+            if tries < 3 { Err(denied()) } else { Ok(()) }
+        })
+        .unwrap();
+        assert_eq!(tries, 3);
+
+        tries = 0;
+        let e = delete_addon_dir(dir, "Locked", |_| {
+            tries += 1;
+            Err(denied())
+        })
+        .unwrap_err()
+        .to_string();
+        assert_eq!(tries, 6);
+        assert!(e.starts_with("Locked's files are still in use"), "{e}");
+        assert!(!e.contains("someone"), "{e}");
+
+        tries = 0;
+        let e = delete_addon_dir(dir, "Locked", |_| {
+            tries += 1;
+            Err(std::io::Error::other("disk gone"))
+        })
+        .unwrap_err()
+        .to_string();
+        assert_eq!(tries, 1);
+        assert_eq!(e, "Couldn't delete Locked's files: disk gone");
     }
 }

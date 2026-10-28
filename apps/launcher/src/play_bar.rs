@@ -47,6 +47,13 @@ pub(crate) fn link(id: &'static str, label: &'static str, p: Palette) -> Statefu
         .child(label)
 }
 
+fn capitalised(s: &str) -> String {
+    let mut c = s.chars();
+    c.next()
+        .map(|f| f.to_uppercase().chain(c).collect())
+        .unwrap_or_default()
+}
+
 fn status_row() -> Div {
     h_flex()
         .flex_1()
@@ -160,7 +167,7 @@ impl Shell {
             .tooltip("Switch the copy of F1 25 Play uses")
             .disabled(matches!(
                 self.play_state(),
-                PlayState::Running | PlayState::Launching | PlayState::Restoring
+                PlayState::Running | PlayState::Launching | PlayState::Restoring | PlayState::Building
             ))
             .dropdown_menu_with_anchor(Anchor::BottomLeft, move |mut menu, _, _| {
                 menu = menu
@@ -296,6 +303,33 @@ impl Shell {
                 }
             }
             PlayState::Restoring => row.child(dot(p.warning)).child("Restoring the game files…"),
+            PlayState::Building => {
+                let Some(b) = &self.build else {
+                    return row;
+                };
+                let text = match self.cancelling {
+                    true => "Cancelling the build…".to_owned(),
+                    false => format!(
+                        "{} for {} · {}",
+                        capitalised(&b.progress()),
+                        b.profile,
+                        duration((b.minutes() * 60).max(1))
+                    ),
+                };
+                row.child(dot(p.warning))
+                    .child(div().min_w_0().truncate().child(text))
+                    .when(!self.cancelling, |d| {
+                        d.child(
+                            link("cancel-build", "Cancel", p)
+                                .on_click(cx.listener(|this, _, window, cx| this.cancel_build(window, cx))),
+                        )
+                    })
+                    .when_some(self.wrapper_log(), |d, log| {
+                        d.child(
+                            link("launch-log", "Log", p).on_click(move |_, _, cx| cx.open_with_system(&log)),
+                        )
+                    })
+            }
             PlayState::Launching => row
                 .child(dot(p.warning))
                 .child(format!(
@@ -332,10 +366,17 @@ impl Shell {
                 if let Some(Err(failure)) = ending {
                     return launch_failed(row, failure, p).child(open).child(dismiss);
                 }
-                let summary = ending
-                    .and_then(|e| e.as_ref().ok())
+                let view = self.crash_view.as_ref().filter(|v| v.dir == session.dir);
+                let details = view.map(|_| {
+                    link("crash-details", "What happened", p).on_click(cx.listener(|this, _, _, cx| {
+                        this.crash_open = true;
+                        cx.notify();
+                    }))
+                });
+                let summary = view
+                    .map(|v| v.headline())
+                    .or_else(|| ending.and_then(|e| e.as_ref().ok()).cloned())
                     .filter(|s| !s.is_empty())
-                    .cloned()
                     .unwrap_or_else(|| "reading the log…".into());
                 let crashed = format!(
                     "Crashed {}",
@@ -359,6 +400,7 @@ impl Shell {
                                             .font_weight(FontWeight::MEDIUM)
                                             .child(crashed),
                                     )
+                                    .children(details)
                                     .child(open)
                                     .child(dismiss),
                             )
@@ -392,6 +434,11 @@ impl Shell {
                 row
             }
         }
+    }
+
+    fn wrapper_log(&self) -> Option<std::path::PathBuf> {
+        let log = self.store.root.join("state/wrapper-run.log");
+        log.is_file().then_some(log)
     }
 
     fn launch_log(&self) -> Option<std::path::PathBuf> {
@@ -429,7 +476,7 @@ impl Shell {
             .dropdown_caret(true)
             .disabled(matches!(
                 self.play_state(),
-                PlayState::Running | PlayState::Launching | PlayState::Restoring
+                PlayState::Running | PlayState::Launching | PlayState::Restoring | PlayState::Building
             ))
             .dropdown_menu_with_anchor(Anchor::BottomRight, move |mut menu, _, _| {
                 menu = menu.min_w(px(300.)).label("Profile");
@@ -546,6 +593,7 @@ impl Shell {
             PlayState::Ready | PlayState::Crashed(_) => (IconName::Play, "Play", p.accent, p.on_accent, true),
             PlayState::Launching => (IconName::LoaderCircle, "Launching…", p.elevated, p.accent, false),
             PlayState::Restoring => (IconName::LoaderCircle, "Restoring…", p.elevated, p.accent, false),
+            PlayState::Building => (IconName::LoaderCircle, "Building…", p.elevated, p.accent, false),
             PlayState::Running => (IconName::Square, "Stop", p.elevated, p.error, true),
             PlayState::NotInstalled => (IconName::FolderSearch, "Locate game", p.elevated, p.text, true),
             PlayState::Detecting | PlayState::Checking => {

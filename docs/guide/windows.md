@@ -34,7 +34,7 @@ With F1 25 on both Steam and the EA app, select the game name next to the cover 
 4. On your first launch, select **Accept and launch** in the **Modded play runs offline** dialog. For why modded play runs offline, see [Offline play](/reference/safety).
 5. The first launch after the setup can take 5 to 8 minutes. Don't press Play in Steam or the EA app while it runs.
 
-You'll see **Launching…** on the button, then **Stop** while the game runs. If Steam is closed, the launcher starts it and waits for it to sign in first; see [Steam](/reference/launch#steam). When you want to play vanilla, launch through Steam as usual.
+You'll see **Launching…** on the button, then **Stop** while the game runs. While Swofty builds your mods or copies them into the game folder, the button shows **Building…** and the bar beside it shows how far it got. **Cancel** stops the build after the file it is on and puts the game files back; your profile and addons stay as they are, and the next Play builds again. Addons in a running build can't be updated or removed until it finishes. If Steam is closed, the launcher starts it and waits for it to sign in first; see [Steam](/reference/launch#steam). When you want to play vanilla, launch through Steam as usual.
 
 To follow the logs as you play, select the arrow next to **Play** and choose **Play with console**, or run `swofty run` from a terminal.
 
@@ -43,6 +43,9 @@ To follow the logs as you play, select the arrow next to **Play** and choose **P
 An antivirus such as Windows Defender can delete, quarantine or block the launcher's `version.dll` and its other DLLs, and F1 25 would then run without mods.
 
 - Before the game starts, the launcher checks that the files it put in the game folder are still there. If one is missing or changed, F1 25 is not started: the game folder goes back to vanilla and a **Your antivirus removed mod files** dialog names the files.
+- When `swofty.exe` is gone from the launcher's `bin` folder, **Play** shows **Could not launch F1 25** with how to restore it from quarantine, which folder to exclude, and to reinstall the launcher if it isn't there.
+- When `bin\simplified-helper.exe` is gone from Simplified for Swofty's folder, **Play** downloads and installs Simplified for Swofty again. When another addon's helper program is gone, the error names it and says to allow the addon's folder in the antivirus, then reinstall the addon.
+- When the launcher's own `loader` folder is gone from its install, F1 25 is not started and a **Swofty Launcher's loader folder is missing** dialog says to reinstall the launcher. Your addons and settings are kept.
 - Once the game runs, the launcher checks that the mods loaded. If they did not, a **Mods did not load** dialog appears, and the game keeps running without mods.
 
 To fix it:
@@ -58,13 +61,16 @@ When the mods did not load and `version.dll` is still in the game folder, the la
 
 - which `version.dll` the running game loaded, and from which folder
 - the DLL load policies on `F1_25.exe`, such as Exploit protection's Code integrity guard
+- Exploit protection's program settings for `F1_25.exe` (`MitigationOptions`, `MitigationAuditOptions` or `EAFModules` under its Image File Execution Options)
+- the compatibility settings on `F1_25.exe` (its **Compatibility** tab, for you and for all users), and the compatibility shims Windows loaded into the game (`AcLayers.dll` and the like)
+- the compatibility settings on the programs that start the game (`EADesktop.exe`, `EALauncher.exe`, `swofty-launcher.exe` and the offline play stub), and the compatibility shims in the running EA app. When the game has shims and `F1_25.exe` has no setting, the advice names the program they came from
 - whether `version.dll` is listed under KnownDLLs, and whether Smart App Control is on
 - Code Integrity and Microsoft Defender events since the game started
-- the antivirus registered with Windows
+- the antivirus registered with Windows, and programs that hook into games, such as Medal or RivaTuner, among the game's modules
 
 When the loader runs but the game can't create its log in the game folder, the log is in `state\loader-fallback.log` in the data folder instead. The session then counts the mods as loaded, and its `[warning]` line in `state\wrapper-run.log` says what to do.
 
-The **Mods did not load** dialog then names what it found and its fix, for example turning off Smart App Control, or an antivirus's DLL protection for `F1_25.exe`. The details are under `[loader]` in `state\wrapper-run.log`, which [Send Logs](/using/send-logs) includes.
+The **Mods did not load** dialog then names what it found and its fix, for example turning off Smart App Control, removing the Exploit protection settings for `F1_25.exe`, unticking its **Compatibility** tab, or the DLL protection of an antivirus other than Microsoft Defender, by name. When nothing it found explains it, the dialog says so, names any program hooked into the game to close first, and offers **Send Logs to Developers** and **Join the support Discord**. When Windows doesn't let the launcher look inside the game and no antivirus other than Microsoft Defender is on, the dialog says that instead of naming an antivirus. The details are under `[loader]` in `state\wrapper-run.log`, which [Send Logs](/using/send-logs) includes.
 
 ## If Windows blocks the launcher
 
@@ -98,6 +104,10 @@ To fix it:
 
 The next launch checks the game again and continues once it matches Steam's copy.
 
+## If an addon needs a newer F1 25
+
+Addons are made for the latest F1 25 update. When an addon's changes don't apply to an older F1 25, F1 25 is not started and the play bar names the addon, your F1 25 version and the version it needs. Update F1 25 in Steam or the EA app, then press **Play** again. The original error is in the launch log, under **View log**.
+
 ## If the game closes as it starts
 
 F1 25 runs one copy at a time. A copy started while another runs closes itself before its window opens.
@@ -111,6 +121,8 @@ To fix it:
 2. Press **Play** in the launcher, and don't start F1 25 from Steam until the session ends.
 
 ## If the game crashes
+
+When a session ends in a crash, the launcher opens an **F1 25 crashed** screen with the cause and its fix when it recognises one, or **Send Logs to Developers** and the support Discord when it doesn't. See [When F1 25 crashes](/using/send-logs#when-f1-25-crashes).
 
 The session puts the game folder back to vanilla when the game exits, crash or not. If the launcher was closed first, it puts the folder back the next time it starts. See [Restoring the game](/using/profiles-and-restoring).
 

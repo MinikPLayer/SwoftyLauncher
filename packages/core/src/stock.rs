@@ -250,6 +250,7 @@ pub fn parse_manifest(data: &[u8]) -> std::result::Result<Vec<(String, Entry)>, 
 }
 
 pub fn sha1_file(path: &Path) -> Result<[u8; 20]> {
+    crate::worked();
     let mut f = std::fs::File::open(path).map_err(io_err(path))?;
     let mut h = Sha1::new();
     let mut buf = vec![0; 1 << 20];
@@ -399,6 +400,10 @@ pub struct Report {
     pub game: PathBuf,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub detail: Vec<Foreign>,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub missing: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
 }
 
 impl Report {
@@ -410,7 +415,21 @@ impl Report {
             files,
             game: game.to_path_buf(),
             detail: Vec::new(),
+            missing: false,
+            version: None,
         }
+    }
+
+    pub fn missing(files: Vec<String>, game: &Path, version: Option<String>) -> Self {
+        Self {
+            missing: true,
+            version,
+            ..Self::new(files, game)
+        }
+    }
+
+    pub fn fix(&self) -> Fix {
+        fix_for(self.version.as_deref())
     }
 
     pub fn with_detail(mut self, detail: Vec<Foreign>) -> Self {
@@ -451,6 +470,54 @@ impl Report {
             names(&self.files),
             if self.files.len() == 1 { "was" } else { "were" }
         )
+    }
+}
+
+/// What puts missing game files back: the latest update when the game is
+/// older than it, a verify when it is that update, and both when the
+/// version can't be read.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Fix {
+    Update,
+    Verify,
+    Both,
+}
+
+pub fn fix_for(version: Option<&str>) -> Fix {
+    match version
+        .and_then(|v| crate::known_problems::older_game(v, crate::known_problems::LATEST_GAME_VERSION))
+    {
+        Some(true) => Fix::Update,
+        Some(false) => Fix::Verify,
+        None => Fix::Both,
+    }
+}
+
+pub fn missing_text(files: &[String], version: Option<&str>) -> String {
+    let are = if files.len() == 1 { "is" } else { "are" };
+    format!(
+        "{} {are} missing from the game folder; nothing in the game folder was changed; {}, then try again",
+        names(files),
+        missing_fix(files.len(), version)
+    )
+}
+
+/// How to put `n` missing game files back on a game of `version`.
+pub fn missing_fix(n: usize, version: Option<&str>) -> String {
+    let them = if n == 1 { "it" } else { "them" };
+    let verify = format!(
+        "verify the game files in Steam (open {STEAM_VERIFY_URL}, or F1 25 > Properties > Installed Files > \
+         Verify integrity of game files) or repair the game in the EA app"
+    );
+    let latest = crate::known_problems::LATEST_GAME_VERSION;
+    match (fix_for(version), version) {
+        (Fix::Update, Some(v)) => {
+            format!(
+                "F1 25 {v} is older than {latest}; update F1 25 in Steam or the EA app to put {them} back"
+            )
+        }
+        (Fix::Verify, _) => format!("{verify} to put {them} back"),
+        _ => format!("update F1 25 in Steam or the EA app, then {verify} to put {them} back"),
     }
 }
 

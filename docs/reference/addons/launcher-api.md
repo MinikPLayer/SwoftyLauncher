@@ -32,8 +32,8 @@ You can write the plugin in any language that reads and writes a line of JSON. T
 | [The protocol](#the-protocol) | Messages, the calls the launcher sends and the host calls the plugin sends back |
 | [Views](#views) | The blocks a sidebar page is built from, and its events and effects |
 | [Dashboard blocks](#dashboard-blocks) | Hero, pills, tiles, meters, cards and grids |
-| [Forms](#forms) | Number, text, slider, select and toggle fields with an Apply button |
-| [Tables](#tables) | Sortable columns, searchable rows, editable cells, pictures, switches and row details |
+| [Forms](#forms) | Number, text, slider, select, toggle and colour fields with an Apply button |
+| [Tables](#tables) | Sortable columns, searchable rows, editable cells, colours, pictures, switches and row details |
 | [Live pages](#live-pages) | `tick` from the launcher and `invalidate` from the plugin |
 | [Task lists](#task-lists) | A dialog that ticks off items while an event runs |
 | [The build reply](#the-build-reply) | Asset ops returned at build |
@@ -224,10 +224,11 @@ While handling a request, you can call back to the launcher. Include an `id` whe
 | `game_original` | `{ rel }` | a path to a clean copy of the file |
 | `game_original_lang` | `{ code }` | a path to the stock `language_<code>.lng` |
 | `game_dir` *(1.0.10)* | — | the game folder, or `null` |
-| `addon_game_dir` *(1.0.10)* | — | your addon's folder in the game, as the game sees it ([below](#addon-game-dir)), or `null` |
+| `addon_game_dir` *(1.0.10)* | — | your addon's folder in the game, as the game sees it ([below](#addon-game-dir)): `<game>/swofty/addons/<id>/`, `$DATA/addon-storage/<id>/` when the game keeps its files there, or `null` |
 | `game_status` *(1.0.10)* | — | `{ running, pid, since, session }` |
 | `steam_save_dir` *(1.0.10)* | — | `<steam>/userdata/<steamid3>/3059520/remote/`, or `null` |
 | `profile_tracks` *(1.0.12)* | — | the tracks in the active profile's last build, or `null` ([Profile tracks](#profile-tracks)) |
+| `profile_heads` *(1.5.12)* | — | the driver heads the active profile's addons put, or `null` ([Profile heads](#profile-heads)) |
 | `addons` | — | the installed addons ([Managing addons](#managing-addons)) |
 | `install_addon` | `{ path }` | the addon it installed |
 | `set_addon_enabled` | `{ id, on }` | `null`, or an error on the vanilla profile |
@@ -249,7 +250,7 @@ While handling a request, you can call back to the launcher. Include an `id` whe
 - Use `get_state` to read your addon's entry in the active profile's `state`; you'll get `null` if the profile has none. `set_state` replaces the whole value, whose contents the launcher never reads. Duplicating or renaming a profile copies its state.
 - Use the five `game_*` calls when you need the game's own clean files, rather than the modded folder. If no game is found, `game_build_key`, `game_exe_version` and `game_is_stock` return `null` or `false`. `game_original` and `game_original_lang` return `error: "the game is not available"` instead. A build key looks like `25251167-d873a1c8d204`; an exe version looks like `1.0.141.7865`.
 - `game_dir` is the folder the launcher plays: the [active copy](/using/game-copies), Steam's or the EA app's or an added folder. It is `null` when no game is found.
-- <a id="addon-game-dir"></a>`addon_game_dir` is your addon's own folder inside the game, the one a native plugin reads and writes with the [storage library](./native-plugins): `<game>/swofty/addons/<id>/`. The launcher doesn't create it; it may not exist until a session has run the addon, so create it yourself before you write to it. Restoring the game folder removes it, so keep anything that must outlast a session in `data_dir`.
+- <a id="addon-game-dir"></a>`addon_game_dir` is your addon's own folder inside the game, the one a native plugin reads and writes with the [storage library](./native-plugins): `<game>/swofty/addons/<id>/`. When the game can't create files in that folder, the core keeps your addon's files in `$DATA/addon-storage/<id>/` for the session and writes a `.swofty-data-folder` file there; `addon_game_dir` then names that folder until the next install, which removes the file (see [Storage](/reference/std/storage#when-the-game-can-t-write-in-its-folder)). The launcher doesn't create it; it may not exist until a session has run the addon, so create it yourself before you write to it. Restoring the game folder removes it, so keep anything that must outlast a session in `data_dir`.
   - **Ask again every time you use it.** Don't cache the path, store it or show it to the player as the game folder.
   - In an [OverlayFS session](/reference/launch#overlayfs-sessions) on Linux, the game folder isn't changed, and the answer depends on the session. While the game runs, it is a path under `/proc/<pid>/root/…` that goes through the game's mount, so reads, writes, renames and deletes behave as if the game made them. When no game runs, it is the profile's upper dir, `$DATA/profiles/<profile>/writes/swofty/addons/<id>/`, where an addon's last files stay and a batch you queue is picked up by the next session. It is never the real game folder. When a game runs in a session the launcher can't reach, the call returns an error saying so.
   - `game_dir` is always the real game folder, in every mode. The loader's own files (`swofty/addons/core`) aren't in it in an OverlayFS session; read them from the folder next to your addon's, `addon_game_dir/../core`.
@@ -288,6 +289,22 @@ While handling a request, you can call back to the launcher. Include an `id` whe
 | `playable` | `true` when the `2025` or `2026` content set lists the track for Grand Prix. |
 | `modded` | `true` when a track package in this build added or filled the row. |
 | `name`, `addon` | The package's `track_name` and the addon that added it, for a modded track. |
+
+#### Profile heads {#profile-heads}
+
+`profile_heads` lists the driver heads that the addons on in the active profile put with `file.put`, at `2025_asset_groups/animation_package/scenes/cinematics/drivers/heads/<label>.erp`, that drivers can wear: a head with a row in the game or an addon's `add-row`, or one whose archive holds a head model, which the build adds a row for ([Driver heads](./runtime-assets#driver-heads)). It reads the addons' op files, so it needs no build. It is `null` when no game is found. A launcher lists `profile_heads` in hello's `host_calls` when it answers it.
+
+```json
+{ "heads": [
+  { "label": "rio_haryanto", "addon": "mod.rio-haryanto-facemod", "addon_name": "Rio_Haryanto_facemod", "female": false }
+] }
+```
+
+| Field | Value |
+|---|---|
+| `label` | The head's label, the value a driver's `head` takes. |
+| `addon`, `addon_name` | The addon that puts the head archive, and its name. |
+| `female` | `true` for a female head. |
 
 #### Managing addons {#managing-addons}
 
@@ -447,7 +464,7 @@ When you handle `event`, you receive one event and return one effect to tell the
 | A choice pick | `{ "choose": { "id": "livery", "index": 2 } }` |
 | A row reorder | `{ "move": { "row": "okayama.exmod", "to": 0 } }` |
 | A file-picker result | `{ "picked": { "id": "pick", "paths": ["/home/you/okayama.exmod"] } }` |
-| A form's Apply, a live field or an edited table cell *(1.0.10)* | `{ "submit": { "form": "finance", "values": { "cash": 15000000 }, "changed": ["cash"] } }`, plus `"row"` for a table cell, and `true` or `false` for a switch cell *(1.5.8)* ([Forms](#forms), [Tables](#tables)) |
+| A form's Apply, a live field or an edited table cell *(1.0.10)* | `{ "submit": { "form": "finance", "values": { "cash": 15000000 }, "changed": ["cash"] } }`, plus `"row"` for a table cell, `true` or `false` for a switch cell *(1.5.8)*, and `"#RRGGBB"` for a colour field or cell *(1.5.25)* ([Forms](#forms), [Colour fields](#colour-fields), [Tables](#tables)) |
 | A search box, when it asks for events *(1.0.10)* | `{ "search": { "id": "drivers", "query": "ver" } }` ([Search](#search)) |
 | A tab click *(1.0.10)* | `{ "tab": { "id": "page", "tab": "drivers" } }` ([Tabs](#tabs)) |
 | Launcher start, once, to the first section of an addon whose manifest sets `launcher.startup` *(1.3.0)* | `{ "startup": {} }` |
@@ -532,7 +549,7 @@ if let Some(toggle) = event.get("toggle") {
 
 **`grid`**: blocks side by side. `{ columns, blocks }`: `columns` is a count from 1 to 4 for equal columns (default 2), or a list of relative widths such as `[2, 1]`. The blocks fill the columns left to right, then the next row; blocks in a row share its height. On a page too narrow for about 280 px per column, the grid becomes one column.
 
-**`image`** *(1.0.12)*: a picture from your plugin's `cache_dir` or `data_dir`. `{ path, width, height, caption, fit }`: `path` (absolute), `width` and `height` (in pixels) are required. `width` shrinks to the space the block is in. `fit` is `cover` (default), which fills the box and crops, or `contain`, which shows the whole picture inside the box. `caption` is a muted line under it. A path outside those two folders shows an empty box. An older launcher fails the view.
+**`image`** *(1.0.12)*: a picture from your plugin's `cache_dir` or `data_dir`. `{ path, width, height, caption, fit }`: `path` (absolute), `width` and `height` (in pixels) are required. `width` shrinks to the space the block is in. `fit` is `cover` (default), which fills the box and crops, or `contain`, which shows the whole picture inside the box. `caption` is a muted line under it. A path outside those two folders shows an empty box. An older launcher fails the view. *Launcher 1.5.25* adds `"transparent": true`, which draws the picture without the box and border behind it, so its transparent parts show the card or panel under it. An older launcher ignores `transparent` and draws the box.
 
 ```json
 { "image": { "path": "/home/you/.local/share/swofty/cache/addons/example.launcher-addon/helmets/helmet_042-91c0.png", "width": 240, "height": 135, "caption": "Carbon stripe", "fit": "contain" } }
@@ -602,6 +619,7 @@ Every field takes `id` *(required: its key in `values`)*, `label`, `help` (a mut
 | `text` | `value`, `placeholder`, `max_len` | a string |
 | `select` | `value`, `options`: strings, `{ value, label }` objects (with an optional `image` *(1.0.12)*), or `{ heading }` group titles *(1.0.12)*; `search` *(1.0.12)* | the chosen option's `value` (a string option is its own value) |
 | `toggle` | `value` | `true` or `false` |
+| `colour` *(1.5.25)* | `value`, `hex` (default `true`) | `"#RRGGBB"`, or `null` without a value ([Colour fields](#colour-fields)) |
 
 A `{ "heading": "Modded tracks" }` option starts a group in the select's menu: its title shows above the options that follow it, with a line above it unless it's the first group, and it can't be picked. A search that matches a group's title keeps the whole group. An older launcher fails the view, so send it only to 1.0.12 or later.
 
@@ -632,6 +650,23 @@ How a form behaves:
 - In a `live` form, a field is committed by Enter or leaving it (number, text), releasing it (slider), picking an option (select) or flipping it (toggle). Its event holds only that field, in both `values` and `changed`.
 - While the event runs, the form shows busy. When the effect comes back, the form drops its edits and shows the values of the next view, so return `"reload"` or a notice to show what the edit did. If the event fails, the edits stay and the error shows as a notification.
 - A new view, such as one after an `invalidate`, updates every field you haven't edited and leaves edited fields alone.
+
+### Colour fields {#colour-fields}
+
+*Launcher 1.5.25.* A `colour` field shows a round dot of the colour, followed by its hex unless `"hex": false`. A field without a value shows an empty dot and `None`.
+
+```json
+{ "colour": { "id": "livery", "label": "Livery colour", "value": "#E10600" } }
+{ "colour": { "id": "accent", "label": "Accent", "value": "#00A19C", "hex": false } }
+```
+
+`value` takes `#RRGGBB` or `#RGB`, with or without `#`, in upper or lower case. The field sends the colour as `#RRGGBB` in upper case, and `null` while it has no value.
+
+Clicking the field opens a picker under it: a square for saturation and brightness with a handle to drag, a hue strip, a hex box and R, G and B boxes. They stay in sync, and the field shows the colour as it changes. Enter, a click outside the picker or a second click on the field commits the colour; Escape puts the previous colour back. One picker is open at a time, and it stays inside the window.
+
+A committed colour waits for **Apply** like any other field, and a `live` form sends it at once. A table cell takes a colour too ([Tables](#tables)).
+
+An older launcher fails a view that holds a `colour` field or cell: set `"compat": { "launcher": ">=1.5.25" }` in `swofty.json`, or check `launcher` in `hello` and fall back.
 
 ## Tables {#tables}
 
@@ -681,8 +716,8 @@ A **row** is a list of cells, or `{ id, cells, tone, title, subtitle, detail }`:
 | `sort` | A number or string to sort by instead of `text`. |
 | `pill` | `true` draws the text as a [pill](#pills) in `tone`. |
 | `bar` | `0.0` to `1.0`: a small bar before the text, in `tone` (`accent` when neutral). |
-| `edit` | Makes the cell editable: `{ "number": { value, min, max, step, unit } }` or `{ "text": { value, placeholder, max_len } }`. `value` defaults to the cell's text. *1.5.8*: `{ "toggle": { value, disabled } }` draws a switch, with the cell's text after it when there is any. |
-| `image` *(1.5.8)* | A picture before the text: the absolute path of a PNG or JPEG under your plugin's `cache_dir` or `data_dir`, drawn as a square as tall as the row allows, or `{ path, width, height }` for a box of that size, such as `20` by `14` for a flag. The picture fills the box and is cropped to it. |
+| `edit` | Makes the cell editable: `{ "number": { value, min, max, step, unit } }` or `{ "text": { value, placeholder, max_len } }`. `value` defaults to the cell's text. *1.5.8*: `{ "toggle": { value, disabled } }` draws a switch, with the cell's text after it when there is any. *1.5.25*: `{ "colour": { value, hex, disabled } }` draws the colour's dot before the text, or the dot alone with `"hex": false`, and opens a [colour picker](#colour-fields) when clicked. |
+| `image` *(1.5.8)* | A picture before the text: the absolute path of a PNG or JPEG under your plugin's `cache_dir` or `data_dir`, drawn as a square as tall as the row allows, or `{ path, width, height }` for a box of that size, such as `20` by `14` for a flag. The picture fills the box and is cropped to it. *1.5.25*: the object also takes `fit` (`cover`, the default, or `contain`, which shows the whole picture) and `"transparent": true`, which drops the box behind the picture so its transparent parts show the row. |
 | `spans` *(1.5.8)* | The text in pieces, `[{ text, bold, tone }]`, drawn in place of `text`, such as a surname in bold: `[{ "text": "Kimi " }, { "text": "RÄIKKÖNEN", "bold": true }]`. Keep `text` as the whole text: it is what search and sort use, and what an older launcher shows. |
 
 Click an editable cell to edit it. Enter or leaving the cell commits it, and Escape cancels. A committed value that differs fires:
@@ -692,6 +727,19 @@ Click an editable cell to edit it. Enter or leaving the cell commits it, and Esc
 ```
 
 The cell shows busy until the effect comes back, as a form does. Flipping a switch cell fires the same event with `true` or `false`, and the switch shows its new position until the effect comes back.
+
+*Launcher 1.5.25.* A colour cell opens the colour picker under it. A committed colour that differs fires the same event with `"#RRGGBB"`:
+
+```json
+{ "text": "#E8002D", "edit": { "colour": {} } }
+{ "text": "Ferrari", "image": { "path": "/home/you/.local/share/swofty/cache/addons/example.launcher-addon/logos/ferrari.png", "width": 28, "height": 28, "fit": "contain", "transparent": true } }
+```
+
+```json
+{ "submit": { "form": "teams", "row": "ferrari", "values": { "colour": "#00A19C" }, "changed": ["colour"] } }
+```
+
+An older launcher fails a view with a colour cell, and ignores a cell picture's `fit` and `transparent`.
 
 ### Row details {#row-details}
 
@@ -706,7 +754,7 @@ The cell shows busy until the effect comes back, as a form does. Flipping a swit
     { "facts": [ { "label": "Car number", "value": "#7" } ] } ] }
 ```
 
-The panel takes any [blocks](#views); their events reach your plugin as they do anywhere else on the page. It stays open while the view refreshes, so a form in it keeps working, and is hidden while its row isn't shown, such as during a search. Clicking an editable cell or a switch in a row edits it and doesn't open the panel. *Since 1.5.9*, a form in a row's panel is set up when the panel opens and dropped when it closes, and values typed in it but not sent are lost on closing.
+The panel takes any [blocks](#views); their events reach your plugin as they do anywhere else on the page. It stays open while the view refreshes, so a form in it keeps working, and is hidden while its row isn't shown, such as during a search. Clicking an editable cell, a switch or a colour in a row edits it and doesn't open the panel. *Since 1.5.9*, a form in a row's panel is set up when the panel opens and dropped when it closes, and values typed in it but not sent are lost on closing.
 
 *Since 1.5.9*, a table with more than 30 rows on a page of blocks draws only the rows in and near view.
 

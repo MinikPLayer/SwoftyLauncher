@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::time::Duration;
 
 use gpui_kit::component::WindowExt;
 use gpui_kit::component::notification::Notification;
@@ -7,6 +8,7 @@ use gpui_kit::*;
 use swofty_core::compat;
 use swofty_core::install::Source;
 
+use crate::app_log;
 use crate::game::Install;
 use crate::shell::Shell;
 
@@ -25,17 +27,13 @@ pub(crate) fn text(dir: &Path, source: Source, windows: bool) -> String {
     if !windows {
         return format!("{}.", compat::write_blocked_text_for(dir, false));
     }
-    let mut text = format!(
+    format!(
         "F1 25 is installed in {}, a folder Windows lets only administrators change, so Swofty can't \
          add your mods there.\n\nRestart Swofty Launcher as administrator to play with mods, or move \
          F1 25 to a folder outside Program Files{}.",
         dir.display(),
         move_hint(source)
-    );
-    if source == Source::EaApp {
-        text.push_str(" Close the EA app before you restart, so it opens as administrator too.");
-    }
-    text
+    )
 }
 
 impl Shell {
@@ -61,22 +59,97 @@ impl Shell {
                     a.ok_text("Restart as administrator")
                         .show_cancel(true)
                         .on_ok(|_, window, cx| {
-                            match compat::relaunch_elevated() {
-                                Ok(()) => cx.quit(),
-                                Err(why) => window.push_notification(
-                                    Notification::warning(format!(
-                                        "Windows didn't restart Swofty Launcher: {why}. It keeps running \
-                                         without administrator rights."
-                                    ))
-                                    .title("Not restarted as administrator"),
-                                    cx,
-                                ),
-                            }
+                            restart_elevated(window, cx);
                             true
                         })
                 })
         });
     }
+}
+
+/// How long the administrator copy has to keep running before this one closes.
+const ELEVATED_SETTLE: Duration = Duration::from_secs(6);
+
+fn not_restarted(text: String, window: &mut Window, cx: &mut App) {
+    window.push_notification(
+        Notification::warning(text)
+            .title("Not restarted as administrator")
+            .autohide(false),
+        cx,
+    );
+}
+
+/// Starts the administrator copy and closes this one once it is still
+/// running a few seconds later. One that closes before then is reported.
+fn restart_elevated(window: &mut Window, cx: &mut App) {
+    app_log::note("restart as administrator: asking Windows");
+    let started = cx.background_executor().spawn(async move {
+        std::thread::spawn(compat::relaunch_elevated)
+            .join()
+            .unwrap_or_else(|_| Err("the administrator prompt failed".to_owned()))
+    });
+    window
+        .spawn(cx, async move |cx| {
+            let started = started.await;
+            cx.update(|window, cx| elevated_started(started, window, cx)).ok();
+        })
+        .detach();
+}
+
+fn elevated_started(started: Result<compat::Elevated, String>, window: &mut Window, cx: &mut App) {
+    let elevated = match started {
+        Ok(e) => e,
+        Err(why) => {
+            app_log::note(&format!("restart as administrator: {why}"));
+            return not_restarted(
+                format!(
+                    "Windows didn't restart Swofty Launcher: {why}. It keeps running without administrator \
+                     rights."
+                ),
+                window,
+                cx,
+            );
+        }
+    };
+    app_log::note(&format!(
+        "restart as administrator: started the administrator copy{}",
+        elevated
+            .pid()
+            .map(|pid| format!(", process {pid}"))
+            .unwrap_or_default()
+    ));
+    window.minimize_window();
+    let wait = cx
+        .background_executor()
+        .spawn(async move { elevated.exited_within(ELEVATED_SETTLE) });
+    window
+        .spawn(cx, async move |cx| {
+            let exited = wait.await;
+            cx.update(|window, cx| match exited {
+                None => {
+                    app_log::note("restart as administrator: the administrator copy is running; closing");
+                    cx.quit();
+                }
+                Some(code) => {
+                    app_log::note(&format!(
+                        "restart as administrator: the administrator copy closed with exit code {code:#x}"
+                    ));
+                    window.activate_window();
+                    not_restarted(
+                        format!(
+                            "The administrator copy of Swofty Launcher closed as it started (exit code \
+                             {code:#x}). This one keeps running without administrator rights. Press {} so \
+                             the developers can see why.",
+                            crate::send_logs::label()
+                        ),
+                        window,
+                        cx,
+                    );
+                }
+            })
+            .ok();
+        })
+        .detach();
 }
 
 #[cfg(test)]
@@ -93,8 +166,7 @@ mod tests {
             "{ea}"
         );
         assert!(ea.contains("Restart Swofty Launcher as administrator"), "{ea}");
-        assert!(ea.contains("outside Program Files in the EA app."), "{ea}");
-        assert!(ea.ends_with("Close the EA app before you restart, so it opens as administrator too."));
+        assert!(ea.ends_with("outside Program Files in the EA app."), "{ea}");
         let steam = text(
             Path::new(r"C:\Program Files\Steam\steamapps\common\F1 25"),
             Source::Steam,

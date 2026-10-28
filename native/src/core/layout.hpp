@@ -18,6 +18,13 @@ struct GameMessageBusHolder;
 struct GameModeContext;
 struct GdbStringRecord;
 struct NeMessageBus;
+struct NeBagCodec;
+struct NeCountingStream;
+struct NeMemWriteStream;
+struct NePropertyVtbl;
+struct NePropertyTypeVtbl;
+struct NeStreamVtbl;
+struct SaveDataContainer;
 }
 
 namespace runtime::layout {
@@ -61,10 +68,41 @@ concept message_bus = requires(H *h, B *b) {
     b->active;
 };
 
+template <class C, class CS, class MS, class SV>
+concept save_streams = requires(C *c, CS *cs, MS *ms, SV *sv) {
+    c->vtable;
+    c->stream;
+    cs->vtable;
+    cs->count;
+    ms->vtable;
+    ms->data;
+    ms->capacity;
+    ms->position;
+    sv->write;
+    sv->write_length;
+};
+
+template <class S>
+concept named_container = requires(S *s) {
+    s->vtable;
+    s->name;
+};
+
+template <class PV, class TV>
+concept property = requires(PV *pv, TV *tv) {
+    pv->type;
+    pv->value;
+    tv->id;
+    tv->key_offset;
+};
+
 inline constexpr bool FLOW = flow_state<g::FlowState>;
 inline constexpr bool GDB_STRING = gdb_string<g::GdbStringRecord>;
 inline constexpr bool CAREER = career_chain<g::GameManager, g::GameModeContext, g::ChampionshipHolder, g::CareerEntity>;
 inline constexpr bool ENTRANT = entrant<g::EntrantRecord>;
 inline constexpr bool BUS = message_bus<g::GameMessageBusHolder, g::NeMessageBus>;
+inline constexpr bool SAVE_SPLICE = save_streams<g::NeBagCodec, g::NeCountingStream, g::NeMemWriteStream, g::NeStreamVtbl> &&
+                                    property<g::NePropertyVtbl, g::NePropertyTypeVtbl> &&
+                                    named_container<g::SaveDataContainer>;
 
 }

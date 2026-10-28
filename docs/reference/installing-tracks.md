@@ -59,7 +59,7 @@ Some sub-table names in `F1_25.exe` exist only as strings built on the stack. To
 
 You won't find your manifest's `ers` values in the database. They go into per-track `TrackSettings` entries in the car handling files: every 2026 handling file gets an entry for your code, cloned from the base track's and given your manifest's values. Without an entry, the track still loads, but the cars use their default ERS settings.
 
-An addon that changes a 2026 handling file gets the same entry in its copy. The manifest's `OverrideDetectionLapProgress` and `OverrideActivationLapProgress` set where overtake mode is detected and where it can be used, as fractions of the lap.
+An addon that changes a 2026 handling file gets the same entry in its copy, and so does every handling file with `TrackSettings` in a car archive an addon puts whole, such as a Classic Seasons season's cars. The manifest's `OverrideDetectionLapProgress` and `OverrideActivationLapProgress` set where overtake mode is detected and where it can be used, as fractions of the lap.
 
 ## Checking a build
 

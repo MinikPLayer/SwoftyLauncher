@@ -2,9 +2,12 @@
 
 mod addons;
 mod admin_needed;
+mod app_log;
 mod blocks;
 mod browser;
+mod colour;
 mod console;
+mod crash_modal;
 mod db;
 mod discord;
 mod ea_app;
@@ -12,6 +15,7 @@ mod game;
 mod game_edited;
 mod importer;
 mod library;
+mod multiplayer;
 mod news;
 mod overlayfs_answer;
 mod overlayfs_dialog;
@@ -38,6 +42,7 @@ fn main() {
     if let Some((kind, reason, data)) = overlayfs_answer::requested(&args) {
         overlayfs_dialog::run(kind, reason, data);
     }
+    app_log::start();
     let app = gpui_kit::application().with_assets(gpui_kit::assets::AllAssets);
     let prepared = app.background_executor().spawn(async { shell::Prepared::load() });
     app.run(move |cx| {

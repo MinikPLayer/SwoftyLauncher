@@ -245,6 +245,23 @@ pub fn runtime_text(tag: u8, value: &str) -> std::result::Result<(), String> {
     }
 }
 
+/// Records the core may add at runtime on top of a game database file of `loaded` records. F1 25 sizes the
+/// database's robin_hood map while it loads the file, to the smallest power-of-two slot count whose 80% holds
+/// the records, and grows it when an insert finds it 80% full. Growing it after the load leaves the game's
+/// pointers into the old slots dangling, and the game crashes at boot (Gdb_Init_TableCursor under locale
+/// init), so the core's inserts have to stay under that 80%. The margin covers the core's class probe
+/// records and inserts the game makes later.
+pub fn runtime_record_room(loaded: usize) -> usize {
+    let max_load = |slots: usize| slots / 100 * 80 + slots % 100 * 80 / 100;
+    let mut slots = 8usize;
+    while max_load(slots) < loaded {
+        slots *= 2;
+    }
+    max_load(slots).saturating_sub(loaded + RUNTIME_RECORD_MARGIN)
+}
+
+pub const RUNTIME_RECORD_MARGIN: usize = 4096;
+
 pub fn db_edits(base: &Gvdb, built: &Gvdb) -> std::result::Result<Vec<DbEdit>, String> {
     let stock: HashMap<u64, _> = base.records.iter().map(|r| (r.key, r)).collect();
     let kept: std::collections::HashSet<u64> = built.records.iter().map(|r| r.key).collect();
@@ -812,6 +829,24 @@ mod tests {
         );
         assert_eq!(table("all.lng").get("lng_c"), Some("every language"));
         std::fs::remove_dir_all(&out).ok();
+    }
+
+    #[test]
+    fn the_runtime_record_room_stops_before_the_game_database_grows() {
+        assert_eq!(
+            runtime_record_room(742_857),
+            838_860 - 742_857 - RUNTIME_RECORD_MARGIN
+        );
+        assert_eq!(
+            runtime_record_room(758_755),
+            838_860 - 758_755 - RUNTIME_RECORD_MARGIN
+        );
+        assert_eq!(runtime_record_room(838_860), 0);
+        assert_eq!(
+            runtime_record_room(838_861),
+            1_677_721 - 838_861 - RUNTIME_RECORD_MARGIN
+        );
+        assert_eq!(runtime_record_room(0), 0);
     }
 
     #[test]

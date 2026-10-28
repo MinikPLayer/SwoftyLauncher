@@ -1,0 +1,291 @@
+{
+  "schema_version": 1,
+  "id": "swofty.progressive",
+  "name": "Progressive Career",
+  "version": "1.2.4",
+  "author": "Swofty",
+  "description": "A Driver Career that starts in any season from 2016 to 2026 as a real driver and moves through the real seasons: each year's cars, liveries, helmets and line-ups, then 2026 from there on.",
+  "license": "AGPL-3.0-or-later",
+  "icon": "icon.png",
+  "category": "career",
+  "kind": [
+    "native",
+    "database",
+    "erp",
+    "text"
+  ],
+  "compat": {
+    "game": "f1_25",
+    "game_builds": [
+      ">=25251167"
+    ],
+    "seasons": [
+      "f1_2026"
+    ],
+    "launcher": ">=1.5.27"
+  },
+  "requires": [
+    {
+      "id": "swofty.core",
+      "version": ">=0.2.13"
+    },
+    {
+      "id": "swofty.classic-seasons",
+      "version": ">=0.5.1"
+    },
+    {
+      "id": "swofty.classic-seasons-2016",
+      "version": ">=0.5.2"
+    },
+    {
+      "id": "swofty.classic-seasons-2017",
+      "version": ">=0.5.2"
+    },
+    {
+      "id": "swofty.classic-seasons-2018",
+      "version": ">=0.5.2"
+    },
+    {
+      "id": "swofty.classic-seasons-2019",
+      "version": ">=0.5.2"
+    },
+    {
+      "id": "swofty.classic-seasons-2020",
+      "version": ">=0.5.2"
+    },
+    {
+      "id": "swofty.classic-seasons-2021",
+      "version": ">=0.5.2"
+    },
+    {
+      "id": "swofty.classic-seasons-2022",
+      "version": ">=0.5.2"
+    },
+    {
+      "id": "swofty.classic-seasons-2023",
+      "version": ">=0.5.2"
+    },
+    {
+      "id": "swofty.classic-seasons-2024",
+      "version": ">=0.5.2"
+    }
+  ],
+  "saves": {
+    "affects": true,
+    "message": "Progressive careers won't load without it."
+  },
+  "options": [
+    {
+      "id": "start_season",
+      "type": "choice",
+      "label": "Starting season",
+      "description": "The real season a new Progressive career starts in. Each new season moves on a year, up to 2026.",
+      "default": "2026",
+      "values": [
+        "2016",
+        "2017",
+        "2018",
+        "2019",
+        "2020",
+        "2021",
+        "2022",
+        "2023",
+        "2024",
+        "2025",
+        "2026"
+      ],
+      "binds": "native",
+      "hidden": true
+    },
+    {
+      "id": "rnd_mode",
+      "type": "choice",
+      "label": "R&D",
+      "description": "Real life: each season's car brings that year's pace, with no R&D. Hybrid: R&D on top of the year's car, with a per-season budget from the team's real pace. You can change it at any time; it applies to the loaded career.",
+      "default": "real_life",
+      "values": [
+        {
+          "value": "real_life",
+          "label": "Real life"
+        },
+        {
+          "value": "hybrid",
+          "label": "Hybrid"
+        }
+      ],
+      "binds": "native",
+      "hidden": true
+    },
+    {
+      "id": "team_moves",
+      "type": "choice",
+      "label": "Team moves",
+      "description": "Follow your driver's real career from team to team, or choose your team from the offers.",
+      "default": "follow_driver",
+      "values": [
+        {
+          "value": "follow_driver",
+          "label": "Follow your driver's real career"
+        },
+        {
+          "value": "choose",
+          "label": "Choose your team"
+        }
+      ],
+      "binds": "native",
+      "hidden": true
+    },
+    {
+      "id": "season_visuals",
+      "type": "toggle",
+      "label": "Season cars and helmets",
+      "description": "Each season also brings that year's cars, liveries and helmets.",
+      "default": true,
+      "binds": "native"
+    },
+    {
+      "id": "season_development",
+      "type": "toggle",
+      "label": "In-season development",
+      "description": "With Real life R&D, every team's car gains or loses pace through the season the way it did in that real season.",
+      "default": true,
+      "binds": "native",
+      "hidden": true
+    },
+    {
+      "id": "season_rnd_models",
+      "type": "toggle",
+      "label": "Real team performance",
+      "description": "Every team's R&D performance (Team HQ's vehicle performance comparison, the game's team rankings) follows the season's real order.",
+      "default": true,
+      "binds": "native",
+      "hidden": true
+    },
+    {
+      "id": "season_ratings",
+      "type": "toggle",
+      "label": "Real driver ratings",
+      "description": "Every season gives each AI driver his real ratings of that year (experience, racecraft, awareness, pace, focus, and the overall they make). Your driver starts a new career with his real ratings of the starting year; after that his ratings are his own.",
+      "default": true,
+      "binds": "native",
+      "hidden": true
+    },
+    {
+      "id": "test_calendar",
+      "type": "choice",
+      "label": "Developer: test calendar",
+      "description": "Developer test: makes the Short season length 3 races for every 2026 season, so a season can be simmed to its end quickly. Start a new career after changing it. Leave off.",
+      "values": [
+        {
+          "value": "10",
+          "label": "Off"
+        },
+        {
+          "value": "3",
+          "label": "On (3 races)"
+        }
+      ],
+      "default": "10",
+      "binds": "db",
+      "hidden": true
+    },
+    {
+      "id": "test_next_season",
+      "type": "toggle",
+      "label": "Developer: next season now",
+      "description": "Developer test: the next Team HQ of a Progressive career applies the following season's line-ups, cars and looks without racing the season. Turn it off and on again for another season. Leave off.",
+      "default": false,
+      "binds": "native",
+      "hidden": true
+    },
+    {
+      "id": "ten_team_years",
+      "type": "toggle",
+      "label": "10 teams in 2017-2025",
+      "description": "The seasons 2017 to 2025 race 10 teams and 20 cars, as they really did: Manor's drivers leave the grid at the first Team HQ of 2017, and Cadillac joins with two drivers in 2026. Turn it off to keep an 11th team through those seasons.",
+      "default": true,
+      "binds": "native",
+      "hidden": true
+    },
+    {
+      "id": "dev_probe",
+      "type": "toggle",
+      "label": "Developer: seat probe",
+      "description": "Developer test: applies data/probe.json seat writes at Team HQ in any Driver Career. Leave off.",
+      "default": false,
+      "binds": "native",
+      "hidden": true
+    }
+  ],
+  "career_setup": {
+    "route": "career_wizard_driver_career_progressive",
+    "title": "Progressive Career",
+    "options": [
+      "start_season",
+      "rnd_mode",
+      "team_moves"
+    ]
+  },
+  "hub_tab": {
+    "name": "progressive",
+    "title": "Progressive Settings",
+    "options": [
+      "rnd_mode"
+    ],
+    "data_group": "f1_career_progressive"
+  },
+  "operations": {
+    "database": [
+      "db/career.json",
+      "db/grid.json",
+      "db/test.json"
+    ],
+    "erp": [
+      "erp/wizard.json"
+    ],
+    "assets": [
+      "lang/career.json"
+    ],
+    "native": [
+      {
+        "dll": "native/progressive_ui.dll"
+      },
+      {
+        "dll": "native/progressive_suffix.dll"
+      },
+      {
+        "dll": "native/progressive_back.dll"
+      },
+      {
+        "dll": "native/progressive_rnd.dll"
+      },
+      {
+        "dll": "native/progressive_follow.dll"
+      },
+      {
+        "dll": "native/progressive_cards.dll"
+      },
+      {
+        "dll": "native/progressive_logos.dll"
+      },
+      {
+        "dll": "native/progressive_numbers.dll"
+      },
+      {
+        "dll": "native/progressive_teamlogos.dll"
+      },
+      {
+        "dll": "native/progressive_resume.dll"
+      },
+      {
+        "dll": "native/progressive_fuel.dll"
+      },
+      {
+        "dll": "native/progressive.dll",
+        "files": [
+          "data/"
+        ]
+      }
+    ]
+  }
+}

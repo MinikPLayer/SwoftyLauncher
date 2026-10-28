@@ -1,5 +1,6 @@
 #include "runtime.hpp"
 
+#include "dbread_logic.hpp"
 #include "perf.hpp"
 
 #include <safetyhook.hpp>
@@ -25,6 +26,7 @@ const runtime::Sig S_GLOBAL{"g_Gdb_Database", "56 57 55 53 49 B8 25 23 22 84 E4 
 
 constexpr size_t DB_MAP = 0xa8, DB_LOADED = 0xf0, DB_ALLOC = 0x8;
 constexpr const char *PROBE_PREFIX = "swofty.class_probe.t";
+constexpr size_t PROBE_RECORDS = 32;
 
 using Load_t = void *(void *db, void *cfg);
 using Insert_t = void *(void *db, uint64_t key, uint8_t tag, char *text);
@@ -293,6 +295,19 @@ void apply(uint8_t *db, const char *when)
     swofty::log("[assets] gamedb: database at %p (%s) on thread %lu, loaded=%u, %llu record(s); applying %zu edit(s)",
                 static_cast<void *>(db), when, GetCurrentThreadId(), unsigned(db[DB_LOADED]), (unsigned long long)before,
                 edits.size());
+    size_t fresh = 0;
+    for (auto &e : edits)
+        if (!value_of(db, e.key))
+            fresh++;
+    uint64_t slots = map.mask() + 1;
+    if (!dbread::fits_without_growing(before, fresh + PROBE_RECORDS, slots, 0)) {
+        swofty::log("[assets] gamedb: the edits add %zu record(s) to %llu, and the game's database map grows at %llu "
+                    "(80%% of %llu slots); growing it after the game has loaded crashes the game at boot, so no edit "
+                    "applied and the database is the game's own",
+                    fresh, (unsigned long long)before, (unsigned long long)dbread::grows_at(slots),
+                    (unsigned long long)slots);
+        return;
+    }
     size_t overwrote = 0, created = 0, retyped = 0, skipped = 0;
     for (auto &e : edits) {
         void *old = value_of(db, e.key);

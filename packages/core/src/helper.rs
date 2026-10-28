@@ -11,8 +11,8 @@ use serde::de::DeserializeOwned;
 use serde_json::Value;
 use swofty_addon::asset::{AssetBatch, Op, Origin};
 use swofty_addon::helper::{
-    ADDON_CALLS, API_VERSION, Built, Call, Hello, HostCall, Incoming, MOVE_ADDON, RESTART, Reply, Request,
-    TASKS, Welcome,
+    ADDON_CALLS, API_VERSION, Built, Call, Hello, HostCall, Incoming, MOVE_ADDON, PROFILE_HEADS, RESTART,
+    Reply, Request, TASKS, Welcome,
 };
 use swofty_addon::launcher::{
     Addon, BuildCx, Claim, CommandSpec, Cx, Importer, ProfileInfo, Progress, Summary,
@@ -292,13 +292,28 @@ impl HelperAddon {
         }
     }
 
+    fn removed(&self, rel: &str) -> String {
+        let then = match crate::managed::is_managed(&self.manifest.id) {
+            true => "press Play again to download it again".to_owned(),
+            false => format!("reinstall {}", self.name()),
+        };
+        format!(
+            "could not start: its program {rel} is missing, most likely removed by an antivirus. Allow {} in your \
+             antivirus, then {then}",
+            self.dir.display()
+        )
+    }
+
     fn start(&self, cx: &Cx) -> std::result::Result<Live, String> {
         let rel = self
             .spec
             .program()
             .ok_or_else(|| format!("has no helper for {}", std::env::consts::OS))?;
         let program = self.dir.join(rel);
-        executable(&program).map_err(|e| format!("could not start {}: {e}", program.display()))?;
+        executable(&program).map_err(|e| match e.kind() {
+            std::io::ErrorKind::NotFound if self.dir.is_dir() => self.removed(rel),
+            _ => format!("could not start {}: {e}", program.display()),
+        })?;
         let log = std::fs::File::create(cx.cache_dir.join(LOG_FILE)).map(Stdio::from);
         let mut command = Command::new(&program);
         command
@@ -476,6 +491,9 @@ fn host_calls(cx: &Cx) -> Vec<String> {
         None => Vec::new(),
     };
     calls.push(TASKS);
+    if cx.game.is_some() {
+        calls.push(PROFILE_HEADS);
+    }
     calls.into_iter().map(String::from).collect()
 }
 
@@ -519,6 +537,10 @@ fn host_call(cx: &Cx, call: HostCall) -> std::result::Result<Value, String> {
             Some(g) => g
                 .profile_tracks(&cx.profile.name)
                 .and_then(|t| serde_json::to_value(t).map_err(|e| swofty_addon::Error::Other(e.to_string()))),
+            None => Ok(Value::Null),
+        },
+        HostCall::ProfileHeads => match cx.game {
+            Some(g) => g.profile_heads(&cx.profile.name).and_then(to_value),
             None => Ok(Value::Null),
         },
         HostCall::Addons => addons().and_then(|a| a.list()).and_then(to_value),
@@ -889,6 +911,47 @@ read -r l
         std::fs::remove_dir_all(&root).ok();
     }
 
+    #[test]
+    fn removing_an_addon_stops_its_helper_before_deleting_it() {
+        let root = tmp("remove");
+        let store = Store::new(root.join("data"));
+        let dir = store.addons_dir().join("t.helper");
+        addon(
+            &dir,
+            r#"echo $$ > pid
+read -r l; echo '{"id":0,"result":{"api":1}}'
+read -r l; echo '{"id":1,"result":{"subtitle":"s","body":{"blocks":[]}}}'
+exec sleep 60
+"#,
+        );
+        let h = store
+            .helpers()
+            .get(&AddonManifest::load(&dir).unwrap(), &dir)
+            .unwrap();
+        let state = Memory::default();
+        let (data, cache) = (root.join("state"), root.join("cache"));
+        std::fs::create_dir_all(&cache).unwrap();
+        let p = profile("default");
+        h.view(&Cx::new("t.helper", &p, &data, &cache, None, &state), "items")
+            .unwrap();
+        assert!(h.running());
+        let pid = std::fs::read_to_string(dir.join("pid")).unwrap();
+        store
+            .remove_addon_with("t.helper", |d| {
+                assert!(!h.running());
+                let alive = Command::new("kill")
+                    .args(["-0", pid.trim()])
+                    .stderr(Stdio::null())
+                    .status()
+                    .unwrap();
+                assert!(!alive.success(), "the helper still runs");
+                std::fs::remove_dir_all(d)
+            })
+            .unwrap();
+        assert!(!dir.exists());
+        std::fs::remove_dir_all(&root).ok();
+    }
+
     struct FakeGame(PathBuf);
 
     impl GameFiles for FakeGame {
@@ -990,7 +1053,10 @@ read -r l
             .map(|l| serde_json::from_str(l).unwrap())
             .collect();
         assert_eq!(received[0]["params"]["launcher"], env!("CARGO_PKG_VERSION"));
-        assert_eq!(received[0]["params"]["host_calls"], serde_json::json!(["tasks"]));
+        assert_eq!(
+            received[0]["params"]["host_calls"],
+            serde_json::json!(["tasks", PROFILE_HEADS])
+        );
         let game_dir = root.join("F1 25");
         assert_eq!(received[2]["result"], game_dir.to_string_lossy().as_ref());
         assert_eq!(
@@ -1268,6 +1334,61 @@ read -r l
             assert_eq!(h.event(&cx, "items", restart).unwrap(), Effect::Reload);
             assert!(h.failure().is_none());
         }
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn a_missing_program_names_the_antivirus() {
+        let root = tmp("missing");
+        let dir = root.join("t.helper");
+        addon(&dir, "read -r l");
+        std::fs::remove_file(dir.join("bin/helper")).unwrap();
+        let state = Memory::default();
+        let p = profile("default");
+        let cache = root.join("cache");
+        std::fs::create_dir_all(&cache).unwrap();
+        let cx = Cx::new("t.helper", &p, &root, &cache, None, &state);
+        let view = helper(&dir).view(&cx, "items").unwrap();
+        assert_eq!(
+            view.notices[0].text,
+            format!(
+                "Helper could not start: its program bin/helper is missing, most likely removed by an antivirus. \
+                 Allow {} in your antivirus, then reinstall Helper",
+                dir.display()
+            )
+        );
+        let manifest = AddonManifest::load(&dir).unwrap();
+        std::fs::remove_dir_all(&dir).unwrap();
+        let view = HelperAddon::new(manifest, &dir)
+            .unwrap()
+            .view(&cx, "items")
+            .unwrap();
+        assert!(
+            view.notices[0].text.starts_with("Helper could not start "),
+            "{}",
+            view.notices[0].text
+        );
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn the_managed_addon_comes_back_on_play() {
+        let root = tmp("managed-missing");
+        let dir = root.join(crate::managed::ID);
+        addon(&dir, "read -r l");
+        std::fs::remove_file(dir.join("bin/helper")).unwrap();
+        let manifest = AddonManifest {
+            id: crate::managed::ID.into(),
+            name: crate::managed::NAME.into(),
+            ..AddonManifest::load(&dir).unwrap()
+        };
+        let h = HelperAddon::new(manifest, &dir).unwrap();
+        assert!(
+            h.removed("bin/helper")
+                .ends_with("then press Play again to download it again"),
+            "{}",
+            h.removed("bin/helper")
+        );
         std::fs::remove_dir_all(&root).ok();
     }
 

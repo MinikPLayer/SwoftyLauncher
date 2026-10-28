@@ -40,6 +40,10 @@ A mod made of several parts imports as one addon per part. When the parts are al
 
 The page shows what each import became. **Details** lists every change.
 
+## Face mods
+
+A mod that adds a driver head the game doesn't have, such as a face mod with a `heads/<name>.erp` archive, gets a driver head row when the profile builds. [Driver Manager](/using/driver-manager) and the [DB Editor](/using/db-editor) offer the head by its name and the addon's name, such as **Rio Haryanto (Rio_Haryanto_facemod)**. A driver whose head comes from an addon that's off keeps the game's head.
+
 ## Tracks
 
 Drop a track zip on the launcher without unpacking it. It becomes a track addon in the **Tracks** category; turn it on to add the track to Grand Prix track selection. You can turn on any number of tracks in one profile.

@@ -253,6 +253,116 @@
   },
   {
    "op": "add-row",
+   "table": "entrants.animation.driver_heads",
+   "from": "entrants.animation.driver_heads.driver_head[_metadata_=male_ls222]",
+   "set": {
+    "_metadata_": "cs_rio_haryanto",
+    "model_path": "eaid://[CHARACTER_PACKAGE]/heads/male_driver/rio_haryanto/idf/rio_haryanto_rig_head_morph_v1",
+    "has_morph_data": "True",
+    "available_for_customisation": "False"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "entrants.animation.driver_heads",
+   "from": "entrants.animation.driver_heads.driver_head[_metadata_=male_ls222]",
+   "set": {
+    "_metadata_": "cs_brendon_hartley",
+    "model_path": "eaid://[CHARACTER_PACKAGE]/heads/male_driver/brendon_hartley/idf/brendon_hartley_rig_head_morph_v1",
+    "has_morph_data": "True",
+    "available_for_customisation": "False"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "entrants.animation.driver_heads",
+   "from": "entrants.animation.driver_heads.driver_head[_metadata_=male_ls222]",
+   "set": {
+    "_metadata_": "cs_sergey_sirotkin",
+    "model_path": "eaid://[CHARACTER_PACKAGE]/heads/male_driver/sergey_sirotkin/idf/sergey_sirotkin_rig_head_morph_v1",
+    "has_morph_data": "True",
+    "available_for_customisation": "False"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "entrants.animation.driver_heads",
+   "from": "entrants.animation.driver_heads.driver_head[_metadata_=male_ls222]",
+   "set": {
+    "_metadata_": "cs_stoffel_vandoorne",
+    "model_path": "eaid://[CHARACTER_PACKAGE]/heads/male_driver/stoffel_vandoorne/idf/stoffel_vandoorne_rig_head_morph_v1",
+    "has_morph_data": "True",
+    "available_for_customisation": "False"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "entrants.animation.driver_heads",
+   "from": "entrants.animation.driver_heads.driver_head[_metadata_=male_ls222]",
+   "set": {
+    "_metadata_": "cs_nico_rosberg",
+    "model_path": "eaid://[CHARACTER_PACKAGE]/heads/male_driver/nico_rosberg/idf/nico_rosberg_rig_head_morph_v1",
+    "has_morph_data": "True",
+    "available_for_customisation": "False"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "entrants.animation.driver_heads",
+   "from": "entrants.animation.driver_heads.driver_head[_metadata_=male_ls222]",
+   "set": {
+    "_metadata_": "cs_jolyon_palmer",
+    "model_path": "eaid://[CHARACTER_PACKAGE]/heads/male_driver/cs_jolyon_pal/idf/cs_jolyon_pal_rig_head_morph_v1",
+    "has_morph_data": "True",
+    "available_for_customisation": "False"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "entrants.animation.driver_heads",
+   "from": "entrants.animation.driver_heads.driver_head[_metadata_=male_ls222]",
+   "set": {
+    "_metadata_": "cs_marcus_ericsson",
+    "model_path": "eaid://[CHARACTER_PACKAGE]/heads/male_driver/cs_marcus_ericsso/idf/cs_marcus_ericsso_rig_head_morph_v1",
+    "has_morph_data": "True",
+    "available_for_customisation": "False"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "entrants.animation.driver_heads",
+   "from": "entrants.animation.driver_heads.driver_head[_metadata_=male_ls222]",
+   "set": {
+    "_metadata_": "cs_felipe_nasr",
+    "model_path": "eaid://[CHARACTER_PACKAGE]/heads/male_driver/cs_felipe_nasr_/idf/cs_felipe_nasr__rig_head_morph_v1",
+    "has_morph_data": "True",
+    "available_for_customisation": "False"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "entrants.animation.driver_heads",
+   "from": "entrants.animation.driver_heads.driver_head[_metadata_=male_ls222]",
+   "set": {
+    "_metadata_": "cs_esteban_gutierrez",
+    "model_path": "eaid://[CHARACTER_PACKAGE]/heads/male_driver/cs_esteban_gutier/idf/cs_esteban_gutier_rig_head_morph_v1",
+    "has_morph_data": "True",
+    "available_for_customisation": "False"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "entrants.animation.driver_heads",
+   "from": "entrants.animation.driver_heads.driver_head[_metadata_=male_ls222]",
+   "set": {
+    "_metadata_": "cs_pascal_wehrlein",
+    "model_path": "eaid://[CHARACTER_PACKAGE]/heads/male_driver/cs_pascal_wehrle/idf/cs_pascal_wehrle_rig_head_morph_v1",
+    "has_morph_data": "True",
+    "available_for_customisation": "False"
+   }
+  },
+  {
+   "op": "add-row",
    "table": "entrants.drivers",
    "from": "entrants.drivers.driver[_metadata_=lando_norris]",
    "set": {
@@ -263,7 +373,7 @@
     "last_name_standard": "",
     "initials": "NAS",
     "nationality": "brazil",
-    "head": "male_ls487",
+    "head": "cs_felipe_nasr",
     "audio_name": "DefaultName",
     "expression_label": "",
     "stat_id": "225"
@@ -281,7 +391,7 @@
     "last_name_standard": "",
     "initials": "GUT",
     "nationality": "mexico",
-    "head": "male_ls212",
+    "head": "cs_esteban_gutierrez",
     "audio_name": "DefaultName",
     "expression_label": "",
     "stat_id": "226"
@@ -299,7 +409,7 @@
     "last_name_standard": "",
     "initials": "VAN",
     "nationality": "belgium",
-    "head": "male_ls343",
+    "head": "cs_stoffel_vandoorne",
     "audio_name": "DefaultName",
     "expression_label": "",
     "stat_id": "227"
@@ -317,7 +427,7 @@
     "last_name_standard": "",
     "initials": "HAR",
     "nationality": "new_zealand",
-    "head": "male_ls265",
+    "head": "cs_brendon_hartley",
     "audio_name": "DefaultName",
     "expression_label": "",
     "stat_id": "228"
@@ -335,7 +445,7 @@
     "last_name_standard": "",
     "initials": "SIR",
     "nationality": "default",
-    "head": "male_ls790",
+    "head": "cs_sergey_sirotkin",
     "audio_name": "DefaultName",
     "expression_label": "",
     "stat_id": "229"
@@ -353,7 +463,7 @@
     "last_name_standard": "",
     "initials": "HAR",
     "nationality": "indonesia",
-    "head": "male_ls161",
+    "head": "cs_rio_haryanto",
     "audio_name": "DefaultName",
     "expression_label": "",
     "stat_id": "230"
@@ -363,7 +473,7 @@
    "op": "set",
    "select": "entrants.drivers.driver[_metadata_=nico_rosberg]",
    "field": "head",
-   "value": "male_ls265"
+   "value": "cs_nico_rosberg"
   },
   {
    "op": "set",
@@ -393,19 +503,19 @@
    "op": "set",
    "select": "entrants.drivers.driver[_metadata_=marcus_ericsson]",
    "field": "head",
-   "value": "male_ls192"
+   "value": "cs_marcus_ericsson"
   },
   {
    "op": "set",
    "select": "entrants.drivers.driver[_metadata_=jolyon_palmer]",
    "field": "head",
-   "value": "male_ls204"
+   "value": "cs_jolyon_palmer"
   },
   {
    "op": "set",
    "select": "entrants.drivers.driver[_metadata_=pascal_wehrlein]",
    "field": "head",
-   "value": "male_ls487"
+   "value": "cs_pascal_wehrlein"
   },
   {
    "op": "set",
@@ -4826,6 +4936,1990 @@
     "colour_1_default": "0",
     "colour_2_default": "0",
     "colour_3_default": "0",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-mercedes_lewis_hamilton]",
+   "set": {
+    "_metadata_": "cs16-mercedes_lewis_hamilton",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-mercedes_lewis_hamilton/idf/lewis_hamilton_helmet_attachments",
+    "material_override": "cs16-mercedes_lewis_hamilton",
+    "id": "908",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-tororosso_isack_hadjar]",
+   "set": {
+    "_metadata_": "cs16-tororosso_isack_hadjar",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-tororosso_isack_hadjar/isack_hadjar_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-tororosso_isack_hadjar/idf/isack_hadjar_helmet_attachments",
+    "material_override": "cs16-tororosso_isack_hadjar",
+    "id": "909",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbulljapan_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs16-redbulljapan_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-redbulljapan_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs16-redbulljapan_yuki_tsunoda",
+    "id": "910",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbull_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs16-redbull_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-redbull_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs16-redbull_yuki_tsunoda",
+    "id": "911",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_zak_osullivan]",
+   "set": {
+    "_metadata_": "cs16-f2-artgp_zak_osullivan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-f2-artgp_zak_osullivan/idf/zak_osullivan_helmet_attachments",
+    "material_override": "cs16-f2-artgp_zak_osullivan",
+    "id": "912",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-ferrari_charles_leclerc]",
+   "set": {
+    "_metadata_": "cs16-ferrari_charles_leclerc",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-ferrari_charles_leclerc/idf/charles_leclerc_helmet_attachments",
+    "material_override": "cs16-ferrari_charles_leclerc",
+    "id": "913",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-tororosso_daniel_ricciardo]",
+   "set": {
+    "_metadata_": "cs16-tororosso_daniel_ricciardo",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-tororosso_daniel_ricciardo/idf/daniel_ricciardo_helmet_attachments",
+    "material_override": "cs16-tororosso_daniel_ricciardo",
+    "id": "914",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-sauber_valtteri_bottas]",
+   "set": {
+    "_metadata_": "cs16-sauber_valtteri_bottas",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-sauber_valtteri_bottas/idf/valtteri_bottas_helmet_attachments",
+    "material_override": "cs16-sauber_valtteri_bottas",
+    "id": "915",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-redbull_sergio_perez]",
+   "set": {
+    "_metadata_": "cs16-redbull_sergio_perez",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-redbull_sergio_perez/idf/sergio_perez_helmet_attachments",
+    "material_override": "cs16-redbull_sergio_perez",
+    "id": "916",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-sauber_nico_hulkenberg]",
+   "set": {
+    "_metadata_": "cs16-sauber_nico_hulkenberg",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-sauber_nico_hulkenberg/idf/nico_hulkenberg_helmet_attachments",
+    "material_override": "cs16-sauber_nico_hulkenberg",
+    "id": "917",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-haas_oliver_bearman]",
+   "set": {
+    "_metadata_": "cs16-haas_oliver_bearman",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-haas_oliver_bearman/oliver_bearman_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-haas_oliver_bearman/idf/oliver_bearman_helmet_attachments",
+    "material_override": "cs16-haas_oliver_bearman",
+    "id": "918",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-f2-mpmotorsport_oliver_goethe]",
+   "set": {
+    "_metadata_": "cs16-f2-mpmotorsport_oliver_goethe",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-f2-mpmotorsport_oliver_goethe/idf/oliver_goethe_helmet_attachments",
+    "material_override": "cs16-f2-mpmotorsport_oliver_goethe",
+    "id": "919",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-renault_jack_doohan]",
+   "set": {
+    "_metadata_": "cs16-renault_jack_doohan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-renault_jack_doohan/idf/jack_doohan_helmet_attachments",
+    "material_override": "cs16-renault_jack_doohan",
+    "id": "920",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-tororosso_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs16-tororosso_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-tororosso_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs16-tororosso_yuki_tsunoda",
+    "id": "921",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-sauber_gabriel_bortoleto]",
+   "set": {
+    "_metadata_": "cs16-sauber_gabriel_bortoleto",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-sauber_gabriel_bortoleto/idf/gabriel_bortoleto_helmet_attachments",
+    "material_override": "cs16-sauber_gabriel_bortoleto",
+    "id": "922",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-forceindia_lance_stroll]",
+   "set": {
+    "_metadata_": "cs16-forceindia_lance_stroll",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-forceindia_lance_stroll/idf/lance_stroll_helmet_attachments",
+    "material_override": "cs16-forceindia_lance_stroll",
+    "id": "923",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-camposracing_isack_hadjar]",
+   "set": {
+    "_metadata_": "cs16-f2-camposracing_isack_hadjar",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-f2-camposracing_isack_hadjar/isack_hadjar_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-f2-camposracing_isack_hadjar/idf/isack_hadjar_helmet_attachments",
+    "material_override": "cs16-f2-camposracing_isack_hadjar",
+    "id": "924",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-invictaracing_kush_maini]",
+   "set": {
+    "_metadata_": "cs16-f2-invictaracing_kush_maini",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-f2-invictaracing_kush_maini/kush_maini_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-f2-invictaracing_kush_maini/idf/kush_maini_helmet_attachments",
+    "material_override": "cs16-f2-invictaracing_kush_maini",
+    "id": "925",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-trident_richard_verschoor]",
+   "set": {
+    "_metadata_": "cs16-f2-trident_richard_verschoor",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-f2-trident_richard_verschoor/richard_verschoor_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-f2-trident_richard_verschoor/idf/richard_verschoor_helmet_attachments",
+    "material_override": "cs16-f2-trident_richard_verschoor",
+    "id": "926",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-haas_esteban_ocon]",
+   "set": {
+    "_metadata_": "cs16-haas_esteban_ocon",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-haas_esteban_ocon/esteban_ocon_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-haas_esteban_ocon/idf/esteban_ocon_helmet_attachments",
+    "material_override": "cs16-haas_esteban_ocon",
+    "id": "927",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-haas_kevin_magnussen]",
+   "set": {
+    "_metadata_": "cs16-haas_kevin_magnussen",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-haas_kevin_magnussen/kevin_magnussen_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-haas_kevin_magnussen/idf/kevin_magnussen_helmet_attachments",
+    "material_override": "cs16-haas_kevin_magnussen",
+    "id": "928",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-invictaracing_kush_maini]",
+   "set": {
+    "_metadata_": "cs17-f2-invictaracing_kush_maini",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-f2-invictaracing_kush_maini/kush_maini_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-f2-invictaracing_kush_maini/idf/kush_maini_helmet_attachments",
+    "material_override": "cs17-f2-invictaracing_kush_maini",
+    "id": "930",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-renault_pierre_gasly]",
+   "set": {
+    "_metadata_": "cs16-renault_pierre_gasly",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs16-renault_pierre_gasly/pierre_gasly_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs16-renault_pierre_gasly/idf/pierre_gasly_helmet_attachments",
+    "material_override": "cs16-renault_pierre_gasly",
+    "id": "939",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-mercedes_lewis_hamilton]",
+   "set": {
+    "_metadata_": "cs17-mercedes_lewis_hamilton",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-mercedes_lewis_hamilton/idf/lewis_hamilton_helmet_attachments",
+    "material_override": "cs17-mercedes_lewis_hamilton",
+    "id": "940",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-sauber_valtteri_bottas]",
+   "set": {
+    "_metadata_": "cs17-sauber_valtteri_bottas",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-sauber_valtteri_bottas/idf/valtteri_bottas_helmet_attachments",
+    "material_override": "cs17-sauber_valtteri_bottas",
+    "id": "941",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbulljapan_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs17-redbulljapan_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-redbulljapan_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs17-redbulljapan_yuki_tsunoda",
+    "id": "942",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbull_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs17-redbull_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-redbull_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs17-redbull_yuki_tsunoda",
+    "id": "943",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_zak_osullivan]",
+   "set": {
+    "_metadata_": "cs17-f2-artgp_zak_osullivan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-f2-artgp_zak_osullivan/idf/zak_osullivan_helmet_attachments",
+    "material_override": "cs17-f2-artgp_zak_osullivan",
+    "id": "944",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-ferrari_charles_leclerc]",
+   "set": {
+    "_metadata_": "cs17-ferrari_charles_leclerc",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-ferrari_charles_leclerc/idf/charles_leclerc_helmet_attachments",
+    "material_override": "cs17-ferrari_charles_leclerc",
+    "id": "945",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-tororosso_daniel_ricciardo]",
+   "set": {
+    "_metadata_": "cs17-tororosso_daniel_ricciardo",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-tororosso_daniel_ricciardo/daniel_ricciardo_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-tororosso_daniel_ricciardo/idf/daniel_ricciardo_helmet_attachments",
+    "material_override": "cs17-tororosso_daniel_ricciardo",
+    "id": "946",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-forceindia_lance_stroll]",
+   "set": {
+    "_metadata_": "cs17-forceindia_lance_stroll",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-forceindia_lance_stroll/idf/lance_stroll_helmet_attachments",
+    "material_override": "cs17-forceindia_lance_stroll",
+    "id": "947",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-redbull_sergio_perez]",
+   "set": {
+    "_metadata_": "cs17-redbull_sergio_perez",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-redbull_sergio_perez/idf/sergio_perez_helmet_attachments",
+    "material_override": "cs17-redbull_sergio_perez",
+    "id": "948",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-renault_esteban_ocon]",
+   "set": {
+    "_metadata_": "cs17-renault_esteban_ocon",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-renault_esteban_ocon/esteban_ocon_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-renault_esteban_ocon/idf/esteban_ocon_helmet_attachments",
+    "material_override": "cs17-renault_esteban_ocon",
+    "id": "949",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-sauber_nico_hulkenberg]",
+   "set": {
+    "_metadata_": "cs17-sauber_nico_hulkenberg",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-sauber_nico_hulkenberg/idf/nico_hulkenberg_helmet_attachments",
+    "material_override": "cs17-sauber_nico_hulkenberg",
+    "id": "950",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-f2-mpmotorsport_oliver_goethe]",
+   "set": {
+    "_metadata_": "cs17-f2-mpmotorsport_oliver_goethe",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-f2-mpmotorsport_oliver_goethe/oliver_goethe_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-f2-mpmotorsport_oliver_goethe/idf/oliver_goethe_helmet_attachments",
+    "material_override": "cs17-f2-mpmotorsport_oliver_goethe",
+    "id": "951",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-renault_jack_doohan]",
+   "set": {
+    "_metadata_": "cs17-renault_jack_doohan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-renault_jack_doohan/idf/jack_doohan_helmet_attachments",
+    "material_override": "cs17-renault_jack_doohan",
+    "id": "952",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-tororosso_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs17-tororosso_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-tororosso_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs17-tororosso_yuki_tsunoda",
+    "id": "953",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-sauber_gabriel_bortoleto]",
+   "set": {
+    "_metadata_": "cs17-sauber_gabriel_bortoleto",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-sauber_gabriel_bortoleto/idf/gabriel_bortoleto_helmet_attachments",
+    "material_override": "cs17-sauber_gabriel_bortoleto",
+    "id": "954",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-renault_pierre_gasly]",
+   "set": {
+    "_metadata_": "cs17-renault_pierre_gasly",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-renault_pierre_gasly/pierre_gasly_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-renault_pierre_gasly/idf/pierre_gasly_helmet_attachments",
+    "material_override": "cs17-renault_pierre_gasly",
+    "id": "955",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_victor_martins]",
+   "set": {
+    "_metadata_": "cs17-f2-artgp_victor_martins",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-f2-artgp_victor_martins/victor_martins_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-f2-artgp_victor_martins/idf/victor_martins_helmet_attachments",
+    "material_override": "cs17-f2-artgp_victor_martins",
+    "id": "956",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-haas_esteban_ocon]",
+   "set": {
+    "_metadata_": "cs17-haas_esteban_ocon",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-haas_esteban_ocon/esteban_ocon_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-haas_esteban_ocon/idf/esteban_ocon_helmet_attachments",
+    "material_override": "cs17-haas_esteban_ocon",
+    "id": "957",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-haas_oliver_bearman]",
+   "set": {
+    "_metadata_": "cs17-haas_oliver_bearman",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs17-haas_oliver_bearman/oliver_bearman_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs17-haas_oliver_bearman/idf/oliver_bearman_helmet_attachments",
+    "material_override": "cs17-haas_oliver_bearman",
+    "id": "958",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-mercedes_lewis_hamilton]",
+   "set": {
+    "_metadata_": "cs18-mercedes_lewis_hamilton",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-mercedes_lewis_hamilton/idf/lewis_hamilton_helmet_attachments",
+    "material_override": "cs18-mercedes_lewis_hamilton",
+    "id": "959",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-sauber_valtteri_bottas]",
+   "set": {
+    "_metadata_": "cs18-sauber_valtteri_bottas",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-sauber_valtteri_bottas/idf/valtteri_bottas_helmet_attachments",
+    "material_override": "cs18-sauber_valtteri_bottas",
+    "id": "960",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_zak_osullivan]",
+   "set": {
+    "_metadata_": "cs18-f2-artgp_zak_osullivan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-f2-artgp_zak_osullivan/idf/zak_osullivan_helmet_attachments",
+    "material_override": "cs18-f2-artgp_zak_osullivan",
+    "id": "961",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-ferrari_charles_leclerc]",
+   "set": {
+    "_metadata_": "cs18-ferrari_charles_leclerc",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-ferrari_charles_leclerc/idf/charles_leclerc_helmet_attachments",
+    "material_override": "cs18-ferrari_charles_leclerc",
+    "id": "962",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbulljapan_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs18-redbulljapan_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-redbulljapan_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs18-redbulljapan_yuki_tsunoda",
+    "id": "963",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-camposracing_isack_hadjar]",
+   "set": {
+    "_metadata_": "cs18-f2-camposracing_isack_hadjar",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-f2-camposracing_isack_hadjar/isack_hadjar_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-f2-camposracing_isack_hadjar/idf/isack_hadjar_helmet_attachments",
+    "material_override": "cs18-f2-camposracing_isack_hadjar",
+    "id": "964",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-sauber_nico_hulkenberg]",
+   "set": {
+    "_metadata_": "cs18-sauber_nico_hulkenberg",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-sauber_nico_hulkenberg/idf/nico_hulkenberg_helmet_attachments",
+    "material_override": "cs18-sauber_nico_hulkenberg",
+    "id": "965",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-renault_jack_doohan]",
+   "set": {
+    "_metadata_": "cs18-renault_jack_doohan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-renault_jack_doohan/idf/jack_doohan_helmet_attachments",
+    "material_override": "cs18-renault_jack_doohan",
+    "id": "966",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-haas_esteban_ocon]",
+   "set": {
+    "_metadata_": "cs18-haas_esteban_ocon",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-haas_esteban_ocon/esteban_ocon_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-haas_esteban_ocon/idf/esteban_ocon_helmet_attachments",
+    "material_override": "cs18-haas_esteban_ocon",
+    "id": "967",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-haas_oliver_bearman]",
+   "set": {
+    "_metadata_": "cs18-haas_oliver_bearman",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-haas_oliver_bearman/oliver_bearman_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-haas_oliver_bearman/idf/oliver_bearman_helmet_attachments",
+    "material_override": "cs18-haas_oliver_bearman",
+    "id": "968",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-renault_pierre_gasly]",
+   "set": {
+    "_metadata_": "cs18-renault_pierre_gasly",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-renault_pierre_gasly/pierre_gasly_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-renault_pierre_gasly/idf/pierre_gasly_helmet_attachments",
+    "material_override": "cs18-renault_pierre_gasly",
+    "id": "969",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_victor_martins]",
+   "set": {
+    "_metadata_": "cs18-f2-artgp_victor_martins",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-f2-artgp_victor_martins/victor_martins_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-f2-artgp_victor_martins/idf/victor_martins_helmet_attachments",
+    "material_override": "cs18-f2-artgp_victor_martins",
+    "id": "970",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-redbull_sergio_perez]",
+   "set": {
+    "_metadata_": "cs18-redbull_sergio_perez",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-redbull_sergio_perez/idf/sergio_perez_helmet_attachments",
+    "material_override": "cs18-redbull_sergio_perez",
+    "id": "971",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-renault_esteban_ocon]",
+   "set": {
+    "_metadata_": "cs18-renault_esteban_ocon",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-renault_esteban_ocon/esteban_ocon_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-renault_esteban_ocon/idf/esteban_ocon_helmet_attachments",
+    "material_override": "cs18-renault_esteban_ocon",
+    "id": "972",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-sauber_gabriel_bortoleto]",
+   "set": {
+    "_metadata_": "cs18-sauber_gabriel_bortoleto",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-sauber_gabriel_bortoleto/gabriel_bortoleto_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-sauber_gabriel_bortoleto/idf/gabriel_bortoleto_helmet_attachments",
+    "material_override": "cs18-sauber_gabriel_bortoleto",
+    "id": "973",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-ferrarimonza_charles_leclerc]",
+   "set": {
+    "_metadata_": "cs18-ferrarimonza_charles_leclerc",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-ferrarimonza_charles_leclerc/charles_leclerc_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-ferrarimonza_charles_leclerc/idf/charles_leclerc_helmet_attachments",
+    "material_override": "cs18-ferrarimonza_charles_leclerc",
+    "id": "974",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-tororosso_liam_lawson]",
+   "set": {
+    "_metadata_": "cs18-tororosso_liam_lawson",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-tororosso_liam_lawson/liam_lawson_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-tororosso_liam_lawson/idf/liam_lawson_helmet_attachments",
+    "material_override": "cs18-tororosso_liam_lawson",
+    "id": "975",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-camposracing_pepe_marti]",
+   "set": {
+    "_metadata_": "cs18-f2-camposracing_pepe_marti",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-f2-camposracing_pepe_marti/idf/pepe_marti_helmet_attachments",
+    "material_override": "cs18-f2-camposracing_pepe_marti",
+    "id": "976",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-forceindia_lance_stroll]",
+   "set": {
+    "_metadata_": "cs18-forceindia_lance_stroll",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-forceindia_lance_stroll/idf/lance_stroll_helmet_attachments",
+    "material_override": "cs18-forceindia_lance_stroll",
+    "id": "977",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-williams_logan_sargeant]",
+   "set": {
+    "_metadata_": "cs18-williams_logan_sargeant",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs18-williams_logan_sargeant/logan_sargeant_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs18-williams_logan_sargeant/idf/logan_sargeant_helmet_attachments",
+    "material_override": "cs18-williams_logan_sargeant",
+    "id": "978",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-mercedes_lewis_hamilton]",
+   "set": {
+    "_metadata_": "cs19-mercedes_lewis_hamilton",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-mercedes_lewis_hamilton/idf/lewis_hamilton_helmet_attachments",
+    "material_override": "cs19-mercedes_lewis_hamilton",
+    "id": "979",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-sauber_valtteri_bottas]",
+   "set": {
+    "_metadata_": "cs19-sauber_valtteri_bottas",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-sauber_valtteri_bottas/idf/valtteri_bottas_helmet_attachments",
+    "material_override": "cs19-sauber_valtteri_bottas",
+    "id": "980",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_zak_osullivan]",
+   "set": {
+    "_metadata_": "cs19-f2-artgp_zak_osullivan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-f2-artgp_zak_osullivan/idf/zak_osullivan_helmet_attachments",
+    "material_override": "cs19-f2-artgp_zak_osullivan",
+    "id": "981",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-ferrari_charles_leclerc]",
+   "set": {
+    "_metadata_": "cs19-ferrari_charles_leclerc",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-ferrari_charles_leclerc/idf/charles_leclerc_helmet_attachments",
+    "material_override": "cs19-ferrari_charles_leclerc",
+    "id": "982",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbull_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs19-redbull_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-redbull_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs19-redbull_yuki_tsunoda",
+    "id": "983",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-tororosso_liam_lawson]",
+   "set": {
+    "_metadata_": "cs19-tororosso_liam_lawson",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-tororosso_liam_lawson/liam_lawson_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-tororosso_liam_lawson/idf/liam_lawson_helmet_attachments",
+    "material_override": "cs19-tororosso_liam_lawson",
+    "id": "984",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-renault_jack_doohan]",
+   "set": {
+    "_metadata_": "cs19-renault_jack_doohan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-renault_jack_doohan/idf/jack_doohan_helmet_attachments",
+    "material_override": "cs19-renault_jack_doohan",
+    "id": "985",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-mclaren_lando_norris]",
+   "set": {
+    "_metadata_": "cs19-mclaren_lando_norris",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-mclaren_lando_norris/lando_norris_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-mclaren_lando_norris/idf/lando_norris_helmet_attachments",
+    "material_override": "cs19-mclaren_lando_norris",
+    "id": "986",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbulljapan_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs19-redbulljapan_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-redbulljapan_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs19-redbulljapan_yuki_tsunoda",
+    "id": "987",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-sauber_nico_hulkenberg]",
+   "set": {
+    "_metadata_": "cs19-sauber_nico_hulkenberg",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-sauber_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-sauber_nico_hulkenberg/idf/nico_hulkenberg_helmet_attachments",
+    "material_override": "cs19-sauber_nico_hulkenberg",
+    "id": "988",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-tororosso_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs19-tororosso_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-tororosso_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs19-tororosso_yuki_tsunoda",
+    "id": "989",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-williams_alex_albon]",
+   "set": {
+    "_metadata_": "cs19-williams_alex_albon",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-williams_alex_albon/alex_albon_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-williams_alex_albon/idf/alex_albon_helmet_attachments",
+    "material_override": "cs19-williams_alex_albon",
+    "id": "990",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-redbull_sergio_perez]",
+   "set": {
+    "_metadata_": "cs19-redbull_sergio_perez",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-redbull_sergio_perez/idf/sergio_perez_helmet_attachments",
+    "material_override": "cs19-redbull_sergio_perez",
+    "id": "991",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-forceindia_lance_stroll]",
+   "set": {
+    "_metadata_": "cs19-forceindia_lance_stroll",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-forceindia_lance_stroll/idf/lance_stroll_helmet_attachments",
+    "material_override": "cs19-forceindia_lance_stroll",
+    "id": "992",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_victor_martins]",
+   "set": {
+    "_metadata_": "cs19-f2-artgp_victor_martins",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-f2-artgp_victor_martins/victor_martins_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-f2-artgp_victor_martins/idf/victor_martins_helmet_attachments",
+    "material_override": "cs19-f2-artgp_victor_martins",
+    "id": "993",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-camposracing_pepe_marti]",
+   "set": {
+    "_metadata_": "cs19-f2-camposracing_pepe_marti",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-f2-camposracing_pepe_marti/idf/pepe_marti_helmet_attachments",
+    "material_override": "cs19-f2-camposracing_pepe_marti",
+    "id": "994",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-haas_esteban_ocon]",
+   "set": {
+    "_metadata_": "cs19-haas_esteban_ocon",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-haas_esteban_ocon/esteban_ocon_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-haas_esteban_ocon/idf/esteban_ocon_helmet_attachments",
+    "material_override": "cs19-haas_esteban_ocon",
+    "id": "995",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-haas_oliver_bearman]",
+   "set": {
+    "_metadata_": "cs19-haas_oliver_bearman",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-haas_oliver_bearman/oliver_bearman_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-haas_oliver_bearman/idf/oliver_bearman_helmet_attachments",
+    "material_override": "cs19-haas_oliver_bearman",
+    "id": "996",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-dams_jak_crawford]",
+   "set": {
+    "_metadata_": "cs19-f2-dams_jak_crawford",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-f2-dams_jak_crawford/jak_crawford_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-f2-dams_jak_crawford/idf/jak_crawford_helmet_attachments",
+    "material_override": "cs19-f2-dams_jak_crawford",
+    "id": "997",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-dams_juan-manuel_correa]",
+   "set": {
+    "_metadata_": "cs19-f2-dams_juan-manuel_correa",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs19-f2-dams_juan-manuel_correa/juan-manuel_correa_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs19-f2-dams_juan-manuel_correa/idf/juan-manuel_correa_helmet_attachments",
+    "material_override": "cs19-f2-dams_juan-manuel_correa",
+    "id": "998",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-mercedes_lewis_hamilton]",
+   "set": {
+    "_metadata_": "cs20-mercedes_lewis_hamilton",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-mercedes_lewis_hamilton/idf/lewis_hamilton_helmet_attachments",
+    "material_override": "cs20-mercedes_lewis_hamilton",
+    "id": "999",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-sauber_valtteri_bottas]",
+   "set": {
+    "_metadata_": "cs20-sauber_valtteri_bottas",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-sauber_valtteri_bottas/idf/valtteri_bottas_helmet_attachments",
+    "material_override": "cs20-sauber_valtteri_bottas",
+    "id": "1000",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbull_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs20-redbull_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-redbull_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs20-redbull_yuki_tsunoda",
+    "id": "1001",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-williams_alex_albon]",
+   "set": {
+    "_metadata_": "cs20-williams_alex_albon",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-williams_alex_albon/alex_albon_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-williams_alex_albon/idf/alex_albon_helmet_attachments",
+    "material_override": "cs20-williams_alex_albon",
+    "id": "1002",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-renault_jack_doohan]",
+   "set": {
+    "_metadata_": "cs20-renault_jack_doohan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-renault_jack_doohan/idf/jack_doohan_helmet_attachments",
+    "material_override": "cs20-renault_jack_doohan",
+    "id": "1003",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-mclaren_lando_norris]",
+   "set": {
+    "_metadata_": "cs20-mclaren_lando_norris",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-mclaren_lando_norris/lando_norris_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-mclaren_lando_norris/idf/lando_norris_helmet_attachments",
+    "material_override": "cs20-mclaren_lando_norris",
+    "id": "1004",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-redbull_sergio_perez]",
+   "set": {
+    "_metadata_": "cs20-redbull_sergio_perez",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-redbull_sergio_perez/idf/sergio_perez_helmet_attachments",
+    "material_override": "cs20-redbull_sergio_perez",
+    "id": "1005",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-forceindia_lance_stroll]",
+   "set": {
+    "_metadata_": "cs20-forceindia_lance_stroll",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-forceindia_lance_stroll/idf/lance_stroll_helmet_attachments",
+    "material_override": "cs20-forceindia_lance_stroll",
+    "id": "1006",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbulljapan_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs20-redbulljapan_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-redbulljapan_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs20-redbulljapan_yuki_tsunoda",
+    "id": "1007",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-renault_esteban_ocon]",
+   "set": {
+    "_metadata_": "cs20-renault_esteban_ocon",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-renault_esteban_ocon/esteban_ocon_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-renault_esteban_ocon/idf/esteban_ocon_helmet_attachments",
+    "material_override": "cs20-renault_esteban_ocon",
+    "id": "1008",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_zak_osullivan]",
+   "set": {
+    "_metadata_": "cs20-f2-artgp_zak_osullivan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-f2-artgp_zak_osullivan/idf/zak_osullivan_helmet_attachments",
+    "material_override": "cs20-f2-artgp_zak_osullivan",
+    "id": "1009",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-ferrari_charles_leclerc]",
+   "set": {
+    "_metadata_": "cs20-ferrari_charles_leclerc",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-ferrari_charles_leclerc/idf/charles_leclerc_helmet_attachments",
+    "material_override": "cs20-ferrari_charles_leclerc",
+    "id": "1010",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-tororosso_liam_lawson]",
+   "set": {
+    "_metadata_": "cs20-tororosso_liam_lawson",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-tororosso_liam_lawson/liam_lawson_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-tororosso_liam_lawson/idf/liam_lawson_helmet_attachments",
+    "material_override": "cs20-tororosso_liam_lawson",
+    "id": "1011",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-tororosso_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs20-tororosso_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-tororosso_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs20-tororosso_yuki_tsunoda",
+    "id": "1012",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_victor_martins]",
+   "set": {
+    "_metadata_": "cs20-f2-artgp_victor_martins",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-f2-artgp_victor_martins/victor_martins_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-f2-artgp_victor_martins/idf/victor_martins_helmet_attachments",
+    "material_override": "cs20-f2-artgp_victor_martins",
+    "id": "1013",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-camposracing_pepe_marti]",
+   "set": {
+    "_metadata_": "cs20-f2-camposracing_pepe_marti",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-f2-camposracing_pepe_marti/idf/pepe_marti_helmet_attachments",
+    "material_override": "cs20-f2-camposracing_pepe_marti",
+    "id": "1014",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-haas_esteban_ocon]",
+   "set": {
+    "_metadata_": "cs20-haas_esteban_ocon",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-haas_esteban_ocon/esteban_ocon_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-haas_esteban_ocon/idf/esteban_ocon_helmet_attachments",
+    "material_override": "cs20-haas_esteban_ocon",
+    "id": "1015",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-haas_oliver_bearman]",
+   "set": {
+    "_metadata_": "cs20-haas_oliver_bearman",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-haas_oliver_bearman/oliver_bearman_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-haas_oliver_bearman/idf/oliver_bearman_helmet_attachments",
+    "material_override": "cs20-haas_oliver_bearman",
+    "id": "1016",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-mercedes_george_russell]",
+   "set": {
+    "_metadata_": "cs20-mercedes_george_russell",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-mercedes_george_russell/george_russell_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-mercedes_george_russell/idf/george_russell_helmet_attachments",
+    "material_override": "cs20-mercedes_george_russell",
+    "id": "1017",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-williams_logan_sargeant]",
+   "set": {
+    "_metadata_": "cs20-williams_logan_sargeant",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs20-williams_logan_sargeant/logan_sargeant_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs20-williams_logan_sargeant/idf/logan_sargeant_helmet_attachments",
+    "material_override": "cs20-williams_logan_sargeant",
+    "id": "1018",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-mercedes_lewis_hamilton]",
+   "set": {
+    "_metadata_": "cs21-mercedes_lewis_hamilton",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-mercedes_lewis_hamilton/lewis_hamilton_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-mercedes_lewis_hamilton/idf/lewis_hamilton_helmet_attachments",
+    "material_override": "cs21-mercedes_lewis_hamilton",
+    "id": "1019",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-sauber_valtteri_bottas]",
+   "set": {
+    "_metadata_": "cs21-sauber_valtteri_bottas",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-sauber_valtteri_bottas/valtteri_bottas_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-sauber_valtteri_bottas/idf/valtteri_bottas_helmet_attachments",
+    "material_override": "cs21-sauber_valtteri_bottas",
+    "id": "1020",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbull_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs21-redbull_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-redbull_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-redbull_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs21-redbull_yuki_tsunoda",
+    "id": "1021",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-redbull_sergio_perez]",
+   "set": {
+    "_metadata_": "cs21-redbull_sergio_perez",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-redbull_sergio_perez/sergio_perez_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-redbull_sergio_perez/idf/sergio_perez_helmet_attachments",
+    "material_override": "cs21-redbull_sergio_perez",
+    "id": "1022",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-ferrari_charles_leclerc]",
+   "set": {
+    "_metadata_": "cs21-ferrari_charles_leclerc",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-ferrari_charles_leclerc/charles_leclerc_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-ferrari_charles_leclerc/idf/charles_leclerc_helmet_attachments",
+    "material_override": "cs21-ferrari_charles_leclerc",
+    "id": "1023",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-renault_jack_doohan]",
+   "set": {
+    "_metadata_": "cs21-renault_jack_doohan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-renault_jack_doohan/jack_doohan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-renault_jack_doohan/idf/jack_doohan_helmet_attachments",
+    "material_override": "cs21-renault_jack_doohan",
+    "id": "1024",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-mclaren_lando_norris]",
+   "set": {
+    "_metadata_": "cs21-mclaren_lando_norris",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-mclaren_lando_norris/lando_norris_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-mclaren_lando_norris/idf/lando_norris_helmet_attachments",
+    "material_override": "cs21-mclaren_lando_norris",
+    "id": "1025",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbulljapan_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs21-redbulljapan_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-redbulljapan_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs21-redbulljapan_yuki_tsunoda",
+    "id": "1026",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-renault_pierre_gasly]",
+   "set": {
+    "_metadata_": "cs21-renault_pierre_gasly",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-renault_pierre_gasly/pierre_gasly_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-renault_pierre_gasly/idf/pierre_gasly_helmet_attachments",
+    "material_override": "cs21-renault_pierre_gasly",
+    "id": "1027",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-renault_esteban_ocon]",
+   "set": {
+    "_metadata_": "cs21-renault_esteban_ocon",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-renault_esteban_ocon/esteban_ocon_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-renault_esteban_ocon/idf/esteban_ocon_helmet_attachments",
+    "material_override": "cs21-renault_esteban_ocon",
+    "id": "1028",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-tororosso_liam_lawson]",
+   "set": {
+    "_metadata_": "cs21-tororosso_liam_lawson",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-tororosso_liam_lawson/liam_lawson_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-tororosso_liam_lawson/idf/liam_lawson_helmet_attachments",
+    "material_override": "cs21-tororosso_liam_lawson",
+    "id": "1029",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-tororosso_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs21-tororosso_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-tororosso_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-tororosso_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs21-tororosso_yuki_tsunoda",
+    "id": "1030",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_zak_osullivan]",
+   "set": {
+    "_metadata_": "cs21-f2-artgp_zak_osullivan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-f2-artgp_zak_osullivan/idf/zak_osullivan_helmet_attachments",
+    "material_override": "cs21-f2-artgp_zak_osullivan",
+    "id": "1031",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-forceindia_lance_stroll]",
+   "set": {
+    "_metadata_": "cs21-forceindia_lance_stroll",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-forceindia_lance_stroll/lance_stroll_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-forceindia_lance_stroll/idf/lance_stroll_helmet_attachments",
+    "material_override": "cs21-forceindia_lance_stroll",
+    "id": "1032",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-mercedes_george_russell]",
+   "set": {
+    "_metadata_": "cs21-mercedes_george_russell",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-mercedes_george_russell/george_russell_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-mercedes_george_russell/idf/george_russell_helmet_attachments",
+    "material_override": "cs21-mercedes_george_russell",
+    "id": "1033",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-williams_logan_sargeant]",
+   "set": {
+    "_metadata_": "cs21-williams_logan_sargeant",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-williams_logan_sargeant/logan_sargeant_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-williams_logan_sargeant/idf/logan_sargeant_helmet_attachments",
+    "material_override": "cs21-williams_logan_sargeant",
+    "id": "1034",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_victor_martins]",
+   "set": {
+    "_metadata_": "cs21-f2-artgp_victor_martins",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-f2-artgp_victor_martins/victor_martins_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-f2-artgp_victor_martins/idf/victor_martins_helmet_attachments",
+    "material_override": "cs21-f2-artgp_victor_martins",
+    "id": "1035",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-camposracing_pepe_marti]",
+   "set": {
+    "_metadata_": "cs21-f2-camposracing_pepe_marti",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-f2-camposracing_pepe_marti/pepe_marti_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-f2-camposracing_pepe_marti/idf/pepe_marti_helmet_attachments",
+    "material_override": "cs21-f2-camposracing_pepe_marti",
+    "id": "1036",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-haas_nico_hulkenberg]",
+   "set": {
+    "_metadata_": "cs21-haas_nico_hulkenberg",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-haas_nico_hulkenberg/nico_hulkenberg_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-haas_nico_hulkenberg/idf/nico_hulkenberg_helmet_attachments",
+    "material_override": "cs21-haas_nico_hulkenberg",
+    "id": "1037",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-dams_jak_crawford]",
+   "set": {
+    "_metadata_": "cs21-f2-dams_jak_crawford",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs21-f2-dams_jak_crawford/jak_crawford_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs21-f2-dams_jak_crawford/idf/jak_crawford_helmet_attachments",
+    "material_override": "cs21-f2-dams_jak_crawford",
+    "id": "1038",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2025-redbulljapan_yuki_tsunoda]",
+   "set": {
+    "_metadata_": "cs22-redbulljapan_yuki_tsunoda",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs22-redbulljapan_yuki_tsunoda/yuki_tsunoda_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs22-redbulljapan_yuki_tsunoda/idf/yuki_tsunoda_helmet_attachments",
+    "material_override": "cs22-redbulljapan_yuki_tsunoda",
+    "id": "1039",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
+    "colour_4_default": "0"
+   }
+  },
+  {
+   "op": "add-row",
+   "table": "customisation.custom_avatar.helmets",
+   "from": "customisation.custom_avatar.helmets.Helmet[_metadata_=2024-f2-artgp_zak_osullivan]",
+   "set": {
+    "_metadata_": "cs22-f2-artgp_zak_osullivan",
+    "asset_group": "asset_groups/[CHARACTER_PACKAGE]/drivers/male/cs22-f2-artgp_zak_osullivan/zak_osullivan_helmet.assetgroup",
+    "attachments_model": "eaid://[CHARACTER_PACKAGE]/drivers/male/cs22-f2-artgp_zak_osullivan/idf/zak_osullivan_helmet_attachments",
+    "material_override": "cs22-f2-artgp_zak_osullivan",
+    "id": "1040",
+    "colour_1_default": "-27130",
+    "colour_2_default": "-15345665",
+    "colour_3_default": "-4129275",
     "colour_4_default": "0"
    }
   }

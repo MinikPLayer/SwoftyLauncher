@@ -140,6 +140,7 @@ pub(crate) struct Db {
     pub rows_motion: crate::scroll::SmoothScroll,
     pub list_scroll: UniformListScrollHandle,
     pub list_motion: crate::scroll::SmoothScroll,
+    pub grid_scroll: ScrollHandle,
     pending_tab: Option<(String, String, String)>,
     pending_link: Option<LinkSpec>,
     pub importing: bool,
@@ -206,6 +207,7 @@ impl Db {
             rows_motion: Default::default(),
             list_scroll: UniformListScrollHandle::new(),
             list_motion: Default::default(),
+            grid_scroll: ScrollHandle::new(),
             pending_tab: None,
             pending_link: None,
             importing: false,
@@ -1170,13 +1172,21 @@ impl Shell {
                     let choices = choices.unwrap_or_else(|| {
                         let tracks = swofty_core::tracks::installed(&store);
                         let drivers = driver_manager::drivers(&store, &catalog);
+                        let heads = swofty_core::heads::installed(&store);
                         let refs = module
                             .fields
                             .iter()
                             .enumerate()
                             .filter(|(_, f)| matches!(f.kind, Some(Kind::Ref | Kind::RefList)))
                             .map(|(i, _)| {
-                                let c = module.choices_with(&catalog, i, scope.as_deref(), &tracks, &drivers);
+                                let c = module.choices_with(
+                                    &catalog,
+                                    i,
+                                    scope.as_deref(),
+                                    &tracks,
+                                    &drivers,
+                                    &heads,
+                                );
                                 (i, c)
                             })
                             .collect();
@@ -1476,6 +1486,7 @@ impl Shell {
         match guarded(|| edits.copy_row(&catalog, &table, &field, from.as_deref(), &to)) {
             Ok(()) => self.db_changed(None, true, cx),
             Err(e) => {
+                crate::app_log::action("db editor: copy a row").failed(&e);
                 self.db.toasts.push(Notification::error(e));
                 cx.notify();
             }
@@ -1617,6 +1628,7 @@ impl Shell {
                 self.db_changed(None, true, cx);
             }
             Err(e) => {
+                crate::app_log::action("db editor: change rows").failed(&e);
                 self.db.toasts.push(Notification::error(e));
                 cx.notify();
             }
@@ -1758,10 +1770,15 @@ impl Shell {
                 };
                 self.db_leave(then, window, cx);
             }
-            Err(e) => window.push_notification(
-                Notification::error(e).title(format!("Could not import {file}")),
-                cx,
-            ),
+            Err(e) => {
+                crate::app_log::action("db editor: import")
+                    .file(std::path::Path::new(&file))
+                    .failed(&e);
+                window.push_notification(
+                    Notification::error(e).title(format!("Could not import {file}")),
+                    cx,
+                )
+            }
         }
     }
 

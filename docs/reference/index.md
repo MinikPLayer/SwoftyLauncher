@@ -50,5 +50,6 @@ The Python tools are in the repository's `tools/` folder. Releases don't ship th
 - [Addon manifest](/reference/addons/manifest): every `swofty.json` field.
 - [Database operations](/reference/ops/database), [ERP operations](/reference/ops/erp), [File operations](/reference/ops/files), [UI patches](/reference/ops/ui-patches) and [Asset op files](/reference/addons/asset-api): every operation.
 - [Game database](/reference/gamedb), [ERP archives](/reference/erp) and [`!pkg` resources](/reference/pkg): the game's file formats.
+- [Assets from older F1 games](/reference/old-games): where F1 2016 to F1 24 keep helmets, faces, suits, engine sounds and cars, and how they're ported to F1 25.
 - [Engine API](/reference/game/): the engine functions and structs an engine plugin can call and hook.
 - [Development](/reference/development): build the launcher from source.

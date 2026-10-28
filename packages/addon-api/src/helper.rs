@@ -18,6 +18,8 @@ pub const ADDON_CALLS: [&str; 4] = ["addons", "install_addon", "set_addon_enable
 pub const MOVE_ADDON: &str = "move_addon";
 // Listed from launcher 1.3.0; a helper sends tasks only when hello lists it.
 pub const TASKS: &str = "tasks";
+// Listed from launcher 1.5.12 when the host knows the game.
+pub const PROFILE_HEADS: &str = "profile_heads";
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Request<C> {
@@ -86,6 +88,7 @@ pub enum HostCall {
     GameStatus,
     SteamSaveDir,
     ProfileTracks,
+    ProfileHeads,
     Addons,
     InstallAddon { path: PathBuf },
     SetAddonEnabled { id: String, on: bool },
@@ -393,6 +396,7 @@ mod tests {
             ("game_status", HostCall::GameStatus),
             ("steam_save_dir", HostCall::SteamSaveDir),
             ("profile_tracks", HostCall::ProfileTracks),
+            (PROFILE_HEADS, HostCall::ProfileHeads),
             ("addons", HostCall::Addons),
         ] {
             round(

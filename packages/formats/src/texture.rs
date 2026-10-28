@@ -123,10 +123,12 @@ impl SideFile {
                 self.path
             )));
         }
-        let mut file = std::fs::File::open(root.join(&self.path))?;
-        file.seek(SeekFrom::Start(level.offset))?;
+        let at = root.join(&self.path);
+        let mut file = std::fs::File::open(&at).map_err(crate::io_at(&at))?;
+        file.seek(SeekFrom::Start(level.offset))
+            .map_err(crate::io_at(&at))?;
         let mut packed = vec![0; level.packed as usize];
-        file.read_exact(&mut packed)?;
+        file.read_exact(&mut packed).map_err(crate::io_at(&at))?;
         let size = level.size as usize;
         match level.compression {
             0 if packed.len() == size => Ok(packed),
