@@ -49,6 +49,11 @@ pub enum Cause {
     ClosedEarly { after: f64 },
     /// Windows refused to start one of Swofty's programs.
     Blocked(Block),
+    /// The player closed the OverlayFS fallback dialog with Exit.
+    OverlayCancelled {
+        fallback: crate::overlayfs::Kind,
+        reason: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -93,6 +98,7 @@ impl Failure {
             Cause::SecondCopy { .. } => "F1 25 was opened twice",
             Cause::ClosedEarly { .. } => "F1 25 closed as it started",
             Cause::Blocked(b) => b.title(),
+            Cause::OverlayCancelled { .. } => "F1 25 was not started",
         }
     }
 
@@ -105,6 +111,9 @@ impl Failure {
             Cause::SecondCopy { .. } => "another copy of F1 25 was running, so the modded copy closed".into(),
             Cause::ClosedEarly { .. } => "F1 25 closed itself before its window opened".into(),
             Cause::Blocked(b) => b.headline(),
+            Cause::OverlayCancelled { .. } => {
+                "the launch was cancelled in the OverlayFS dialog, so F1 25 was not started".into()
+            }
         }
     }
 
@@ -132,6 +141,12 @@ impl Failure {
                  Send Logs to Developers right after it happens."
             ),
             Cause::Blocked(b) => b.text(),
+            Cause::OverlayCancelled { reason, .. } => format!(
+                "The launch was cancelled: OverlayFS could not be used ({reason}), and Exit was chosen \
+                 instead of copying the mod files into the game folder. Nothing was changed. Press Play \
+                 again and choose Continue to launch by copying files, or remove --use-overlayfs from the \
+                 Steam launch option."
+            ),
         }
     }
 }

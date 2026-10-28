@@ -11,6 +11,7 @@ use swofty_core::crash::{Event, LogScan, Symbols, fatal_name};
 use swofty_core::install::{Game, Installer, PROXY, Source};
 use swofty_core::launch;
 use swofty_core::loader_check;
+use swofty_core::offline::Artifacts;
 use swofty_core::process::{
     descends_from, game_processes, game_running_in, games_in, steamvr_running, stop_game_in, stop_process,
 };
@@ -25,6 +26,7 @@ use swofty_core::steam_client::{self, Ready, Report, State, Wait};
 use swofty_core::store::Store;
 use swofty_core::{GAME_EXE, STEAM_APP_ID, steam};
 
+use crate::overlay::{self, Choice, Overlay};
 use crate::time::{now_secs, stamp};
 
 const KB: &str = include_str!("../../../re/db/functions.tsv");
@@ -55,6 +57,11 @@ pub struct RunArgs {
         help = "Build and install the profile (database, tracks) before the game starts, and roll it back when it exits"
     )]
     apply: bool,
+    #[arg(
+        long,
+        help = "Linux: run the modded game from an OverlayFS mount instead of copying files into the game folder"
+    )]
+    use_overlayfs: bool,
     #[arg(long, help = crate::GAME_HELP)]
     game: Option<PathBuf>,
     #[arg(
@@ -148,11 +155,12 @@ pub fn run(store: &Store, profile: &str, args: RunArgs) -> Result<ExitCode> {
     if mode.is_vr() && !cfg!(windows) {
         ensure_steamvr();
     }
-    let loader = game.join(LOADER_LOG);
+    let loader = overlay::log_root(store, &game, profile).join(LOADER_LOG);
     let before = LogMark::read(&loader);
     let asked = now_secs();
     let mut wrapper = launch(store, &game, args.direct, mode).inspect_err(|e| note_blocked(store, e))?;
     let mut silence = Silence::new();
+    let mut waiting_on_dialog = false;
     let dir = loop {
         if let Some(d) = store
             .latest_session()
@@ -169,6 +177,15 @@ pub fn run(store: &Store, profile: &str, args: RunArgs) -> Result<ExitCode> {
             let err = wrapper.failure(status, "before the game started");
             settle(store, &g, &mut wrapper, None, false);
             return Err(err);
+        }
+        if swofty_core::overlayfs::dialog_pending(&store.root) {
+            if !waiting_on_dialog {
+                waiting_on_dialog = true;
+                say("info", "waiting for your answer in the OverlayFS dialog");
+            }
+            silence = Silence::new();
+        } else {
+            waiting_on_dialog = false;
         }
         if silence.of(&wrapper.log) > wrapper.timeout {
             match &wrapper.child {
@@ -369,9 +386,6 @@ fn wrapper(store: &Store, profile: &str, args: &RunArgs, g: &Game) -> Result<Exi
     if let Some(reason) = swofty_core::compat::elevation_blocker(&g.dir) {
         bail!("{reason}");
     }
-    if swofty_core::compat::write_blocker(&g.dir).is_some() {
-        bail!("{}", swofty_core::compat::write_blocked_text(&g.dir));
-    }
     end_on_signals();
     let config: Config = std::fs::read(store.config_path())
         .ok()
@@ -389,17 +403,15 @@ fn wrapper(store: &Store, profile: &str, args: &RunArgs, g: &Game) -> Result<Exi
     let apply = request.apply || args.apply;
     quarantine::Report::clear(&store.root).ok();
     launch::Failure::clear(&store.root).ok();
-    let session = Session {
+    let mut session = Session {
         store,
         game: g,
         request_id: request.id.clone(),
         _lock: lock,
+        copy: false,
+        overlay: None,
     };
-    if apply {
-        say("info", &format!("installing profile {profile}"));
-        crate::build::install(store, &profile, g, true, &info)?;
-    }
-    let installed = apply.then(Instant::now);
+    swofty_core::overlayfs::LiveSession::clear(&store.root);
     become_subreaper();
     let artifacts = crate::offline::ensure_extension(store)?;
     if let Some(note) = crate::offline::loader_note(&artifacts) {
@@ -414,16 +426,97 @@ fn wrapper(store: &Store, profile: &str, args: &RunArgs, g: &Game) -> Result<Exi
         );
     }
     say("info", &format!("game build supported: {}", probe.report));
+    let mut overlay = None;
+    if args.use_overlayfs {
+        let proton = proton_path(&args.steam_command);
+        match overlay::choose(store, &profile, g, &artifacts, proton.as_deref(), apply)? {
+            Choice::Overlay(o) => overlay = Some(*o),
+            Choice::Copy => {}
+            Choice::Cancelled => return finish(session, Ok(ExitCode::from(overlay::CANCELLED_EXIT))),
+        }
+    }
+    let mut installed = None;
+    if overlay.is_none() {
+        installed = start_copy(&mut session, &profile, apply, &artifacts)?;
+    }
+    session.overlay.clone_from(&overlay);
+    let mut result = run_loop(
+        store,
+        args,
+        &config,
+        &request,
+        &profile,
+        g,
+        match overlay.as_mut() {
+            Some(o) => Mode::Overlay(o),
+            None => Mode::Copy { installed },
+        },
+    );
+    // The mount can still fail when the game is started: fall back before it runs.
+    let failed = match (&result, &overlay) {
+        (Err(e), Some(_)) => e.downcast_ref::<overlay::MountFailed>().map(|m| m.0.clone()),
+        _ => None,
+    };
+    if let Some(reason) = failed {
+        session.overlay = None;
+        match overlay::fall_back(store, swofty_core::overlayfs::Kind::MountFailed, &reason) {
+            Choice::Cancelled => result = Ok(ExitCode::from(overlay::CANCELLED_EXIT)),
+            _ => {
+                let installed = start_copy(&mut session, &profile, apply, &artifacts)?;
+                result = run_loop(
+                    store,
+                    args,
+                    &config,
+                    &request,
+                    &profile,
+                    g,
+                    Mode::Copy { installed },
+                );
+            }
+        }
+    }
+    finish(session, result)
+}
+
+/// Copy mode: install the profile into the game folder and stage offline play
+/// there, as before OverlayFS. Returns when the install finished.
+fn start_copy(
+    session: &mut Session,
+    profile: &str,
+    apply: bool,
+    artifacts: &Artifacts,
+) -> Result<Option<Instant>> {
+    let (store, g) = (session.store, session.game);
+    if swofty_core::compat::write_blocker(&g.dir).is_some() {
+        bail!("{}", swofty_core::compat::write_blocked_text(&g.dir));
+    }
+    swofty_core::overlayfs::forget_last(&store.root);
+    session.copy = true;
+    if apply {
+        say("info", &format!("installing profile {profile}"));
+        crate::build::install(store, profile, g, true, &info)?;
+    }
+    let installed = apply.then(Instant::now);
     let journal = swofty_core::offline::journal_path(&store.root);
-    for note in swofty_core::offline::stage(&game, &artifacts, &journal)? {
+    for note in swofty_core::offline::stage(&g.dir, artifacts, &journal)? {
         say("info", &format!("offline play: {note}"));
     }
     say(
         "info",
         "staged offline play: EA AntiCheat is not started this session; multiplayer is unavailable",
     );
-    let result = run_loop(store, args, &config, &request, &profile, g, installed);
-    finish(session, result)
+    Ok(installed)
+}
+
+/// The Proton the Steam command runs the game with.
+fn proton_path(steam_command: &[String]) -> Option<PathBuf> {
+    parse_steam_command(steam_command)
+        .proton
+        .map(PathBuf::from)
+        .or_else(|| {
+            let tools = std::env::var("STEAM_COMPAT_TOOL_PATHS").ok()?;
+            Some(PathBuf::from(tools.split(':').next()?).join("proton"))
+        })
 }
 
 /// A launch the loader check refused before the game started.
@@ -471,16 +564,42 @@ fn refused(store: &Store, since: f64) -> Option<quarantine::Report> {
 
 /// A wrapper session: it holds the session lock, and however it ends (the
 /// game exits or crashes, an error, a panic, a stop signal) dropping it puts
-/// the offline play staging and the profile's game files back.
+/// the offline play staging and the profile's game files back, or in an
+/// OverlayFS session, collects the game's logs.
 struct Session<'a> {
     store: &'a Store,
     game: &'a Game,
     request_id: String,
     _lock: SessionLock,
+    /// Files were (or are about to be) copied into the game folder.
+    copy: bool,
+    overlay: Option<Overlay>,
 }
 
 impl Drop for Session<'_> {
     fn drop(&mut self) {
+        let logs = self
+            .store
+            .latest_session()
+            .filter(|d| {
+                std::fs::read_to_string(d.join("request_id")).is_ok_and(|s| s.trim() == self.request_id)
+            })
+            .map(|d| d.join("game-logs"))
+            .unwrap_or_else(|| self.store.sessions_dir().join("orphaned-logs"));
+        if let Some(o) = &self.overlay {
+            swofty_core::overlayfs::LiveSession::clear(&self.store.root);
+            match swofty_core::overlayfs::collect_logs(&o.upper, &self.store.logs_dir(), Some(&logs)) {
+                Ok(0) => {}
+                Ok(n) => info(&format!(
+                    "copied {n} game log file(s) to {}",
+                    self.store.logs_dir().display()
+                )),
+                Err(e) => info(&format!("could not collect the game's logs: {e:#}")),
+            }
+        }
+        if !self.copy {
+            return;
+        }
         match swofty_core::offline::restore_pending(&self.store.root) {
             Ok(true) => info("offline play: the game folder is back to vanilla"),
             Ok(false) => {}
@@ -504,14 +623,6 @@ impl Drop for Session<'_> {
                 still_running(&self.game.dir)
             )),
         }
-        let logs = self
-            .store
-            .latest_session()
-            .filter(|d| {
-                std::fs::read_to_string(d.join("request_id")).is_ok_and(|s| s.trim() == self.request_id)
-            })
-            .map(|d| d.join("game-logs"))
-            .unwrap_or_else(|| self.store.sessions_dir().join("orphaned-logs"));
         match inst.tidy(&logs) {
             Ok(0) => {}
             Ok(n) => info(&format!(
@@ -523,6 +634,14 @@ impl Drop for Session<'_> {
     }
 }
 
+/// How a session gets the profile's files to the game.
+enum Mode<'a> {
+    /// Copied into the game folder; the install finished at `installed`.
+    Copy { installed: Option<Instant> },
+    /// Mounted over it.
+    Overlay(&'a mut Overlay),
+}
+
 fn run_loop(
     store: &Store,
     args: &RunArgs,
@@ -530,8 +649,12 @@ fn run_loop(
     request: &LaunchRequest,
     profile: &str,
     g: &Game,
-    mut installed: Option<Instant>,
+    mode: Mode,
 ) -> Result<ExitCode> {
+    let (mut installed, mut overlay) = match mode {
+        Mode::Copy { installed } => (installed, None),
+        Mode::Overlay(o) => (None, Some(o)),
+    };
     let profile = profile.to_owned();
     let game = g.dir.clone();
     let mut restarted = false;
@@ -539,8 +662,28 @@ fn run_loop(
         if ending() {
             return Ok(ExitCode::FAILURE);
         }
-        rebuild_if_needed(store, &profile, &game);
-        let code = play(store, args, config, request, g, installed, restarted)?;
+        match overlay.as_deref_mut() {
+            // The first start has just built the layers; a restart builds the
+            // profile again, since the changes made in game are merged into it.
+            Some(o) if restarted => {
+                say("info", &format!("rebuilding the overlay of {profile}"));
+                o.rebuild(store, g)?;
+            }
+            Some(_) => {}
+            None => rebuild_if_needed(store, &profile, &game),
+        }
+        let code = play(
+            store,
+            args,
+            config,
+            request,
+            g,
+            Play {
+                installed,
+                restarted,
+                overlay: overlay.as_deref(),
+            },
+        )?;
         let relaunch = match store.merge_requests(&profile, true) {
             Ok(Some(m)) => {
                 for c in &m.changed {
@@ -562,7 +705,7 @@ fn run_loop(
         }
         say("info", "Apply & restart: starting F1 25 again");
         restarted = true;
-        if installed.is_some() {
+        if overlay.is_none() && installed.is_some() {
             say("info", &format!("reinstalling profile {profile}"));
             crate::build::install(store, &profile, g, true, &info)?;
             installed = Some(Instant::now());
@@ -587,17 +730,33 @@ fn rebuild_if_needed(store: &Store, profile: &str, game: &Path) {
     }
 }
 
+/// What a start of the game needs besides the session's settings.
+struct Play<'a> {
+    installed: Option<Instant>,
+    restarted: bool,
+    overlay: Option<&'a Overlay>,
+}
+
 fn play(
     store: &Store,
     args: &RunArgs,
     config: &Config,
     request: &LaunchRequest,
     g: &Game,
-    installed: Option<Instant>,
-    restarted: bool,
+    Play {
+        installed,
+        restarted,
+        overlay,
+    }: Play,
 ) -> Result<i32> {
     let game = g.dir.as_path();
-    let placed_loader = check_loader(store, game, installed).map_err(Refused)?;
+    // Where the game's own files (its logs) are on the host: the game folder,
+    // or in an OverlayFS session the upper dir its writes land in.
+    let root = overlay.map_or(game, |o| o.upper.as_path());
+    let placed_loader = match overlay {
+        Some(o) => o.prepared.layers.has_loader(),
+        None => check_loader(store, game, installed).map_err(Refused)?,
+    };
     // The profile build and the offline play download before the first
     // start can take minutes, time enough for F1 25 to be started from
     // Steam. On Apply & restart the previous copy is still on its way out.
@@ -606,7 +765,7 @@ fn play(
     }
     let dir = store.sessions_dir().join(stamp());
     std::fs::create_dir_all(&dir)?;
-    let loader = game.join(LOADER_LOG);
+    let loader = root.join(LOADER_LOG);
     let before = LogMark::read(&loader);
     std::fs::write(dir.join(LOADER_MARK), serde_json::to_vec(&before)?)?;
     let fallback = store.root.join(LOADER_FALLBACK);
@@ -626,10 +785,7 @@ fn play(
         LaunchMode::of(cmd.game_args())
     };
     let extra = game_args(cmd.game_args(), mode);
-    let proton = cmd.proton.map(PathBuf::from).or_else(|| {
-        let tools = std::env::var("STEAM_COMPAT_TOOL_PATHS").ok()?;
-        Some(PathBuf::from(tools.split(':').next()?).join("proton"))
-    });
+    let proton = proton_path(&args.steam_command);
     let winedebug = request
         .winedebug
         .clone()
@@ -639,29 +795,9 @@ fn play(
     // "F1 25" cannot be passed directly. A space-free symlink to the folder
     // gives an absolute target that survives untouched; the game and the
     // loader see the same files through it.
-    let game_link = {
-        let link = store.root.join("state/game-link");
-        #[cfg(unix)]
-        {
-            match std::fs::symlink_metadata(&link) {
-                Ok(m) if m.file_type().is_symlink() => {
-                    if std::fs::read_link(&link).ok().as_deref() != Some(game) {
-                        std::fs::remove_file(&link).and_then(|_| std::os::unix::fs::symlink(game, &link))?;
-                    }
-                }
-                Ok(_) => bail!(
-                    "{} exists and is not the game link; remove it and try again",
-                    link.display()
-                ),
-                Err(_) => {
-                    std::fs::create_dir_all(store.root.join("state"))?;
-                    std::os::unix::fs::symlink(game, &link)?;
-                }
-            }
-        }
-        #[cfg(not(unix))]
-        let _ = &link;
-        link
+    let game_link = match overlay {
+        Some(o) => link_to(&store.root.join("state/game-link-overlay"), &o.target)?,
+        None => link_to(&store.root.join("state/game-link"), game)?,
     };
     // The game gets a curated environment: Proton's steam helper packs it
     // into a Windows environment block (32767 characters), and a build
@@ -752,6 +888,20 @@ fn play(
     let listed: String = game_env.iter().map(|(k, v)| format!("{k}={v}\n")).collect();
     std::fs::write(dir.join("env.txt"), listed)?;
     let spawn = |exe: &str, log: &str| -> Result<std::process::Child> {
+        if let Some(o) = overlay {
+            let proton = proton
+                .as_ref()
+                .context("OverlayFS needs Proton to start the game")?;
+            let mut run: Vec<OsString> = vec![proton.into(), "run".into(), game_link.join(exe).into()];
+            run.extend(extra.iter().map(OsString::from));
+            let mut child = o.spawn(&run, &game_env, &dir.join(log))?;
+            if let Err(e) = o.record(store, child.id()) {
+                child.kill().ok();
+                child.wait().ok();
+                return Err(e);
+            }
+            return Ok(child);
+        }
         let out = std::fs::File::create(dir.join(log))?;
         let mut c = match &proton {
             Some(p) => {
@@ -778,6 +928,12 @@ fn play(
     // window exists, so the in-process hook is too late to act on it.
     let target = if args.via_ea {
         GAME_EXE
+    } else if overlay.is_some() {
+        say(
+            "info",
+            "offline play: launching via the session launcher (OverlayFS)",
+        );
+        "EAAntiCheat.GameServiceLauncher.exe"
     } else if game.join("EAAntiCheat.GameServiceLauncher.exe.bak").is_file() {
         say("info", "offline play: launching via the session launcher");
         "EAAntiCheat.GameServiceLauncher.exe"
@@ -796,6 +952,16 @@ fn play(
         .into_iter()
         .find_map(|(rel, sha)| rel.eq_ignore_ascii_case(PROXY).then_some(sha));
     let missed = || {
+        if let Some(o) = overlay {
+            say(
+                "loader",
+                &format!(
+                    "version.dll did not attach to F1 25; the OverlayFS session's loader log is {}",
+                    o.upper.join(LOADER_LOG).display()
+                ),
+            );
+            return;
+        }
         let found = loader_check::collect(game, placed.as_deref(), launched, g.user_reg.as_deref());
         say(
             "loader",
@@ -845,7 +1011,8 @@ fn play(
         verdict(w.ended(Instant::now()));
     }
     wait_relaunched(game, &copies_before, code, launched.elapsed().unwrap_or_default());
-    keep_game_logs(game, &fallback, &dir, before.as_ref(), launched);
+    keep_game_logs(root, &fallback, &dir, before.as_ref(), launched);
+    swofty_core::overlayfs::LiveSession::clear(&store.root);
     let loader = std::fs::read(dir.join("loader.log"))
         .ok()
         .map(|b| launch::LoaderSeen::scan(&String::from_utf8_lossy(&b)));
@@ -876,6 +1043,33 @@ fn play(
     }
     note_failed_launch(store, loader, code, launched.elapsed().unwrap_or_default());
     Ok(code)
+}
+
+/// A space-free symlink at `link` to `dest`, made or repointed as needed.
+fn link_to(link: &Path, dest: &Path) -> Result<PathBuf> {
+    #[cfg(unix)]
+    {
+        match std::fs::symlink_metadata(link) {
+            Ok(m) if m.file_type().is_symlink() => {
+                if std::fs::read_link(link).ok().as_deref() != Some(dest) {
+                    std::fs::remove_file(link).and_then(|_| std::os::unix::fs::symlink(dest, link))?;
+                }
+            }
+            Ok(_) => bail!(
+                "{} exists and is not the game link; remove it and try again",
+                link.display()
+            ),
+            Err(_) => {
+                if let Some(parent) = link.parent() {
+                    std::fs::create_dir_all(parent)?;
+                }
+                std::os::unix::fs::symlink(dest, link)?;
+            }
+        }
+    }
+    #[cfg(not(unix))]
+    let _ = dest;
+    Ok(link.to_owned())
 }
 
 const EA_UNREAD: &str =
@@ -2349,6 +2543,8 @@ mod tests {
             game: &m.game,
             request_id: "refused".into(),
             _lock: SessionLock::try_acquire(&m.store.root).unwrap().unwrap(),
+            copy: true,
+            overlay: None,
         };
         let args = Cli::parse_from(["swofty"]).run;
         let request = LaunchRequest::default();
@@ -2359,7 +2555,7 @@ mod tests {
             &request,
             "MODDED",
             &m.game,
-            written,
+            Mode::Copy { installed: written },
         );
         assert_eq!(
             finish(session, result).unwrap(),

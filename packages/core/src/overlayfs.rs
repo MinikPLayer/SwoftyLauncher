@@ -1068,7 +1068,7 @@ mod tests {
             let root = temp("unlock");
             let work = root.join("workdir/work");
             std::fs::create_dir_all(&work).unwrap();
-            std::fs::set_permissions(&work, std::fs::Permissions::from_mode(0)).unwrap();
+            std::fs::set_permissions(&work, std::fs::Permissions::from_mode(0o0)).unwrap();
             unlock(&root);
             std::fs::remove_dir_all(&root).unwrap();
         }

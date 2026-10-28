@@ -53,7 +53,7 @@ pub fn build(store: &Store, profile: &str, game: Option<PathBuf>, side_data: boo
     Ok(ExitCode::SUCCESS)
 }
 
-fn build_profile(store: &Store, profile: &str, g: &Game) -> Result<swofty_core::build::Built> {
+pub(crate) fn build_profile(store: &Store, profile: &str, g: &Game) -> Result<swofty_core::build::Built> {
     let addons = store.addons()?;
     let mut p = store.profile(profile)?;
     let mut built = swofty_core::build::build(store, profile, g)?;
@@ -66,7 +66,12 @@ fn build_profile(store: &Store, profile: &str, g: &Game) -> Result<swofty_core::
         Some(s) => s,
         None => store.session_settings(profile)?,
     };
-    std::fs::write(&settings, serde_json::to_vec_pretty(&session)?)?;
+    // Left alone when it's unchanged, so its time doesn't make an OverlayFS
+    // layer built from it look stale.
+    let text = serde_json::to_vec_pretty(&session)?;
+    if std::fs::read(&settings).ok().as_deref() != Some(text.as_slice()) {
+        std::fs::write(&settings, text)?;
+    }
     if !built.plan.loader.is_empty() {
         built.plan.loader.insert(SETTINGS_FILE.into(), settings);
     }
@@ -78,7 +83,7 @@ fn build_profile(store: &Store, profile: &str, g: &Game) -> Result<swofty_core::
     Ok(built)
 }
 
-fn report(profile: &str, built: &swofty_core::build::Built) {
+pub(crate) fn report(profile: &str, built: &swofty_core::build::Built) {
     if built.plan.is_vanilla() {
         println!("{profile} plays without addons; nothing to build");
         return;

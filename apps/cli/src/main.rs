@@ -3,6 +3,7 @@ mod db;
 mod doctor;
 mod ea;
 mod offline;
+mod overlay;
 mod overlay_exec;
 mod postfx;
 mod recover;
