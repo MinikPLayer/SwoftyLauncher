@@ -857,7 +857,10 @@ mod tests {
         assert_eq!(Fallback::read(&root), None);
         let f = Fallback::new(Kind::MountFailed, "mount: Operation not permitted");
         f.write(&root).unwrap();
-        assert_eq!(Fallback::read(&root), Some(f));
+        // JSON can move an f64 by one ulp, so the time is compared loosely.
+        let read = Fallback::read(&root).unwrap();
+        assert!((read.at - f.at).abs() < 1e-3);
+        assert_eq!((read.kind, read.reason), (f.kind, f.reason));
         assert_ne!(Kind::Unsupported.key(), Kind::MountFailed.key());
         for k in [Kind::Unsupported, Kind::MountFailed] {
             assert_eq!(Kind::from_arg(k.arg()), Some(k));
