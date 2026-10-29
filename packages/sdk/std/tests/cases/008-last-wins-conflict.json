@@ -1,0 +1,202 @@
+{
+  "name": "two addons set one field: the later wins and the conflict names both",
+  "rule": "load order decides between layers; within one addon its global layer comes before its profile layer; an edit that leaves a value as it was records no origin and no conflict (layers.md#precedence, layers.md#conflicts)",
+  "registries": {
+    "career.season": {
+      "applies": "read",
+      "key_fields": {
+        "/teams": [
+          "slot"
+        ],
+        "/changes": [
+          "round",
+          "slot",
+          "seat"
+        ]
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.progressive",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "career.season",
+          "key": "2017",
+          "value": {
+            "data_group": "f1_career_progressive",
+            "year": 2017,
+            "teams": [
+              {
+                "slot": 1,
+                "team": "game/mercedes",
+                "seats": [
+                  "game/lewis_hamilton",
+                  "game/valtteri_bottas"
+                ]
+              }
+            ],
+            "changes": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "tails.whatif-history",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.season",
+          "target": "swofty.progressive/2017",
+          "patch": {
+            "teams": [
+              {
+                "slot": 1,
+                "seats": [
+                  "game/fernando_alonso",
+                  "game/valtteri_bottas"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "career.season",
+          "target": "swofty.progressive/2017",
+          "patch": {
+            "teams": [
+              {
+                "slot": 1,
+                "seats": [
+                  "game/fernando_alonso",
+                  "game/jenson_button"
+                ]
+              }
+            ]
+          },
+          "scope": "profile",
+          "profile": "whatif"
+        }
+      ]
+    },
+    {
+      "id": "someone.realism",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.season",
+          "target": "swofty.progressive/2017",
+          "patch": {
+            "teams": [
+              {
+                "slot": 1,
+                "seats": [
+                  "game/fernando_alonso",
+                  "game/valtteri_bottas"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "whatif",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.season": {
+          "swofty.progressive/2017": {
+            "status": "ok",
+            "value": {
+              "data_group": "f1_career_progressive",
+              "year": 2017,
+              "teams": [
+                {
+                  "slot": 1,
+                  "team": "game/mercedes",
+                  "seats": [
+                    "game/fernando_alonso",
+                    "game/valtteri_bottas"
+                  ]
+                }
+              ],
+              "changes": []
+            },
+            "origins": {
+              "/teams/slot=1/seats": "someone.realism"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "field",
+          "registry": "career.season",
+          "id": "swofty.progressive/2017",
+          "pointer": "/teams/slot=1/seats",
+          "addons": [
+            "tails.whatif-history",
+            "someone.realism"
+          ],
+          "winner": "someone.realism"
+        }
+      ],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "real",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.season": {
+          "swofty.progressive/2017": {
+            "status": "ok",
+            "value": {
+              "data_group": "f1_career_progressive",
+              "year": 2017,
+              "teams": [
+                {
+                  "slot": 1,
+                  "team": "game/mercedes",
+                  "seats": [
+                    "game/fernando_alonso",
+                    "game/valtteri_bottas"
+                  ]
+                }
+              ],
+              "changes": []
+            },
+            "origins": {
+              "/teams/slot=1/seats": "tails.whatif-history"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

@@ -1,87 +1,95 @@
 ---
 title: Track packages
-description: Make a community track package in the EGO GameDatabases Editor format, import it on the Mods page, build it, and check it with map_check.py.
+description: A community track package in the EGO GameDatabases Editor format, its manifest.json annotated, how the Simplified Importer turns it into a track addon, and how to check the build.
 ---
 
 # Track packages
 
-A community track is a [mod](./): a package zip in the format made for the EGO GameDatabases Editor. The Simplified for Swofty addon imports that zip unchanged into its mod library. To use the track, turn it on in a profile and build: activation clones a base track's database rows, installs your track's archive and adds its menu entries.
+A **track package** is a community track in the zip format made for the EGO GameDatabases Editor. The Simplified Importer turns it into a track addon.
 
-## Import and activate
+## A track zip in full
 
-```sh
-swofty mods import testring.zip
-swofty mods enable testring
-swofty build
+```text
+testring.zip
+├── manifest.json            the track code, name and activation, at the root of the zip
+├── testring.erp             the track archive
+├── mipmaps/                 optional textures
+└── ui/
+    ├── images.json          track artwork
+    └── minimap.json         minimap placement
 ```
 
-1. `swofty mods import` stores your package under `$DATA/addon-data/teamsimplified.mods/library/<track_code>/track/`. The track code becomes its mod id.
-2. `swofty mods enable` turns it on in your profile.
-3. `swofty build` activates every enabled track before the other operations run: the addon's build hook emits a `track.add` [operation](/reference/data/operations) for each.
-
-You can also do this from the [Mods page](/using/mods#tracks).
-
-The importer recognises a track package by a `manifest.json` with a `track_code` at the root of its zip. If you give it a download zip that holds exactly one such zip, it unwraps it. The track code becomes the mod's id, or `<code>-track` when a mod in the library already has that id.
-
-## Package layout
-
-| File | Purpose |
-|---|---|
-| `manifest.json` | Track code, name and activation, at the root of the zip |
-| `<code>.erp` | The track archive |
-| `mipmaps/` | Optional textures |
-| `ui/images.json` | Track artwork |
-| `ui/minimap.json` | Minimap placement |
-
-## manifest.json
-
-```json [manifest.json]
+```jsonc [manifest.json]
 {
-  "track_code": "testring",
-  "track_name": "Test Ring",
+  "track_code": "testring",            // names the track everywhere: letters, digits, _ and -
+  "track_name": "Test Ring",           // optional display fields
   "version": "0.1.0",
   "author_name": "tester",
-  "erp": "testring.erp",
+  "erp": "testring.erp",               // the track archive, relative to the package
   "activation": {
-    "copy_from_track": "melbourne",
-    "copy_slot": "melbourne",
-    "overrides": [{ "datasets": ["f1_2025"], "path": "TyreData_0.compound_harder", "value": "C3" }],
-    "track_overrides": [{ "path": "allow_night_start", "value": "False" }]
+    "copy_from_track": "melbourne",    // the base track whose TrackData rows are cloned in every dataset
+    "copy_slot": "melbourne",          // the track whose Track row and resource row are cloned; defaults to copy_from_track
+    "overrides": [                     // set path to value on the cloned TrackData rows; datasets limits which
+      { "datasets": ["f1_2025"], "path": "TyreData_0.compound_harder", "value": "C3" }
+    ],
+    "track_overrides": [               // set path to value on the cloned Track row
+      { "path": "allow_night_start", "value": "False" }
+    ]
   },
-  "ers": { "HotLapDeployFactor": 0.7 },
-  "copy_directories": [
+  "ers": { "HotLapDeployFactor": 0.7 }, // per-track ERS values written into every 2026 car handling file
+  "copy_directories": [                // source folders in the package and their destination in the game
     { "source": "mipmaps/", "destination": "asset_groups/environment_package/tracks/testring/mipmaps/" }
   ],
   "ui": { "schema_version": 1, "images_file": "ui/images.json", "minimap_file": "ui/minimap.json" }
 }
 ```
 
-| Field | Meaning |
-|---|---|
-| `track_code` | Names your track everywhere; use letters, digits, `_` and `-` |
-| `track_name`, `version`, `author_name` | Optional display fields |
-| `erp` | Path to your track archive, relative to the package |
-| `activation.copy_from_track` | Base track to clone `TrackData` rows from in every dataset; without it, `copy_slot` is the base track |
-| `activation.copy_slot` | Track to clone the `Track` row and resource row from; defaults to `copy_from_track` |
-| `activation.overrides` | Set `path` to `value` on the cloned `TrackData` rows; give `datasets` to limit which datasets you change |
-| `activation.track_overrides` | Set `path` to `value` on the cloned `Track` row |
-| `ers` | Per-track ERS values written into every 2026 car handling file |
-| `copy_directories` | `source` folders in the package and their `destination` in the game |
-| `ui.images_file`, `ui.minimap_file` | Menu artwork and minimap files |
+Import it and build:
 
-`activation` needs `copy_from_track`, `copy_slot` or both, each naming a stock track. A build leaves out a package with neither, or with a `manifest.json` that doesn't read, and builds the rest of the profile. It warns:
-
+```sh
+swofty mods import testring.zip
+swofty build
 ```
+
+```text
+Test Ring is now the addon Test Ring
+testring: track data: testring cloned from melbourne in 19 dataset(s): f1, f2, classic, ...
+```
+
+The importer turns the zip into the addon `mod.testring`, installs it and turns it on in the active profile. You can also drop the zip on the launcher ([Tracks](/using/mods#tracks)). The addon holds the unpacked package and one op:
+
+```text
+$DATA/addons/mod.testring/
+├── swofty.json          category Tracks, kind database and erp
+├── track/               the unpacked package: manifest.json, testring.erp, mipmaps/, ui/
+└── ops/track.json       { "op": "track.add", "source": "track" }
+```
+
+`swofty build` activates every `track.add` before the other operations run: activation clones a base track's database rows, installs your track's archive and adds its menu entries ([How tracks are installed](/reference/installing-tracks)).
+
+## How the importer finds a track
+
+- A zip is a track package when it holds `manifest.json` at its root, or holds exactly one zip and no `swofty.json`, `mod.serps` or `F1 25/` folder. A download zip that wraps one package is unwrapped.
+- The `manifest.json` needs a `track_code` of letters, digits, `_` and `-`. Without one, the zip imports as an ordinary mod ([`.serps` packages](./serps)).
+- The track code becomes the mod's id. When another mod in the library already has that id, the id is `<code>-track`, then `<code>-track-2`. Importing the same track code again reuses its id.
+- A track package converts without the game's files.
+
+## The manifest
+
+- `activation` needs `copy_from_track`, `copy_slot` or both, each naming a stock track. Without `copy_from_track`, `copy_slot` is the base track.
+- An override `path` is relative to the row. A segment of it can name a sub-row by number (`TyreData_0`), every sub-row (`TyreData_*`) or the one sub-row whose field matches (`Name[field=value]`, as in [Selecting rows](/reference/ops/database#selecting-rows)). A selector that matches more than one sub-row fails the build.
+- An override `value` is a string, such as `"1.55"` or `"64,64,64"`. A JSON number is also accepted and written as its text: `1.55` sets `"1.55"`.
+- Keep every path in the package inside the package.
+
+A build leaves out a package with neither `copy_from_track` nor `copy_slot`, or with a `manifest.json` that doesn't read, and builds the rest of the profile. It warns:
+
+```text
 Portimao (mod.portimao): track Portimao is left out; its manifest.json doesn't say which track it replaces or copies. Import a fixed version, or ask its author for one
 ```
 
-A race weekend set to a track the build leaves out races at its stock track again, with a warning. Importing or installing such a package shows the same warning, and the Addons page marks its addon **Track left out**.
+A race weekend set to a track the build leaves out races at its stock track again, with a warning. Importing or installing such a package shows the same warning, and the **Addons** page marks its addon **Track left out**.
 
-An override `path` is relative to the row. A segment of it can name a sub-row by number (`TyreData_0`), every sub-row (`TyreData_*`) or the one sub-row whose field matches (`Name[field=value]`, as in [Selecting rows](/reference/ops/database#selecting-rows)). A selector that matches more than one sub-row fails the build.
-
-An override `value` is a string, such as `"1.55"` or `"64,64,64"`. A JSON number is also accepted and written as its text: `1.55` sets `"1.55"`.
-
-Keep every path in the package inside the package. For every table, archive and menu change made during activation, see [How tracks are installed](/reference/installing-tracks).
+For every table, archive and menu change made during activation, see [How tracks are installed](/reference/installing-tracks).
 
 ## The track's name
 
@@ -126,10 +134,10 @@ A pit lane whose white lines vary along its length, as at the stock tracks, need
 ## Check the build
 
 ```sh
-python3 tools/map_check.py <overlay folder> --game <game folder>
+python3 tools/map_check.py <overlay folder> --game <game folder> --maps "$DATA/addons"
 ```
 
-Use the folder `swofty build` printed under `$DATA/cache/overlay/<profile>/<buildhash>/` for `<overlay folder>`. `map_check.py` reads that folder's `plan.json` and the track packages in the Team Simplified library. It checks that:
+Use the folder `swofty build` printed under `$DATA/cache/overlay/<profile>/<buildhash>/` for `<overlay folder>`. `map_check.py` reads that folder's `plan.json` and the track packages under `--maps`: each folder's `track/manifest.json` or `manifest.json`. `--maps` defaults to the Team Simplified library, which holds no track once it has converted, so point it at `$DATA/addons`, where each track addon keeps its package in `track/`. It checks that:
 
 - Every key the game reads on a base row also exists on your track's new row.
 - Each rewritten archive and database re-serialises correctly.

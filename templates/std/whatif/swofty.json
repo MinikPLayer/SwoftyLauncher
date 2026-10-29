@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "tails.whatif-history",
+  "name": "What If History",
+  "description": "Your own starting grids and driver ratings for Progressive Career, per profile.",
+  "version": "1.0.0",
+  "author": "Tails",
+  "license": "MIT",
+  "kind": ["native"],
+  "category": "career",
+  "compat": { "game": "f1_25", "launcher": ">=1.6.0" },
+  "requires": [ { "id": "swofty.progressive" } ],
+  "operations": { "native": [ { "dll": "native/whatif.dll" } ] },
+  "launcher": {
+    "program": { "windows": "bin/whatif.exe", "linux": "bin/whatif" },
+    "sections": [ { "id": "history", "title": "What if history", "icon": "history" } ],
+    "build": true
+  }
+}

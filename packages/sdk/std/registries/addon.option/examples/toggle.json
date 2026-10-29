@@ -1,0 +1,18 @@
+{
+  "addon.option": {
+    "hide_rnd": {
+      "type": "toggle",
+      "states": [
+        {
+          "text": "Off",
+          "value": false
+        },
+        {
+          "text": "On",
+          "value": true
+        }
+      ],
+      "value": false
+    }
+  }
+}

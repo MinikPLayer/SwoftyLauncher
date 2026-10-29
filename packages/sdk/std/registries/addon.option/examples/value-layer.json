@@ -1,0 +1,7 @@
+{
+  "addon.option": {
+    "swofty.progressive/follow_mode": {
+      "value": "team"
+    }
+  }
+}

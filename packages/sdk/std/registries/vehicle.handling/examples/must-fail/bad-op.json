@@ -1,0 +1,19 @@
+{
+  "vehicle.handling": {
+    "bad_op": {
+      "rad_upgrades": [
+        {
+          "name": "x",
+          "changes": [
+            {
+              "section": "a",
+              "key": "b",
+              "op": "/",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

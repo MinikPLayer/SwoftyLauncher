@@ -1,0 +1,177 @@
+{
+  "name": "a variant's own value beats a layer on its base",
+  "rule": "a layer on a base record doesn't reach a field the variant sets itself, wherever it sits in load order; other fields flow in. The variant's patch is an edit by its addon and competes as a field contest (layers.md#precedence, bases.md#how-a-variant-resolves)",
+  "registries": {
+    "content.package": {
+      "applies": "content",
+      "key_fields": {
+        "/teams": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.classic-seasons-2017",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "content.package",
+          "key": "f1_2017",
+          "value": {
+            "title": "lng_cs_f1_2017",
+            "entrant_list": "cs_f1_2017",
+            "season": 2017,
+            "teams": [
+              {
+                "key": "ferrari",
+                "vehicle": "swofty.classic-seasons-2017/ferrari",
+                "engine_sound": null,
+                "livery": null
+              },
+              {
+                "key": "williams",
+                "vehicle": "swofty.classic-seasons-2017/williams",
+                "engine_sound": null,
+                "livery": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.esp",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "content.package",
+          "key": "f1_2017_v10",
+          "base": "swofty.classic-seasons-2017/f1_2017",
+          "patch": {
+            "title": "lng_esp_era_2017_v10",
+            "entrant_list": "esp_f1_2017_v10",
+            "teams": [
+              {
+                "key": "ferrari",
+                "engine_sound": "mod.esp/v10_screamer"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "someone.liveries",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "content.package",
+          "target": "swofty.classic-seasons-2017/f1_2017",
+          "patch": {
+            "teams": [
+              {
+                "key": "williams",
+                "livery": "someone.liveries/williams"
+              },
+              {
+                "key": "ferrari",
+                "engine_sound": "someone.liveries/ferrari_sound"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "content.package": {
+          "swofty.classic-seasons-2017/f1_2017": {
+            "status": "ok",
+            "value": {
+              "title": "lng_cs_f1_2017",
+              "entrant_list": "cs_f1_2017",
+              "season": 2017,
+              "teams": [
+                {
+                  "key": "ferrari",
+                  "vehicle": "swofty.classic-seasons-2017/ferrari",
+                  "engine_sound": "someone.liveries/ferrari_sound",
+                  "livery": null
+                },
+                {
+                  "key": "williams",
+                  "vehicle": "swofty.classic-seasons-2017/williams",
+                  "engine_sound": null,
+                  "livery": "someone.liveries/williams"
+                }
+              ]
+            },
+            "origins": {
+              "/teams/key=ferrari/engine_sound": "someone.liveries",
+              "/teams/key=williams/livery": "someone.liveries"
+            }
+          },
+          "mod.esp/f1_2017_v10": {
+            "status": "ok",
+            "value": {
+              "title": "lng_esp_era_2017_v10",
+              "entrant_list": "esp_f1_2017_v10",
+              "season": 2017,
+              "teams": [
+                {
+                  "key": "ferrari",
+                  "vehicle": "swofty.classic-seasons-2017/ferrari",
+                  "engine_sound": "mod.esp/v10_screamer",
+                  "livery": null
+                },
+                {
+                  "key": "williams",
+                  "vehicle": "swofty.classic-seasons-2017/williams",
+                  "engine_sound": null,
+                  "livery": "someone.liveries/williams"
+                }
+              ]
+            },
+            "origins": {
+              "/title": "mod.esp",
+              "/entrant_list": "mod.esp",
+              "/teams/key=ferrari/engine_sound": "mod.esp",
+              "/teams/key=williams/livery": "someone.liveries"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "field",
+          "registry": "content.package",
+          "id": "mod.esp/f1_2017_v10",
+          "pointer": "/teams/key=ferrari/engine_sound",
+          "addons": [
+            "mod.esp",
+            "someone.liveries"
+          ],
+          "winner": "mod.esp"
+        }
+      ],
+      "refusals": []
+    }
+  ]
+}

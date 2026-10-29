@@ -1,0 +1,190 @@
+{
+  "name": "profile layers apply in their profile, career layers in their career",
+  "rule": "a global layer applies in every profile; a profile layer only while its profile is active; a career layer only while its career is loaded; within the addon global < profile < career (scopes.md)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "tails.whatif-history",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "n": 1
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "n": 2
+          },
+          "scope": "profile",
+          "profile": "p1"
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "name": "c"
+          },
+          "scope": "career",
+          "career": "c1"
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "p1",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 2,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "tails.whatif-history"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "p2",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 1,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "tails.whatif-history"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "p1",
+        "career": "c1",
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "c",
+              "n": 2,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "tails.whatif-history",
+              "/name": "tails.whatif-history"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "p2",
+        "career": "c2",
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 1,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "tails.whatif-history"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

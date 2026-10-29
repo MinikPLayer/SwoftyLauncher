@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "career.mode 1.0",
+  "x-registry": "career.mode",
+  "x-version": "1.0",
+  "x-applies": "boot",
+  "x-snapshot": false,
+  "description": "career::ModeRecord: a career mode: its data group, save container, title and kind. The 1.6.0 core stores mode records, reads their data group to name a career's data, and applies nothing else from them.",
+  "type": "object",
+  "properties": {
+    "data_group": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "maxLength": 63
+    },
+    "save_container": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]*$",
+      "maxLength": 63
+    },
+    "title": {
+      "$ref": "#/$defs/text"
+    },
+    "kind": {
+      "enum": [
+        "driver_career",
+        "my_team"
+      ],
+      "default": "driver_career"
+    },
+    "freeze": {
+      "enum": [
+        "per_season",
+        "at_creation"
+      ],
+      "default": "per_season"
+    },
+    "stat_id": {
+      "$ref": "#/$defs/stat_id"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "career.mode",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "data_group"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "text": {
+      "description": "A Text: a lang key as a string, or a literal.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literal": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "stat_id": {
+      "description": "A StatId: an explicit id, or \"auto\" (absent: \"auto\") for the core to allocate one.",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "auto"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,263 @@
+{
+  "name": "protected fields skip other addons' selectors",
+  "rule": "a selector's change to a field the record's owner protects is dropped (its other changes apply) and listed as a protected conflict; a layer on the record itself still competes by load order; with the selector addon's \"also_change_year_packs\" setting on, its selector changes protected fields (layers.md#protected-fields)",
+  "registries": {
+    "vehicle": {
+      "applies": "boot"
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "vehicle",
+      "key": "ferrari_2025",
+      "value": {
+        "label": "ferrari_2025",
+        "performance_tier": 1,
+        "tyre_wear_scale": 1.0
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.classic-seasons-2017",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "vehicle",
+          "key": "ferrari",
+          "base": "game/ferrari_2025",
+          "patch": {
+            "label": "cs17_ferrari",
+            "performance_tier": 2
+          }
+        },
+        {
+          "op": "protect",
+          "registry": "vehicle",
+          "id": "swofty.classic-seasons-2017/ferrari",
+          "fields": [
+            "performance_tier"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "someone.pace-equaliser",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "vehicle",
+          "select": {
+            "ids": "*"
+          },
+          "patch": {
+            "performance_tier": 0,
+            "tyre_wear_scale": 1.1
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.direct",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "vehicle",
+          "target": "swofty.classic-seasons-2017/ferrari",
+          "patch": {
+            "performance_tier": 5
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": [
+          "mod.direct"
+        ]
+      },
+      "expect": {
+        "vehicle": {
+          "game/ferrari_2025": {
+            "status": "ok",
+            "value": {
+              "label": "ferrari_2025",
+              "performance_tier": 0,
+              "tyre_wear_scale": 1.1
+            },
+            "origins": {
+              "/performance_tier": "someone.pace-equaliser",
+              "/tyre_wear_scale": "someone.pace-equaliser"
+            }
+          },
+          "swofty.classic-seasons-2017/ferrari": {
+            "status": "ok",
+            "value": {
+              "label": "cs17_ferrari",
+              "performance_tier": 2,
+              "tyre_wear_scale": 1.1
+            },
+            "origins": {
+              "/label": "swofty.classic-seasons-2017",
+              "/performance_tier": "swofty.classic-seasons-2017",
+              "/tyre_wear_scale": "someone.pace-equaliser"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "protected",
+          "registry": "vehicle",
+          "id": "swofty.classic-seasons-2017/ferrari",
+          "pointer": "/performance_tier",
+          "addons": [
+            "someone.pace-equaliser"
+          ],
+          "winner": "swofty.classic-seasons-2017"
+        }
+      ],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "vehicle": {
+          "game/ferrari_2025": {
+            "status": "ok",
+            "value": {
+              "label": "ferrari_2025",
+              "performance_tier": 0,
+              "tyre_wear_scale": 1.1
+            },
+            "origins": {
+              "/performance_tier": "someone.pace-equaliser",
+              "/tyre_wear_scale": "someone.pace-equaliser"
+            }
+          },
+          "swofty.classic-seasons-2017/ferrari": {
+            "status": "ok",
+            "value": {
+              "label": "cs17_ferrari",
+              "performance_tier": 5,
+              "tyre_wear_scale": 1.1
+            },
+            "origins": {
+              "/label": "swofty.classic-seasons-2017",
+              "/performance_tier": "mod.direct",
+              "/tyre_wear_scale": "someone.pace-equaliser"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "protected",
+          "registry": "vehicle",
+          "id": "swofty.classic-seasons-2017/ferrari",
+          "pointer": "/performance_tier",
+          "addons": [
+            "someone.pace-equaliser"
+          ],
+          "winner": "mod.direct"
+        },
+        {
+          "kind": "field",
+          "registry": "vehicle",
+          "id": "swofty.classic-seasons-2017/ferrari",
+          "pointer": "/performance_tier",
+          "addons": [
+            "swofty.classic-seasons-2017",
+            "mod.direct"
+          ],
+          "winner": "mod.direct"
+        }
+      ],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {
+          "someone.pace-equaliser": {
+            "also_change_year_packs": true
+          }
+        },
+        "disabled": [
+          "mod.direct"
+        ]
+      },
+      "expect": {
+        "vehicle": {
+          "game/ferrari_2025": {
+            "status": "ok",
+            "value": {
+              "label": "ferrari_2025",
+              "performance_tier": 0,
+              "tyre_wear_scale": 1.1
+            },
+            "origins": {
+              "/performance_tier": "someone.pace-equaliser",
+              "/tyre_wear_scale": "someone.pace-equaliser"
+            }
+          },
+          "swofty.classic-seasons-2017/ferrari": {
+            "status": "ok",
+            "value": {
+              "label": "cs17_ferrari",
+              "performance_tier": 0,
+              "tyre_wear_scale": 1.1
+            },
+            "origins": {
+              "/label": "swofty.classic-seasons-2017",
+              "/performance_tier": "someone.pace-equaliser",
+              "/tyre_wear_scale": "someone.pace-equaliser"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "field",
+          "registry": "vehicle",
+          "id": "swofty.classic-seasons-2017/ferrari",
+          "pointer": "/performance_tier",
+          "addons": [
+            "swofty.classic-seasons-2017",
+            "someone.pace-equaliser"
+          ],
+          "winner": "someone.pace-equaliser"
+        }
+      ],
+      "refusals": []
+    }
+  ]
+}

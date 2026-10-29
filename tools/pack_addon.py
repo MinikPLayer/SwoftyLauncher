@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """Package an addon folder as <out>/<id>.swoftyaddon with swofty.json at the zip root.
 
-  pack_addon.py [--zip] <addon dir> <out dir>
+  pack_addon.py [--zip] [--with <file>]... <addon dir> <out dir>
 
---zip writes <out>/<id>.zip instead; the launcher installs either.
+--zip writes <out>/<id>.zip instead; the launcher installs either. --with adds a file the addon's code names
+(swofty dev pack passes the paths its SWOFTY_REGISTER records name).
 
-Only swofty.json, LICENSE, README.md, the icon, the launcher plugin's programs and the files the manifest's
-operations name go in, plus every
+Only swofty.json, LICENSE, README.md, the icon, the launcher plugin's programs, the standard library's
+registry.json, registry.lock.json and registry/ data files, and the files the manifest's operations name go in,
+plus every
 file an operation file names in a "source" or "sources" field (texture fragments, VTFs, UI files). Entries are
-sorted with a fixed timestamp and mode, so the same inputs give the same bytes.
+sorted with a fixed timestamp and mode, so the same inputs give the same bytes. A string in a registry/*.json
+data file that names a file inside the addon (a Path field such as an engine sound's bundle) goes in too.
 """
 import json, os, sys, zipfile
 
-OPTIONAL = ('LICENSE', 'README.md')
+OPTIONAL = ('LICENSE', 'README.md', 'registry.json', 'registry.lock.json', 'registry')
 
 
 def wanted(m):
@@ -50,6 +53,40 @@ def sources(addon, rel):
     return out
 
 
+def inside(addon, rel):
+    if not isinstance(rel, str) or not rel or os.path.isabs(rel) or rel.startswith(('/', '\\')):
+        return False
+    parts = rel.replace('\\', '/').split('/')
+    if '..' in parts or ':' in parts[0]:
+        return False
+    return os.path.isfile(os.path.join(addon, rel))
+
+
+def data_paths(addon):
+    out = []
+    folder = os.path.join(addon, 'registry')
+    if not os.path.isdir(folder):
+        return out
+
+    def walk(o):
+        if isinstance(o, dict):
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+        elif inside(addon, o):
+            out.append(o.replace('\\', '/'))
+
+    for name in sorted(os.listdir(folder)):
+        if name.endswith('.json'):
+            try:
+                walk(json.load(open(os.path.join(folder, name))))
+            except ValueError:
+                pass
+    return out
+
+
 def collect(addon, rels):
     names = set()
     for rel in rels:
@@ -70,6 +107,13 @@ def main():
     args = sys.argv[1:]
     ext = 'zip' if '--zip' in args else 'swoftyaddon'
     args = [a for a in args if a != '--zip']
+    extra = []
+    while '--with' in args:
+        at = args.index('--with')
+        if at + 1 >= len(args):
+            sys.exit(__doc__)
+        extra.append(args[at + 1])
+        del args[at:at + 2]
     if len(args) != 2:
         sys.exit(__doc__)
     addon, out = args
@@ -79,6 +123,11 @@ def main():
     for key in ('database', 'erp', 'ui', 'assets'):
         for rel in ops.get(key, []):
             rels += sources(addon, rel)
+    rels += data_paths(addon)
+    for rel in extra:
+        if not inside(addon, rel):
+            sys.exit(f'pack_addon.py: {addon}: {rel} is missing')
+        rels.append(rel.replace('\\', '/'))
     names = collect(addon, rels)
     os.makedirs(out, exist_ok=True)
     pkg = os.path.join(out, f"{m['id']}.{ext}")

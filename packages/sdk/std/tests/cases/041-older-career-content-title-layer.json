@@ -1,0 +1,112 @@
+{
+  "name": "a career content from a 1.5 add call takes another addon's title layer",
+  "rule": "swofty::career::content::add provides a career.content record under the calling addon's id and the content id; another addon's layer changes its title in load order, and the 1.5 tile reads the effective record. career.content applies at boot, so the core's shim adds the record outside the late check (the corpus writes it in the register stage) while another addon's layer outside SWOFTY_REGISTER is refused as late (compatibility.md#an-older-addon-on-16, layers.md#where-a-layer-applies)",
+  "registries": {
+    "career.content": {
+      "applies": "boot"
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.f1-1990",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "career.content",
+          "key": "f1-1990",
+          "value": {
+            "mode": null,
+            "tile": null,
+            "model": "game/f1_career_2026",
+            "calendar": null,
+            "after_last": "market",
+            "title": "lng_f1_1990_title",
+            "description": "lng_f1_1990_desc",
+            "data_group": "f1_career_1990",
+            "suffix": "90",
+            "save_container": "driver_career_1990",
+            "car_group": 2,
+            "badge": 0,
+            "entitlement": "",
+            "careers": "driver"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.retitle",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.content",
+          "target": "swofty.f1-1990/f1-1990",
+          "patch": {
+            "title": "lng_retitle_1990"
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "career.content",
+          "target": "swofty.f1-1990/f1-1990",
+          "patch": {
+            "badge": 1
+          },
+          "stage": "on_load"
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.content": {
+          "swofty.f1-1990/f1-1990": {
+            "status": "ok",
+            "value": {
+              "mode": null,
+              "tile": null,
+              "model": "game/f1_career_2026",
+              "calendar": null,
+              "after_last": "market",
+              "title": "lng_retitle_1990",
+              "description": "lng_f1_1990_desc",
+              "data_group": "f1_career_1990",
+              "suffix": "90",
+              "save_container": "driver_career_1990",
+              "car_group": 2,
+              "badge": 0,
+              "entitlement": "",
+              "careers": "driver"
+            },
+            "origins": {
+              "/title": "mod.retitle"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [
+        {
+          "addon": "mod.retitle",
+          "registry": "career.content",
+          "id": "swofty.f1-1990/f1-1990",
+          "op": 1,
+          "reason": "late"
+        }
+      ]
+    }
+  ]
+}

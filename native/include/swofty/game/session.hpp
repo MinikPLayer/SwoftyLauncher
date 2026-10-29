@@ -3,6 +3,34 @@
 
 namespace swofty::game {
 
+struct AiController {
+    uint8_t _pad_0x0[0x8];
+    struct InputRecord *input; // L2 experimental
+    void *owner; // L2 experimental
+    uint8_t vehicle; // L2 experimental
+};
+static_assert(offsetof(AiController, input) == 0x8);
+static_assert(offsetof(AiController, owner) == 0x10);
+static_assert(offsetof(AiController, vehicle) == 0x18);
+
+struct ControllerSet {
+    uint8_t _pad_0x0[0x10];
+    uint32_t mode_masked; // L2 experimental
+    uint8_t _pad_0x14[0x4];
+    uint32_t mode_key; // L2 experimental
+    uint8_t _pad_0x1c[0x4];
+    void *human_controller; // L2 experimental
+    void *ai_controller; // L2 experimental
+    uint32_t flags; // L2 experimental
+    uint8_t vehicle; // L2 experimental
+};
+static_assert(offsetof(ControllerSet, mode_masked) == 0x10);
+static_assert(offsetof(ControllerSet, mode_key) == 0x18);
+static_assert(offsetof(ControllerSet, human_controller) == 0x20);
+static_assert(offsetof(ControllerSet, ai_controller) == 0x28);
+static_assert(offsetof(ControllerSet, flags) == 0x30);
+static_assert(offsetof(ControllerSet, vehicle) == 0x34);
+
 struct GameWeatherSystem {
     uint8_t _pad_0x0[0x1d98];
     TimeOfDaySystem *tod; // L2 experimental
@@ -29,6 +57,28 @@ static_assert(offsetof(GameWeatherSystem, base_seed) == 0x1f10);
 static_assert(offsetof(GameWeatherSystem, forced_seed) == 0x1f14);
 static_assert(offsetof(GameWeatherSystem, weekend) == 0x1f18);
 static_assert(offsetof(GameWeatherSystem, dataset_dynamic) == 0x2f3a);
+
+struct SpectatorDirector {
+    uint8_t _pad_0x0[0xd0];
+    uint8_t ui_active; // L2 experimental
+    uint8_t active; // L2 experimental
+    uint8_t _pad_0xd2[0x1];
+    uint8_t should_quit; // L2 experimental
+    uint8_t _pad_0xd4[0x2];
+    uint8_t current_driver; // L2 experimental
+    uint8_t _pad_0xd7[0x1];
+    int32_t current_camera; // L2 experimental
+    uint8_t requested_driver; // L2 experimental
+    uint8_t _pad_0xdd[0x3];
+    int32_t requested_camera; // L2 experimental
+};
+static_assert(offsetof(SpectatorDirector, ui_active) == 0xd0);
+static_assert(offsetof(SpectatorDirector, active) == 0xd1);
+static_assert(offsetof(SpectatorDirector, should_quit) == 0xd3);
+static_assert(offsetof(SpectatorDirector, current_driver) == 0xd6);
+static_assert(offsetof(SpectatorDirector, current_camera) == 0xd8);
+static_assert(offsetof(SpectatorDirector, requested_driver) == 0xdc);
+static_assert(offsetof(SpectatorDirector, requested_camera) == 0xe0);
 
 struct TimeOfDayClock {
     uint8_t _pad_0x0[0x68];
@@ -149,6 +199,9 @@ static_assert(offsetof(WeatherSessionSettings, exact_timing) == 0xb18);
 
 using Sess_Build_GroupResult_t = void(void *weekend, uint8_t group, void *result);
 inline constexpr fn<"Sess_Build_GroupResult", Sess_Build_GroupResult_t> Sess_Build_GroupResult{}; // L2 experimental
+inline constexpr address<"Sess_ControllerSystem_ApplyInputs"> Sess_ControllerSystem_ApplyInputs{}; // L2 experimental
+inline constexpr address<"Sess_ControllerSystem_BuildSets"> Sess_ControllerSystem_BuildSets{}; // L2 experimental
+inline constexpr address<"Sess_ControllerSystem_DestroySets"> Sess_ControllerSystem_DestroySets{}; // L2 experimental
 using Sess_Find_GroupRowPosition_t = int32_t *(void *weekend, void *result, uint32_t driver_key);
 inline constexpr fn<"Sess_Find_GroupRowPosition", Sess_Find_GroupRowPosition_t> Sess_Find_GroupRowPosition{}; // L2 experimental
 inline constexpr address<"Sess_Flow_ParseXml"> Sess_Flow_ParseXml{}; // L2 experimental
@@ -193,6 +246,9 @@ using Sess_ScDebrisAccumulator_Update_t = void(void *acc);
 inline constexpr fn<"Sess_ScDebrisAccumulator_Update", Sess_ScDebrisAccumulator_Update_t> Sess_ScDebrisAccumulator_Update{}; // L2 experimental
 using Sess_Set_SafetyCarDeploymentType_t = void(void *sc_state, const void *sc_deployment_msg);
 inline constexpr fn<"Sess_Set_SafetyCarDeploymentType", Sess_Set_SafetyCarDeploymentType_t> Sess_Set_SafetyCarDeploymentType{}; // L2 experimental
+inline constexpr address<"Sess_SpectatorDirector_SetActive"> Sess_SpectatorDirector_SetActive{}; // L2 experimental
+inline constexpr address<"Sess_SpectatorDirector_Update"> Sess_SpectatorDirector_Update{}; // L2 experimental
+inline constexpr address<"Sess_SpectatorHud_Hide"> Sess_SpectatorHud_Hide{}; // L2 experimental
 using Sess_Tod_BuildSessionDataset_Thunk_t = void(void *tod_owner, const uint8_t *types, const float *hold_s, const float *trans_s, const uint8_t *random, uint32_t count, float len_s, uint16_t session, uint8_t use_count);
 inline constexpr fn<"Sess_Tod_BuildSessionDataset_Thunk", Sess_Tod_BuildSessionDataset_Thunk_t> Sess_Tod_BuildSessionDataset_Thunk{}; // L2 experimental
 using Sess_TyreAllocation_OnSessionStart_t = void(void *component);
@@ -210,8 +266,10 @@ inline constexpr data<"g_Sess_TyreRulesMode", uint8_t> g_Sess_TyreRulesMode{}; /
 inline constexpr data<"g_Sess_TyreRulesSessionType", uint32_t> g_Sess_TyreRulesSessionType{}; // L2 experimental
 inline constexpr data<"k_Sess_TyreComponentType", void *> k_Sess_TyreComponentType{}; // L2 experimental
 inline constexpr call<"site_Sess_AiVehicleRegisterCall"> site_Sess_AiVehicleRegisterCall{}; // L2 experimental
+inline constexpr call<"site_Sess_ControllerSystem_ApplyRecordCall"> site_Sess_ControllerSystem_ApplyRecordCall{}; // L2 experimental
 inline constexpr call<"site_Sess_InGamePlayerFinishedAiCall"> site_Sess_InGamePlayerFinishedAiCall{}; // L2 experimental
 inline constexpr call<"site_Sess_InGameSessionCompleteAiCall"> site_Sess_InGameSessionCompleteAiCall{}; // L2 experimental
+inline constexpr vtable<"vt_Sess_AiController", 4> vt_Sess_AiController{}; // L2 experimental
 inline constexpr vtable<"vt_Sess_ScCanReturn", 10> vt_Sess_ScCanReturn{}; // L2 experimental
 inline constexpr vtable<"vt_Sess_ScRaceLapsRemaining", 10> vt_Sess_ScRaceLapsRemaining{}; // L2 experimental
 inline constexpr vtable<"vt_Sess_ScTriggerRedFlag", 10> vt_Sess_ScTriggerRedFlag{}; // L2 experimental

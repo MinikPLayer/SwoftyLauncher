@@ -34,5 +34,11 @@ mkdir -p "$OUT"
     -o "$OUT/netplay_drive_test" netplay_drive_test.cpp
 "$OUT/netplay_drive_test"
 "${PIN[@]}" zig c++ -std=c++23 -O2 -Wall -Wextra -Wno-nullability-completeness -I../../packages/sdk/include \
+    -o "$OUT/testagent_test" testagent_test.cpp
+"$OUT/testagent_test"
+"${PIN[@]}" zig c++ -std=c++23 -O2 -Wall -Wextra -Wno-nullability-completeness -I../../packages/sdk/include \
     -o "$OUT/storage_logic_test" storage_logic_test.cpp
 "$OUT/storage_logic_test"
+"${PIN[@]}" zig c++ -std=c++23 -O2 -Wall -Wextra -Wno-nullability-completeness -I../../packages/sdk/include \
+    -o "$OUT/state_logic_test" state_logic_test.cpp
+"$OUT/state_logic_test"

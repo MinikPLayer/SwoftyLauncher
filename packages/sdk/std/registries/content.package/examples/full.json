@@ -1,0 +1,44 @@
+{
+  "content.package": {
+    "full": {
+      "title": {
+        "literal": "F1 1990"
+      },
+      "entrant_list": "f1990_f1_1990",
+      "season": 1990,
+      "calendar": "swofty.f1-1990/f1_1990",
+      "teams": [
+        {
+          "key": "mclaren",
+          "team": "constructor/mclaren",
+          "vehicle": "swofty.f1-1990/mclaren",
+          "engine_sound": "swofty.f1-1990/honda_v10",
+          "livery": "swofty.f1-1990/mclaren",
+          "drivers": [
+            {
+              "driver": "person/ayrton_senna",
+              "number": 27,
+              "look": "swofty.f1-1990/senna"
+            },
+            {
+              "driver": "person/gerhard_berger",
+              "number": 28,
+              "look": null
+            }
+          ]
+        }
+      ],
+      "rules": {
+        "mode": null,
+        "points": "swofty.f1-1990/points_1990",
+        "drs": "swofty.f1-1990/no_drs",
+        "tyre_class": "swofty.f1-1990/goodyear",
+        "rules_profile": "swofty.f1-1990/rules_1990",
+        "refuelling": false,
+        "race_fuel_kg": 215.0
+      },
+      "setup_mode": "f1_1990",
+      "stat_id": 61
+    }
+  }
+}

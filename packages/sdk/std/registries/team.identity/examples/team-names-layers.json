@@ -1,0 +1,29 @@
+{
+  "team.identity": {
+    "game/mercedes_2026": {
+      "names": {
+        "title": {
+          "literal": "Mercedes-AMG Petronas"
+        },
+        "super_short": {
+          "literal": "Mercedes"
+        },
+        "code": "MER"
+      },
+      "colours": {
+        "menu": "#00D2BE",
+        "primary": "#00D2BE",
+        "secondary": "#0C0C0C",
+        "tertiary": "#C8CCCE"
+      }
+    },
+    "$select": [
+      {
+        "ids": "creator.career-2012/*",
+        "patch": {
+          "wear": null
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "driver.identity": {
+    "haryanto": {
+      "donor": "game/jarno_opmeer",
+      "person": "person/rio_haryanto",
+      "names": {
+        "first": "lng_cs_rio",
+        "last": "lng_cs_haryanto",
+        "full": "lng_cs_rio_haryanto",
+        "code": "HAR"
+      },
+      "nationality": "indonesia",
+      "number": 88,
+      "look": "swofty.classic-seasons-2016/haryanto_look",
+      "seasons_completed": 0,
+      "garage_slot": 1,
+      "stat_id": "auto"
+    }
+  }
+}

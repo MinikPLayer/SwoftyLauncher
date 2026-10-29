@@ -1,0 +1,23 @@
+{
+  "content.package": {
+    "f1_2017_v10": {
+      "extends": "swofty.classic-seasons-2017/f1_2017",
+      "title": "lng_esp_era_2017_v10",
+      "entrant_list": "esp_f1_2017_v10",
+      "teams": [
+        {
+          "key": "mercedes",
+          "vehicle": "mod.esp/mercedes_v10"
+        },
+        {
+          "key": "ferrari",
+          "vehicle": "mod.esp/ferrari_v10"
+        },
+        {
+          "key": "redbull",
+          "vehicle": "mod.esp/redbull_v10"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "career.season": {
+    "swofty.progressive/2017": {
+      "$comment": "a $delete element holds only its key fields",
+      "teams": [
+        {
+          "slot": 7,
+          "team": "game/toro_rosso",
+          "$delete": true
+        }
+      ]
+    }
+  }
+}

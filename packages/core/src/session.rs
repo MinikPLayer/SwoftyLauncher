@@ -82,6 +82,8 @@ pub struct Config {
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub console: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub developer: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub sidebar_list: bool,
     #[serde(default)]
     pub data_version: u32,

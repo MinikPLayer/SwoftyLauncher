@@ -1,15 +1,15 @@
 ---
 title: Your first addon
-description: Build an addon with one setting and a launcher plugin that adds a sidebar page, then install it and open the page.
+description: Build an addon with one setting and a launcher plugin that adds a sidebar page reporting the installed game, then install it and open the page. Every file and command first, then what each part does.
 ---
 
 # Your first addon
 
-You'll build an addon with one setting and a sidebar page that reports the installed game. To add the page, you'll write a **launcher plugin**: a helper program the launcher runs. This example uses Rust, so you'll need `cargo` (the Rust toolchain). The protocol is plain JSON, though, so you can write plugins in any language.
+This addon has one setting and a sidebar page that reports the installed game. The page comes from a **launcher plugin**: a helper program the launcher runs. The helper here is Rust, so you need `cargo` (the Rust toolchain); the protocol is plain JSON, so a plugin can be written in any language.
 
-Here's how your files fit together:
+## The files
 
-```
+```text
 my-first-addon/
 ├── swofty.json
 ├── Cargo.toml
@@ -17,61 +17,10 @@ my-first-addon/
     └── main.rs
 ```
 
-## 1. Write the manifest
-
-Start with `swofty.json` at the addon's root. This is where you give your addon its name:
-
-```json [swofty.json]
+```jsonc [swofty.json]
 {
   "schema_version": 1,
-  "id": "yourname.my-first-addon",
-  "name": "My First Addon",
-  "version": "0.1.0",
-  "author": "Your Name",
-  "description": "A launcher page that reports the installed game.",
-  "compat": { "game": "f1_25" }
-}
-```
-
-Choose an `id` with at least two dot-separated parts, using lowercase letters, digits, `.`, `_` and `-`. The `swofty.` prefix is reserved. You'll find every field in [the manifest reference](./manifest).
-
-## 2. Add a setting
-
-To give your addon a setting, add an `options` array. This one adds a single choice, stored per profile:
-
-```json [swofty.json]
-"options": [
-  {
-    "id": "units",
-    "type": "choice",
-    "label": "Lap display",
-    "description": "How the plugin labels lap times.",
-    "values": ["seconds", { "value": "mmss", "label": "mm:ss.mmm" }],
-    "default": "seconds",
-    "binds": "native"
-  }
-]
-```
-
-You'll see the choice on your addon's row on the **Addons** page and on its tile in **ADDON SETTINGS** in game. With `binds: native`, an [engine plugin](./native-plugins#settings) reads the setting live. See [Settings](./settings) for how to read it.
-
-## 3. Add a launcher page
-
-The launcher needs to know which helper to run and which page to add. Give it a `launcher` block: `program` names the helper for each OS, and `sections` adds one sidebar page:
-
-```json [swofty.json]
-"launcher": {
-  "program": { "linux": "bin/my-first-addon", "windows": "bin/my-first-addon.exe" },
-  "sections": [{ "id": "game", "title": "Game", "icon": "gamepad" }]
-}
-```
-
-Your complete `swofty.json` should now look like this:
-
-```json [swofty.json]
-{
-  "schema_version": 1,
-  "id": "yourname.my-first-addon",
+  "id": "yourname.my-first-addon",       // at least two dot-separated parts
   "name": "My First Addon",
   "version": "0.1.0",
   "author": "Your Name",
@@ -83,21 +32,19 @@ Your complete `swofty.json` should now look like this:
       "type": "choice",
       "label": "Lap display",
       "description": "How the plugin labels lap times.",
-      "values": ["seconds", { "value": "mmss", "label": "mm:ss.mmm" }],
+      "values": ["seconds", { "value": "mmss", "label": "mm:ss.mmm" }],   // a value, or a value with its own label
       "default": "seconds",
-      "binds": "native"
+      "binds": "native"                   // an engine plugin reads it live
     }
   ],
   "launcher": {
-    "program": { "linux": "bin/my-first-addon", "windows": "bin/my-first-addon.exe" },
-    "sections": [{ "id": "game", "title": "Game", "icon": "gamepad" }]
+    "program": { "linux": "bin/my-first-addon", "windows": "bin/my-first-addon.exe" },   // the helper for each OS
+    "sections": [{ "id": "game", "title": "Game", "icon": "gamepad" }]                   // one sidebar page
   }
 }
 ```
 
-## 4. Write the helper
-
-Use this `Cargo.toml` to build your helper as one binary. Its only dependency is `serde_json`:
+The comments are for this page; `swofty.json` is plain JSON.
 
 ```toml [Cargo.toml]
 [package]
@@ -108,8 +55,6 @@ edition = "2024"
 [dependencies]
 serde_json = "1"
 ```
-
-Next, write `src/main.rs` to handle `hello` and `view` requests. Your helper reads each request and sends an answer, but it can also ask the launcher questions before replying. That's how `view` gets the game's build key and exe version: it makes the `game_build_key` and `game_exe_version` [host calls](./launcher-api#host-calls-the-plugin-sends-back), then returns a page built from those values:
 
 ```rust [src/main.rs]
 use std::io::{BufRead, Lines, StdinLock, StdoutLock, Write};
@@ -125,10 +70,12 @@ struct Launcher {
 }
 
 impl Launcher {
+    // one JSON message per line
     fn send(&mut self, message: &Value) {
         writeln!(self.out, "{message}").and_then(|()| self.out.flush()).ok();
     }
 
+    // a host call: ask the launcher, read its reply from the next line
     fn call(&mut self, method: &str) -> Value {
         let id = self.next;
         self.next += 1;
@@ -141,10 +88,11 @@ impl Launcher {
         }
     }
 
+    // the page: two host calls, then a view built from their answers
     fn view(&mut self) -> Value {
         let build = self.call("game_build_key");
         let exe = self.call("game_exe_version");
-        let text = |v: &Value| v.as_str().unwrap_or("not found").to_owned();
+        let text = |v: &Value| v.as_str().unwrap_or("not found").to_owned();   // null when no game was located
         json!({
             "subtitle": "The game this profile builds against",
             "body": { "blocks": [
@@ -181,50 +129,84 @@ fn main() {
 }
 ```
 
-## 5. Build the helper
-
-Compile the helper, then copy the binary to `bin/` so the launcher can find it at the path you set in `program`:
+## Build, install and open it
 
 ```sh
 cargo build --release
 mkdir -p bin
-cp target/release/my-first-addon bin/
+cp target/release/my-first-addon bin/            # the path program names for linux
+swofty addons install .                          # copies the folder to $DATA/addons/yourname.my-first-addon/
+swofty addons enable yourname.my-first-addon     # into the active profile
 ```
 
 On Windows, build `my-first-addon.exe` and copy it to `bin/`.
 
-## 6. Install and enable
+Open **Game** under **ADDON PANELS** in the launcher's sidebar. The launcher starts your helper and calls `view`:
 
-```sh
-swofty addons install .
-swofty addons enable yourname.my-first-addon
-```
-
-Use a modded profile to enable your addon; the `vanilla` profile takes no addons. If you install it again, you'll replace the copy in `$DATA/addons/yourname.my-first-addon/`.
-
-## 7. See it
-
-Open **Game** under **ADDON PANELS** in the launcher's sidebar. This starts your helper and calls `view`, giving you a page like this:
-
-```
+```text
 INSTALLED GAME
 Build       25251167-d873a1c8d204
 F1_25.exe   1.0.141.7865
 ```
 
-If you see `not found` for a value, no game was located. To see your setting in game, open **Career → ADDON SETTINGS** and look for the **Lap display** choice on the **My First Addon** tile.
+`not found` in place of a value means no game was located.
 
-If your helper crashes or stalls, the launcher stays running. The page shows the error and a **Restart** button. To investigate, check `$DATA/cache/addons/yourname.my-first-addon/helper.log`, where the plugin's stderr goes.
+To see the setting in game, run `swofty run --apply`, open **Career → ADDON SETTINGS** and find the **Lap display** choice on the **My First Addon** tile.
 
-## 8. Package it
+## The manifest
 
-When you're ready to share your addon, zip the folder's contents as a `.swoftyaddon` file. Keep `swofty.json` at the zip root:
+- **`id`**: at least two dot-separated parts, using lowercase letters, digits, `.`, `_` and `-`. The `swofty.` prefix is reserved.
+- **`options`**: one choice, stored per profile. It shows on your addon's row on the **Addons** page and on its tile in **ADDON SETTINGS** in game. With `binds: native`, an [engine plugin](./native-plugins#settings) reads the setting live; [Settings](./settings) shows how to read it.
+- **`launcher.program`**: the helper the launcher runs, for each OS.
+- **`launcher.sections`**: the sidebar pages the helper draws. This one adds **Game**.
 
-```sh
-zip -r ../yourname.my-first-addon.swoftyaddon .
+[The manifest reference](./manifest) lists every field.
+
+## The helper
+
+The launcher writes one JSON request per line to the helper's stdin and reads one reply per line from its stdout:
+
+```text
+launcher  {"id":0,"method":"hello","params":{"api":1,"addon":"yourname.my-first-addon",…}}
+helper    {"id":0,"result":{"api":1}}
+launcher  {"id":1,"method":"view","params":{"section":"game"}}
+helper    {"id":0,"method":"game_build_key"}
+launcher  {"id":0,"result":"25251167-d873a1c8d204"}
+helper    {"id":1,"method":"game_exe_version"}
+launcher  {"id":1,"result":"1.0.141.7865"}
+helper    {"id":1,"result":{"subtitle":"The game this profile builds against","body":{…}}}
 ```
 
-Ship the binaries from `bin/`, leaving out `target/`. Include your files, never copies of the game's archives, database or executable. [Packaging and publishing](./publishing) has the full checklist.
+- **`hello`** answers with the protocol version the helper speaks.
+- **`view`** answers with the page. Before it replies, the helper asks the launcher questions: the `game_build_key` and `game_exe_version` [host calls](./launcher-api#host-calls-the-plugin-sends-back).
+- Any other method gets an `error` reply.
+
+## When the helper fails
+
+If your helper crashes or stalls, the launcher stays running. The page shows the error and a **Restart** button:
+
+```text
+stopped (exit status: 3)                                  [Restart]
+My First Addon is not running
+Restart it to load this page.
+```
+
+The helper's stderr goes to `$DATA/cache/addons/yourname.my-first-addon/helper.log`.
+
+## Install again after a change
+
+Use a modded profile to enable your addon; the `vanilla` profile takes no addons. Installing again replaces the copy in `$DATA/addons/yourname.my-first-addon/`, so rebuild the helper and run `swofty addons install .` after each change.
+
+## Package it
+
+Zip the folder's contents as a `.swoftyaddon` file, with `swofty.json` at the zip root:
+
+```sh
+cargo build --release && cp target/release/my-first-addon bin/
+zip -r ../yourname.my-first-addon.swoftyaddon . -x 'target/*'
+```
+
+Ship the binaries in `bin/` and leave out `target/`. Include your own files, never copies of the game's archives, database or executable. [Packaging and publishing](./publishing) has the full checklist.
 
 ## Next
 

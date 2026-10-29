@@ -9,7 +9,7 @@ pub use crate::asset::{Features, Kind};
 use crate::conflicts::Changes;
 use crate::dbedit::deps::Copy;
 use crate::entrant_lists::StockLists;
-use crate::ops::{DbOps, DbReport, ErpOp, apply_db_ops_lenient, apply_db_ops_report};
+use crate::ops::{DbOps, DbReport, ErpOp, MovedStatId, apply_db_ops_lenient, apply_db_ops_report};
 use crate::owned::{self, Added};
 use crate::rowkeys::{Names, RowKeys};
 use crate::{Error, Result};
@@ -118,6 +118,22 @@ pub fn track_removals_line(name: &str, n: usize) -> String {
     )
 }
 
+fn stat_row(row: &str) -> &str {
+    row.rsplit_once('_').map_or(row, |(table, _)| table)
+}
+
+/// The build warning for a row of `addon` whose `stat_id` a row of `holder` already had.
+pub fn moved_stat_id_line(addon: &str, holder: &str, m: &MovedStatId) -> String {
+    let label = |l: &Option<String>, row: &str| l.clone().unwrap_or_else(|| row.to_owned());
+    format!(
+        "{addon}: stat_id {} of {} is taken by {} from {holder}; the build gave it stat_id {}. The addon's author should leave stat_id out of add-row",
+        m.old,
+        label(&m.label, &m.row),
+        label(&m.holder_label, &m.holder),
+        m.new
+    )
+}
+
 /// The build warning for the entrant `lists` addon `name` renames or removes.
 pub fn kept_lists_line(name: &str, lists: &[String]) -> String {
     let shown: Vec<&str> = lists.iter().take(8).map(String::as_str).collect();
@@ -136,6 +152,8 @@ pub struct Planned {
     pub runtime: Vec<Op>,
     pub waiting: Vec<Op>,
     pub conflicts: Vec<Conflict>,
+    /// Names for conflicting records of rows the build added, which the catalogue doesn't know.
+    pub record_names: BTreeMap<u64, String>,
 }
 
 pub struct Planner<'a> {
@@ -668,6 +686,30 @@ impl<'a> Planner<'a> {
                 ignore: ops.side_data.ignore.clone(),
                 quiet: false,
             }));
+            for m in ours.moved_stat_ids {
+                let holder = self
+                    .copies
+                    .iter()
+                    .rev()
+                    .find(|c| c.row == m.holder)
+                    .map_or_else(|| origin.addon.clone(), |c| c.addon.clone());
+                report
+                    .warnings
+                    .push(moved_stat_id_line(&origin.addon, &holder, &m));
+                let keeper = Origin {
+                    addon: holder,
+                    item: None,
+                };
+                if keeper.addon != origin.addon {
+                    let key = swofty_formats::hash::fnv1a64(format!("{}.stat_id", m.holder));
+                    let name = match &m.holder_label {
+                        Some(l) => format!("{}[_metadata_={l}].stat_id", stat_row(&m.holder)),
+                        None => format!("{}.stat_id", m.holder),
+                    };
+                    self.planned.record_names.insert(key, name);
+                    self.kept(Target::Record(key), &keeper, &origin);
+                }
+            }
             for key in replaced {
                 self.write(Target::Record(key), &origin, true);
             }
@@ -1015,6 +1057,70 @@ mod tests {
         p.push(op("b", add));
         let e = p.apply_db(&mut db()).unwrap_err();
         assert!(e.to_string().contains("field names unknown"), "{e}");
+    }
+
+    #[test]
+    fn a_stat_id_an_earlier_addon_holds_moves_and_counts_as_a_conflict() {
+        use swofty_formats::gvdb::Record;
+        let features = Features::default();
+        let opt_in = BTreeSet::new();
+        let fields = || {
+            BTreeMap::from([(
+                "t.r".to_owned(),
+                vec!["_metadata_".to_owned(), "stat_id".to_owned()],
+            )])
+        };
+        let mut p = Planner::new(&features, &opt_in);
+        p.add_fields("a", fields());
+        p.add_fields("b", fields());
+        p.push(op(
+            "a",
+            r#"{"op":"db.add-row","table":"t","from":"t.r_0","set":{"_metadata_":"a_row"}}"#,
+        ));
+        p.push(op(
+            "b",
+            r#"{"op":"db.add-row","table":"t","from":"t.r_0","set":{"_metadata_":"b_row","stat_id":"6"}}"#,
+        ));
+        let mut db = Gvdb {
+            records: vec![
+                Record::new("t._r_instancecount_", 0, "1"),
+                Record::new("t.r_0._metadata_", 4, "base"),
+                Record::new("t.r_0.stat_id", 0, "5"),
+            ],
+        };
+        let stock = db.records.iter().map(|r| r.key).collect();
+        let mut report = DbReport::default();
+        p.apply_db_report(&mut db, &stock, &HashSet::new(), &mut report)
+            .unwrap();
+        assert_eq!(db.get_text("t.r_1.stat_id").as_deref(), Some("6"));
+        assert_eq!(db.get_text("t.r_2.stat_id").as_deref(), Some("7"));
+        assert!(
+            report.warnings.iter().any(|w| w
+                == "b: stat_id 6 of b_row is taken by a_row from a; the build gave it stat_id 7. The addon's author should leave stat_id out of add-row"),
+            "{:?}",
+            report.warnings
+        );
+        let planned = p.finish();
+        assert_eq!(planned.conflicts.len(), 1);
+        assert_eq!(
+            planned.conflicts[0].target,
+            Target::Record(swofty_formats::hash::fnv1a64("t.r_1.stat_id"))
+        );
+        assert_eq!(planned.conflicts[0].winner, origin("a"));
+        assert_eq!(planned.conflicts[0].overridden, [origin("b")]);
+        assert_eq!(
+            planned.record_names.values().collect::<Vec<_>>(),
+            ["t.r[_metadata_=a_row].stat_id"]
+        );
+        let (pairs, _) = crate::conflicts::summarise("p", &planned.conflicts, &|_| None);
+        assert_eq!(
+            (
+                pairs.pairs[0].winner.as_str(),
+                pairs.pairs[0].loser.as_str(),
+                pairs.pairs[0].database
+            ),
+            ("a", "b", 1)
+        );
     }
 
     #[test]

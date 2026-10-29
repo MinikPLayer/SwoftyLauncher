@@ -1,0 +1,9 @@
+{
+  "hub.tab": {
+    "no_name": {
+      "$comment": "name is required",
+      "title": "Progressive",
+      "data_group": "f1_career_progressive"
+    }
+  }
+}

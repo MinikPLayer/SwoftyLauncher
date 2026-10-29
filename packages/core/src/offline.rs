@@ -195,7 +195,10 @@ const RUNNERS: [&str; 2] = ["f1op-prelaunch.exe", "f1op-probe.exe"];
 const RUNNERS: [&str; 2] = ["f1op-prelaunch-linux-x86_64", "f1op-probe-linux-x86_64"];
 
 fn verify_digest(path: &Path, name: &str, want: &str) -> Result<()> {
-    let have = sha256_file(path)?;
+    let have = sha256_file(path).map_err(|e| match e {
+        Error::Io { source, .. } if virus_blocked(&source) => Error::Other(ANTIVIRUS.to_owned()),
+        e => e,
+    })?;
     if have != want {
         return Err(Error::Other(format!(
             "{name}: digest mismatch (have {have}, want {want}); refusing to use it"
@@ -330,9 +333,31 @@ fn install_files(data: &Path, src: &Path, files: &[(&str, &str)]) -> Result<()> 
             let to = staging.join(name);
             std::fs::copy(&from, &to).map(|_| ()).map_err(io_err(&to))
         })
-        .and_then(|()| commit(data, &staging, files));
+        .and_then(|()| commit(data, &staging, files))
+        .map_err(av_error);
     std::fs::remove_dir_all(&staging).ok();
     done
+}
+
+const ANTIVIRUS: &str = "an antivirus removed or blocked Swofty's offline play file. Add an exclusion for the \
+     Swofty data folder (%LOCALAPPDATA%\\Swofty, or SWOFTY_DATA_DIR) and the F1 25 folder, restore the file \
+     from the antivirus's quarantine, then press Play";
+
+fn av_error(e: Error) -> Error {
+    match e {
+        Error::Io { source, .. } if virus_blocked(&source) => {
+            Error::Other(format!("offline play: {ANTIVIRUS}"))
+        }
+        e => e,
+    }
+}
+
+fn virus_code(code: i32) -> bool {
+    crate::quarantine::is_virus_code(code)
+}
+
+fn virus_blocked(e: &std::io::Error) -> bool {
+    e.raw_os_error().filter(|_| cfg!(windows)).is_some_and(virus_code)
 }
 
 /// Download the pinned release from the artifact host and install it. The
@@ -359,7 +384,8 @@ fn fetch_release(data: &Path, base: &str, version: &str, files: &[(&str, &str)])
             verify_digest(&to, name, digest)
                 .map_err(|e| Error::Other(format!("offline play {version}: {url}: {e}")))
         })
-        .and_then(|()| commit(data, &staging, files));
+        .and_then(|()| commit(data, &staging, files))
+        .map_err(av_error);
     std::fs::remove_dir_all(&staging).ok();
     done
 }
@@ -427,7 +453,13 @@ fn download(url: &str, to: &Path) -> std::result::Result<(), String> {
             body.len()
         ));
     }
-    std::fs::write(to, &body).map_err(|e| format!("{}: {e}", to.display()))
+    std::fs::write(to, &body).map_err(|e| {
+        if virus_blocked(&e) {
+            ANTIVIRUS.to_owned()
+        } else {
+            format!("{}: {e}", to.display())
+        }
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -1136,6 +1168,17 @@ pub fn restage(a: &Artifacts, journal: &Path) -> Result<Option<Slot>> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn antivirus_codes_get_the_plain_message() {
+        assert!(virus_code(225) && virus_code(226));
+        assert!(!virus_code(5) && !virus_code(32));
+        assert!(ANTIVIRUS.contains("antivirus") && ANTIVIRUS.contains("SWOFTY_DATA_DIR"));
+        assert!(!ANTIVIRUS.contains("os error"));
+        let e = std::io::Error::from_raw_os_error(225);
+        assert_eq!(virus_blocked(&e), cfg!(windows));
+        assert!(!virus_blocked(&std::io::Error::from_raw_os_error(5)));
+    }
+
     use super::*;
 
     fn temp(name: &str) -> PathBuf {

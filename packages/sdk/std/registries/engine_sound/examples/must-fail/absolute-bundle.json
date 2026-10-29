@@ -1,0 +1,8 @@
+{
+  "engine_sound": {
+    "absolute_bundle": {
+      "$comment": "a Path is relative to the addon's folder",
+      "bundle": "/sounds/v10_screamer.bdl"
+    }
+  }
+}

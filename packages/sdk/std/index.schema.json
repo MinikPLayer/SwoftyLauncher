@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "swofty/registry/index.json",
+  "type": "object",
+  "required": ["version", "profile", "order", "data"],
+  "properties": {
+    "version": { "const": 1 },
+    "profile": { "type": "string", "minLength": 1 },
+    "order": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string", "pattern": "^addons/[^/]+/registry/.+\\.json$" },
+        "minItems": 1
+      }
+    },
+    "registry": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "pattern": "^addons/[^/]+/registry\\.json$" }
+    },
+    "addons": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["name", "version", "code"],
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "code": { "type": "boolean" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

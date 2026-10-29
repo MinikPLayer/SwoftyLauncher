@@ -1,0 +1,11 @@
+{
+  "driver.look": {
+    "mika_salo_look": {
+      "helmet": "game/helmet_tier01_livery03",
+      "suit": "game/suit_generic_01",
+      "gloves": "game/gloves_generic_01",
+      "pose": "arms_crossed",
+      "podium_emote": "fist_pump"
+    }
+  }
+}

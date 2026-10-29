@@ -87,12 +87,15 @@ pub fn blocker(store: &Store, game: &Path, proton: Option<&Path>, apply: bool) -
 fn prepare(store: &Store, profile: &str, g: &Game, stub: &Path, hook: &Path) -> Result<Prepared> {
     let built = crate::build::build_profile(store, profile, g)?;
     crate::build::report(profile, &built);
-    let layers = overlayfs::split(
-        &built.plan,
-        swofty_core::builtin::loader_dir().as_deref(),
-        stub,
-        hook,
-    );
+    let mut plan = built.plan.clone();
+    if !plan.loader.is_empty() {
+        // The install places the core's state file with the loader; here it joins the layers, so
+        // the core's reports and stat ids go to the data folder in an OverlayFS session too.
+        let file = swofty_core::stdlib::state::stage(&store.root)?;
+        plan.loader
+            .insert(swofty_core::stdlib::state::FILE.to_owned(), file);
+    }
+    let layers = overlayfs::split(&plan, swofty_core::builtin::loader_dir().as_deref(), stub, hook);
     let prepared = overlayfs::prepare(
         store,
         profile,

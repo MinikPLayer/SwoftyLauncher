@@ -1,0 +1,26 @@
+{
+ "log": {"max_mb": 32, "on_full": "stop", "summary_every_s": 60},
+ "limits": {"max_events_total": 20000, "max_read": 64},
+ "hooks": [
+  {
+   "id": "t112.apply_block",
+   "test": "T112",
+   "sig": "car.upgrades_apply_to_vehicle",
+   "args": 3,
+   "regs": ["xmm3"],
+   "fields": ["block=cstr[64]:rdx", "flag=u32:r8", "veh=u8:[[[rcx+0x10]+0x10]+0xe8]", "eqperf=u32:[[[rcx+0x10]+0x10]+0x12c]", "applied_begin=ptr:[rcx+0x20]", "applied_end=ptr:[rcx+0x28]"],
+   "bt": 4,
+   "max_per_sec": 200,
+   "max_events": 4000
+  },
+  {
+   "id": "t112.section_call",
+   "test": "T112",
+   "sig": "car.upgrade_section_apply_call",
+   "regs": ["rcx", "xmm6"],
+   "fields": ["veh=u8:[[rcx+0x18]+0xe8]", "sys_vt=ptr:[rcx]"],
+   "max_per_sec": 400,
+   "max_events": 8000
+  }
+ ]
+}

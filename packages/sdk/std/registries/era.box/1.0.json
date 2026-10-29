@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "era.box 1.0",
+  "x-registry": "era.box",
+  "x-version": "1.0",
+  "x-applies": "read",
+  "x-snapshot": false,
+  "description": "content::EraBox: an entry in the Grand Prix and Time Trial era picker that opens a package.",
+  "type": "object",
+  "properties": {
+    "package": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "content.package"
+    },
+    "title": {
+      "$ref": "#/$defs/text",
+      "description": "absent or empty: the package's title"
+    },
+    "image": {
+      "type": "string"
+    },
+    "order": {
+      "type": "integer"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "era.box",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "package"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "text": {
+      "description": "A Text: a lang key as a string, or a literal.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literal": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

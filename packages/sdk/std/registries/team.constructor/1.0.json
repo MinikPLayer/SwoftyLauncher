@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "team.constructor 1.0",
+  "x-registry": "team.constructor",
+  "x-version": "1.0",
+  "x-applies": "boot",
+  "x-snapshot": false,
+  "x-shared": {
+    "provider_registry": "team.identity",
+    "provides": "/provides",
+    "resolved": "/team"
+  },
+  "description": "teams::Constructor: a real Formula 1 team. The ids are the core's shared ids (constructor/<key>): a team.identity record lists the ids it provides, and team is the last enabled provider in load order (null when none).",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "country": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "team": {
+      "description": "Resolved by the core: the last enabled team.identity in load order whose provides lists this id.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "team.identity"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "team.constructor",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "additionalProperties": true
+}

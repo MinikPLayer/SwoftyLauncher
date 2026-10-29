@@ -1,0 +1,8 @@
+{
+  "vehicle.package": {
+    "stat_id_word": {
+      "$comment": "an automatic stat_id is \"auto\" (or absent), not \"automatic\"",
+      "stat_id": "automatic"
+    }
+  }
+}

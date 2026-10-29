@@ -1,0 +1,7 @@
+{
+  "career.season": {
+    "what_if_2018": { "extends": "swofty.progressive/what_if_2017", "year": 2018, "teams": [ { "slot": 3, "seats": [] } ] },
+    "what_if_2019": { "extends": "swofty.progressive/what_if_2018", "year": 2019 },
+    "stock_2025_reshuffle": { "extends": "game/f1_2025", "teams": [ { "slot": 4, "seats": ["game/lewis_hamilton"] } ] }
+  }
+}

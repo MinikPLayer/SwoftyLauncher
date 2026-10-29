@@ -1,52 +1,73 @@
 ---
 title: UI patches
-description: The planned UI patch format for operations.ui — targets, node paths and screen edits. The build skips these files today.
+description: The planned UI patch format for operations.ui — targets, node paths, screen edits, route and UI database edits. The build skips these files today.
 ---
 
 # UI patches
 
-UI patches describe changes to menus, labels and routes, one kind of [operation](/reference/data/operations). Save them as `*.pkgpatch.json` and list them in `operations.ui` in your [manifest](/reference/addons/manifest#operations).
+A UI patch describes changes to menus, labels and routes, as a `*.pkgpatch.json` file listed in `operations.ui`.
 
 ::: warning Not built yet
-The build skips `operations.ui` and prints `<addon>: <n> UI operation file(s) skipped; that stage is not built yet`. This is the format for the planned build step. To change a menu today, ship an edited scene with `replace-resource` ([Editing menus](/reference/ui/editing-menus)), or edit a `!pkg` resource with [`patch-pkg`](/reference/ops/erp#editing-pkg-resources).
+The build skips `operations.ui` and prints:
+
+```text
+warning: yourname.home-text: 1 UI operation file(s) skipped; that stage is not built yet
+```
+
+This page is the format for the planned build step. To change a menu today, ship an edited scene with `replace-resource` ([Editing menus](/reference/ui/editing-menus)), or edit a `!pkg` resource with [`patch-pkg`](/reference/ops/erp#editing-pkg-resources).
 :::
 
-## Example
+## A UI patch in full
 
-```json
+```jsonc [ui/home.pkgpatch.json]
 {
   "schema_version": 1,
-  "targets": [
+  "targets": [                                       // the resources to change; the home screen has two copies
     { "erp": "2025_asset_groups/ui_package/flow_frontend.erp",
-      "resource": "eaid://ui_package/screens/fe_home.ui", "fragment": 0 },
+      "resource": "eaid://ui_package/screens/fe_home.ui", "fragment": 0 },   // fragment is optional, default 0
     { "erp": "2025_asset_groups/ui_package/screens/fe_home.erp",
       "resource": "eaid://ui_package/screens/fe_home.ui", "fragment": 0 }
   ],
-  "root": "Screens[0]:fe_home",
-  "edits": [
+  "root": "Screens[0]:fe_home",                      // optional: node paths are relative to it
+  "edits": [                                         // run in order
     { "op": "set-text", "node": "contextual_panels.offline_contextual_panel.subtitle",
       "value": "Launched with Swofty Launcher, press", "localise": false }
   ]
 }
 ```
 
-`targets` lists the resources to change. The home screen has two copies, so both are listed. Node paths are relative to `root`. Edits run in order.
+```json [swofty.json]
+"operations": {
+  "ui": ["ui/home.pkgpatch.json"]
+}
+```
+
+One kind of [operation](/reference/data/operations); see the [manifest](/reference/addons/manifest#operations).
 
 ## Screen edits
 
-| Edit | Purpose |
-|---|---|
-| `clone-node` | Copy `src` to a sibling named `as`; optionally change properties with `set` |
-| `set-text` | Set a label's `node`, `value` and `localise` flag |
-| `set-props` | Change properties on `node` using `set` |
-| `add-signal` | Add a `signal` to a node's `event` |
-| `remove-signal` | Remove signals from a node's `event` to a target `to` |
+```jsonc
+{ "op": "clone-node", "src": "panel.button_a", "as": "button_b",          // copy src to a sibling named as
+  "set": { "visible": true },                                           // optional: change properties of the copy
+  "replace_event": { "event": "on_click", "signals": [ { "to": "flow", "pin": "open" } ] } }  // optional
+{ "op": "set-text", "node": "panel.title", "value": "Garage", "localise": false }  // a label's text and localise flag
+{ "op": "set-props", "node": "panel.title", "set": { "visible": false } }          // change properties
+{ "op": "add-signal", "node": "panel.button_a", "event": "on_click",
+  "signal": { "to": "flow", "pin": "open", "from": "out", "attrs": { "screen": "garage" } } } // add a signal
+{ "op": "remove-signal", "node": "panel.button_a", "event": "on_click", "to": "flow" }        // remove signals to a target
+```
 
-Signals name a target node (`to`) and pin (`pin`). Optional fields are `from` and `attrs`.
+A signal names a target node (`to`) and a pin (`pin`). `from` and `attrs` are optional.
 
 ## Routes and UI databases
 
-For `.uir` and `.uidb` files, use `clone-entry` or `set-value`. Paths use dots for keys and `[field=value]` to select an array entry.
+For `.uir` and `.uidb` files, use `clone-entry` or `set-value`, the same edits [`patch-pkg`](/reference/ops/erp#editing-pkg-resources) runs. Paths use dots for keys and `[field=value]` to select an array entry:
+
+```jsonc
+{ "op": "clone-entry", "at": "routes", "src": "[name=fe_home]", "as": "fe_home_copy",
+  "set": { "screen": "fe_garage" } }
+{ "op": "set-value", "path": "routes[name=fe_home].screen", "value": "fe_garage" }
+```
 
 ## Text and prompts
 

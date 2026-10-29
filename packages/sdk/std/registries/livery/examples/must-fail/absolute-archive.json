@@ -1,0 +1,9 @@
+{
+  "livery": {
+    "x": {
+      "$comment": "a Path is relative to the addon folder",
+      "vehicle": "game/redbull_2025",
+      "archive": "/abs/x.erp"
+    }
+  }
+}

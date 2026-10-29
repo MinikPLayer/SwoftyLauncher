@@ -1,0 +1,13 @@
+{
+  "content.package": {
+    "unknown_rules_field": {
+      "$comment": "rules is a closed struct: drs_zones is not a field of sessions::Rules",
+      "entrant_list": "cs_f1_2017",
+      "season": 2017,
+      "rules": {
+        "refuelling": false,
+        "drs_zones": 2
+      }
+    }
+  }
+}

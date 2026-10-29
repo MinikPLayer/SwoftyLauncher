@@ -1,0 +1,33 @@
+{
+ "career": "dc-0000002a",
+ "data_group": "f1_career_progressive",
+ "layer": {
+  "registry": "career.season",
+  "id": "swofty.progressive/2016",
+  "patch": {
+   "teams": [
+    {
+     "slot": 1,
+     "seats": [
+      "game/z",
+      "game/b"
+     ]
+    }
+   ]
+  }
+ },
+ "reads": [
+  {
+   "registry": "career.season",
+   "id": "swofty.progressive/2016",
+   "pointer": "/teams/0/seats/0",
+   "value": "game/a"
+  },
+  {
+   "registry": "career.driver_ratings",
+   "id": "swofty.progressive/2017/game/a",
+   "pointer": "/pace",
+   "value": 87
+  }
+ ]
+}

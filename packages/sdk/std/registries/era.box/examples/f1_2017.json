@@ -1,0 +1,9 @@
+{
+  "era.box": {
+    "f1_2017": {
+      "package": "swofty.classic-seasons-2017/f1_2017",
+      "image": "#overrides.home_screen.tiles_solo_6x6[cs_f1_2017]",
+      "order": 2017
+    }
+  }
+}

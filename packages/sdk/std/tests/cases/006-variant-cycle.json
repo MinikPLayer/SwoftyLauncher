@@ -1,0 +1,81 @@
+{
+  "name": "a variant cycle is refused",
+  "rule": "the variant that closes a cycle (the later one in load order) is refused with reason cycle and has status invalid; a variant whose base is invalid is invalid too (bases.md#how-a-variant-resolves)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.a",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "test.thing",
+          "key": "x",
+          "base": "mod.b/y",
+          "patch": {
+            "n": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.b",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "test.thing",
+          "key": "y",
+          "base": "mod.a/x",
+          "patch": {
+            "n": 2
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "mod.a/x": {
+            "status": "invalid"
+          },
+          "mod.b/y": {
+            "status": "invalid"
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [
+        {
+          "addon": "mod.b",
+          "registry": "test.thing",
+          "id": "mod.b/y",
+          "op": 0,
+          "reason": "cycle"
+        }
+      ]
+    }
+  ]
+}

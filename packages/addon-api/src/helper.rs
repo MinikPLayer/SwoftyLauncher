@@ -85,6 +85,7 @@ pub enum HostCall {
     GameOriginalLang { code: String },
     GameDir,
     AddonGameDir,
+    RegistryDir,
     GameStatus,
     SteamSaveDir,
     ProfileTracks,
@@ -393,6 +394,7 @@ mod tests {
         for (method, call) in [
             ("game_dir", HostCall::GameDir),
             ("addon_game_dir", HostCall::AddonGameDir),
+            ("registry_dir", HostCall::RegistryDir),
             ("game_status", HostCall::GameStatus),
             ("steam_save_dir", HostCall::SteamSaveDir),
             ("profile_tracks", HostCall::ProfileTracks),

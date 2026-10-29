@@ -1,9 +1,11 @@
 #include "runtime.hpp"
+#include "registry/older.hpp"
 
 #include <safetyhook.hpp>
 #include <swofty/mixin.hpp>
 
 #include <atomic>
+#include <map>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -109,6 +111,67 @@ const char *lookup(const char *key)
     return out;
 }
 
+namespace older = swofty_core::registry::older;
+
+std::mutex g_shim;
+std::map<std::string, std::map<std::string, swofty::json::Value>> g_layers;
+
+void fill(const std::string &key, const swofty::json::Value &rec)
+{
+    auto texts = older::string_texts(rec);
+    AcquireSRWLockExclusive(&g_lock);
+    if (texts.empty())
+        g_map.erase(key);
+    else {
+        Entry e;
+        for (auto &[language, text] : texts) {
+            const char *copy = g_texts.emplace(text).first->c_str();
+            if (all_languages(language.c_str()))
+                e.all = copy;
+            else
+                e.per.emplace_back(lower(language), copy);
+        }
+        g_map[key] = std::move(e);
+    }
+    g_count.store(g_map.size(), std::memory_order_release);
+    ReleaseSRWLockExclusive(&g_lock);
+}
+
+void refresh_key(const std::string &key)
+{
+    fill(key, older::effective(runtime::older_store(), older::STRING, "game/" + key));
+}
+
+size_t refresh_all()
+{
+    auto &st = runtime::older_store();
+    size_t n = 0;
+    for (auto &id : older::string_ids(st)) {
+        swofty::json::Value rec = older::effective(st, older::STRING, id);
+        if (older::addon_of(id) != "game" && older::string_texts(rec).empty())
+            continue;
+        fill(older::key_of(id), rec);
+        n++;
+    }
+    return n;
+}
+
+void put_layer(const std::string &addon, const std::string &key)
+{
+    auto &st = runtime::older_store();
+    auto a = g_layers.find(addon);
+    if (a == g_layers.end())
+        return;
+    auto k = a->second.find(key);
+    if (k == a->second.end() || !k->second.is_object() || !k->second.size()) {
+        older::string_layer(st, addon, key, swofty::json::Value());
+        if (k != a->second.end())
+            a->second.erase(k);
+        return;
+    }
+    older::string_layer(st, addon, key, k->second);
+}
+
 const char *find_hook(void *set, const char *key, int32_t mode)
 {
     if (g_count.load(std::memory_order_acquire) && key)
@@ -163,24 +226,16 @@ int lang_override_set(const char *language, const char *key, const char *text)
         return SWOFTY_ASSET_INVALID;
     if (!ensure_find_hook())
         return SWOFTY_ASSET_UNAVAILABLE;
-    AcquireSRWLockExclusive(&g_lock);
-    const char *copy = g_texts.emplace(text).first->c_str();
-    Entry &e = g_map[key];
-    if (all_languages(language))
-        e.all = copy;
-    else {
-        std::string code = lower(language);
-        bool found = false;
-        for (auto &[c, t] : e.per)
-            if (c == code) {
-                t = copy;
-                found = true;
-            }
-        if (!found)
-            e.per.emplace_back(code, copy);
+    std::string addon = runtime::older_addon(__builtin_return_address(0));
+    {
+        std::lock_guard<std::mutex> g(g_shim);
+        swofty::json::Value &t = g_layers[addon][key];
+        if (!t.is_object())
+            t = swofty::json::Value::object();
+        t[all_languages(language) ? std::string("*") : lower(language)] = text;
+        put_layer(addon, key);
+        refresh_key(key);
     }
-    g_count.store(g_map.size(), std::memory_order_release);
-    ReleaseSRWLockExclusive(&g_lock);
     return SWOFTY_ASSET_OK;
 }
 
@@ -190,21 +245,18 @@ int lang_override_clear(const char *language, const char *key)
         return SWOFTY_ASSET_UNAVAILABLE;
     if (!key || !*key)
         return SWOFTY_ASSET_INVALID;
-    AcquireSRWLockExclusive(&g_lock);
-    auto it = g_map.find(std::string_view(key));
-    if (it != g_map.end()) {
+    std::lock_guard<std::mutex> g(g_shim);
+    for (auto &[addon, keys] : g_layers) {
+        auto k = keys.find(key);
+        if (k == keys.end())
+            continue;
         if (all_languages(language))
-            g_map.erase(it);
-        else {
-            std::string code = lower(language);
-            auto &per = it->second.per;
-            std::erase_if(per, [&](const auto &p) { return p.first == code; });
-            if (per.empty() && !it->second.all)
-                g_map.erase(it);
-        }
+            k->second = swofty::json::Value();
+        else
+            k->second.erase(lower(language));
+        put_layer(addon, key);
     }
-    g_count.store(g_map.size(), std::memory_order_release);
-    ReleaseSRWLockExclusive(&g_lock);
+    refresh_key(key);
     return SWOFTY_ASSET_OK;
 }
 
@@ -212,10 +264,22 @@ int lang_override_clear_all()
 {
     if (!g_on)
         return SWOFTY_ASSET_UNAVAILABLE;
+    std::lock_guard<std::mutex> g(g_shim);
+    for (auto &[addon, keys] : g_layers) {
+        std::vector<std::string> names;
+        for (auto &[k, t] : keys)
+            names.push_back(k);
+        for (auto &k : names) {
+            keys[k] = swofty::json::Value();
+            put_layer(addon, k);
+        }
+    }
+    g_layers.clear();
     AcquireSRWLockExclusive(&g_lock);
     g_map.clear();
     g_count.store(0, std::memory_order_release);
     ReleaseSRWLockExclusive(&g_lock);
+    refresh_all();
     return SWOFTY_ASSET_OK;
 }
 
@@ -266,6 +330,13 @@ void setup()
     swofty::log("[lang] override: %s (find %s, language table %s, module hook %s)",
                 g_find_at ? "ready, hooked on first use" : "off: Loc_LangSet_Find not found", g_find_at ? "found" : "missing",
                 g_info ? "found" : "missing", h_init ? "on" : "off");
+    if (!g_find_at)
+        return;
+    std::lock_guard<std::mutex> g(g_shim);
+    if (size_t n = refresh_all()) {
+        swofty::log("[lang] override: %zu string(s) from lang.string records", n);
+        ensure_find_hook();
+    }
 }
 
 void setup_once()

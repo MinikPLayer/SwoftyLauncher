@@ -1,0 +1,232 @@
+{
+  "name": "a new team as a variant of a stock team row: its own names, colours and label, the rest from the stock row and its layers",
+  "rule": "a new team copies a stock row as a variant: effective(base) + the variant's patch + layers on the variant; a profile-scope layer on the stock row reaches the new team's fields it doesn't set, in that profile only, and its change to a field the new team sets is a field contest the variant wins (std/systems/teams.md#a-new-team, bases.md#how-a-variant-resolves, scopes.md)",
+  "registries": {
+    "team.identity": {
+      "applies": "boot"
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "team.identity",
+      "key": "williams",
+      "value": {
+        "names": {
+          "title": "lng_team_williams",
+          "short_name": "lng_team_williams_short",
+          "code": "WIL"
+        },
+        "colours": {
+          "menu": "#00A0DE",
+          "primary": "#00A0DE",
+          "secondary": "#FFFFFF",
+          "tertiary": "#041E42"
+        },
+        "livery_name": "williams",
+        "prestige": 3,
+        "nationality": "great_britain"
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "custom.team-names",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "team.identity",
+          "target": "game/williams",
+          "patch": {
+            "names": {
+              "title": "lng_custom_williams_racing"
+            },
+            "prestige": 4
+          },
+          "scope": "profile",
+          "profile": "p1"
+        }
+      ]
+    },
+    {
+      "id": "creator.career-2012",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "team.identity",
+          "key": "hrt",
+          "base": "game/williams",
+          "patch": {
+            "names": {
+              "title": "lng_c2012_hrt",
+              "short_name": "lng_c2012_hrt_short",
+              "code": "HRT"
+            },
+            "colours": {
+              "menu": "#C8A165",
+              "primary": "#C8A165",
+              "secondary": "#1A1A1A"
+            },
+            "livery_name": "career2012_hrt",
+            "nationality": "spain"
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "p1",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "team.identity": {
+          "game/williams": {
+            "status": "ok",
+            "value": {
+              "names": {
+                "title": "lng_custom_williams_racing",
+                "short_name": "lng_team_williams_short",
+                "code": "WIL"
+              },
+              "colours": {
+                "menu": "#00A0DE",
+                "primary": "#00A0DE",
+                "secondary": "#FFFFFF",
+                "tertiary": "#041E42"
+              },
+              "livery_name": "williams",
+              "prestige": 4,
+              "nationality": "great_britain"
+            },
+            "origins": {
+              "/names/title": "custom.team-names",
+              "/prestige": "custom.team-names"
+            }
+          },
+          "creator.career-2012/hrt": {
+            "status": "ok",
+            "value": {
+              "names": {
+                "title": "lng_c2012_hrt",
+                "short_name": "lng_c2012_hrt_short",
+                "code": "HRT"
+              },
+              "colours": {
+                "menu": "#C8A165",
+                "primary": "#C8A165",
+                "secondary": "#1A1A1A",
+                "tertiary": "#041E42"
+              },
+              "livery_name": "career2012_hrt",
+              "prestige": 4,
+              "nationality": "spain"
+            },
+            "origins": {
+              "/names/title": "creator.career-2012",
+              "/names/short_name": "creator.career-2012",
+              "/names/code": "creator.career-2012",
+              "/colours/menu": "creator.career-2012",
+              "/colours/primary": "creator.career-2012",
+              "/colours/secondary": "creator.career-2012",
+              "/livery_name": "creator.career-2012",
+              "/nationality": "creator.career-2012",
+              "/prestige": "custom.team-names"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "field",
+          "registry": "team.identity",
+          "id": "creator.career-2012/hrt",
+          "pointer": "/names/title",
+          "addons": [
+            "custom.team-names",
+            "creator.career-2012"
+          ],
+          "winner": "creator.career-2012"
+        }
+      ],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "team.identity": {
+          "game/williams": {
+            "status": "ok",
+            "value": {
+              "names": {
+                "title": "lng_team_williams",
+                "short_name": "lng_team_williams_short",
+                "code": "WIL"
+              },
+              "colours": {
+                "menu": "#00A0DE",
+                "primary": "#00A0DE",
+                "secondary": "#FFFFFF",
+                "tertiary": "#041E42"
+              },
+              "livery_name": "williams",
+              "prestige": 3,
+              "nationality": "great_britain"
+            },
+            "origins": {}
+          },
+          "creator.career-2012/hrt": {
+            "status": "ok",
+            "value": {
+              "names": {
+                "title": "lng_c2012_hrt",
+                "short_name": "lng_c2012_hrt_short",
+                "code": "HRT"
+              },
+              "colours": {
+                "menu": "#C8A165",
+                "primary": "#C8A165",
+                "secondary": "#1A1A1A",
+                "tertiary": "#041E42"
+              },
+              "livery_name": "career2012_hrt",
+              "prestige": 3,
+              "nationality": "spain"
+            },
+            "origins": {
+              "/names/title": "creator.career-2012",
+              "/names/short_name": "creator.career-2012",
+              "/names/code": "creator.career-2012",
+              "/colours/menu": "creator.career-2012",
+              "/colours/primary": "creator.career-2012",
+              "/colours/secondary": "creator.career-2012",
+              "/livery_name": "creator.career-2012",
+              "/nationality": "creator.career-2012"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

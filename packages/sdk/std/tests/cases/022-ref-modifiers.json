@@ -1,0 +1,289 @@
+{
+  "name": "optional and fallback references resolve in the effective value",
+  "rule": "\"id?\" drops the nearest enclosing list element when nothing provides id, \"a|b\" resolves to the first id that resolves; readers get plain ids; a required ref that doesn't resolve makes a record invalid, and a layer that introduces one is refused as invalid (dependencies.md#when-a-reference-is-missing, layers.md#validation)",
+  "registries": {
+    "track": {
+      "applies": "boot"
+    },
+    "track.venue": {
+      "applies": "boot",
+      "shared": {
+        "provider_registry": "track",
+        "provides": "/provides",
+        "resolved": "/track"
+      }
+    },
+    "career.calendar": {
+      "applies": "boot",
+      "key_fields": {
+        "/rounds": [
+          "round"
+        ]
+      },
+      "refs": {
+        "/rounds/*/venue": "track.venue"
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "track",
+      "key": "bahrain",
+      "value": {
+        "code": "bahrain",
+        "provides": [
+          "venue/bahrain"
+        ]
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "track.venue",
+      "key": "bahrain",
+      "value": {
+        "name": "Bahrain",
+        "track": null
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "track.venue",
+      "key": "sochi",
+      "value": {
+        "name": "Sochi",
+        "track": null
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "track.venue",
+      "key": "sepang",
+      "value": {
+        "name": "Sepang",
+        "track": null
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.classic-seasons-2016",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "career.calendar",
+          "key": "f1_2016",
+          "value": {
+            "rounds": [
+              {
+                "round": 1,
+                "race": "lng_gp_bahrain",
+                "venue": "venue/bahrain"
+              },
+              {
+                "round": 4,
+                "race": "lng_gp_russia",
+                "venue": "venue/sochi?"
+              },
+              {
+                "round": 16,
+                "race": "lng_gp_malaysia",
+                "venue": "venue/sepang|venue/bahrain"
+              }
+            ]
+          }
+        },
+        {
+          "op": "add",
+          "registry": "career.calendar",
+          "key": "strict",
+          "value": {
+            "rounds": [
+              {
+                "round": 1,
+                "race": "lng_gp_russia",
+                "venue": "venue/sochi"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.sochi",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "track",
+          "key": "sochi",
+          "value": {
+            "code": "sochi",
+            "provides": [
+              "venue/sochi"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.bad",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.calendar",
+          "target": "swofty.classic-seasons-2016/f1_2016",
+          "patch": {
+            "rounds": [
+              {
+                "round": 1,
+                "venue": "venue/nowhere"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": [
+          "mod.sochi"
+        ]
+      },
+      "expect": {
+        "career.calendar": {
+          "swofty.classic-seasons-2016/f1_2016": {
+            "status": "ok",
+            "value": {
+              "rounds": [
+                {
+                  "round": 1,
+                  "race": "lng_gp_bahrain",
+                  "venue": "venue/bahrain"
+                },
+                {
+                  "round": 16,
+                  "race": "lng_gp_malaysia",
+                  "venue": "venue/bahrain"
+                }
+              ]
+            },
+            "origins": {}
+          },
+          "swofty.classic-seasons-2016/strict": {
+            "status": "invalid"
+          }
+        },
+        "track.venue": {
+          "venue/sochi": {
+            "status": "no_record"
+          },
+          "venue/sepang": {
+            "status": "no_record"
+          },
+          "venue/bahrain": {
+            "status": "ok",
+            "value": {
+              "name": "Bahrain",
+              "track": "game/bahrain"
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [
+        {
+          "addon": "mod.bad",
+          "registry": "career.calendar",
+          "id": "swofty.classic-seasons-2016/f1_2016",
+          "op": 0,
+          "reason": "invalid"
+        }
+      ]
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.calendar": {
+          "swofty.classic-seasons-2016/f1_2016": {
+            "status": "ok",
+            "value": {
+              "rounds": [
+                {
+                  "round": 1,
+                  "race": "lng_gp_bahrain",
+                  "venue": "venue/bahrain"
+                },
+                {
+                  "round": 4,
+                  "race": "lng_gp_russia",
+                  "venue": "venue/sochi"
+                },
+                {
+                  "round": 16,
+                  "race": "lng_gp_malaysia",
+                  "venue": "venue/bahrain"
+                }
+              ]
+            },
+            "origins": {}
+          },
+          "swofty.classic-seasons-2016/strict": {
+            "status": "ok",
+            "value": {
+              "rounds": [
+                {
+                  "round": 1,
+                  "race": "lng_gp_russia",
+                  "venue": "venue/sochi"
+                }
+              ]
+            },
+            "origins": {}
+          }
+        },
+        "track.venue": {
+          "venue/sochi": {
+            "status": "ok",
+            "value": {
+              "name": "Sochi",
+              "track": "mod.sochi/sochi"
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [
+        {
+          "addon": "mod.bad",
+          "registry": "career.calendar",
+          "id": "swofty.classic-seasons-2016/f1_2016",
+          "op": 0,
+          "reason": "invalid"
+        }
+      ]
+    }
+  ]
+}

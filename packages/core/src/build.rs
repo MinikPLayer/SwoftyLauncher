@@ -567,6 +567,24 @@ pub fn named(store: &Store, game: &Path, e: Error) -> Error {
     e
 }
 
+/// The `registry.json` of each addon whose `replaced_operations` the core in
+/// `loader` applies instead: the core lists the rows feature and the addon has
+/// data files, which reach the core through the registry index.
+fn replaced_operations<'a>(
+    std16: &'a BTreeMap<String, crate::stdlib::deps::Std>,
+    loader: Option<&Path>,
+) -> BTreeMap<&'a str, &'a crate::stdlib::manifest::RegistryManifest> {
+    if !loader.is_some_and(crate::stdlib::manifest::core_applies_rows) {
+        return BTreeMap::new();
+    }
+    std16
+        .iter()
+        .filter(|(_, s)| !s.data_files.is_empty())
+        .filter_map(|(id, s)| Some((id.as_str(), s.registry.as_ref()?)))
+        .filter(|(_, r)| !r.replaced_operations.is_empty())
+        .collect()
+}
+
 /// A `checking` build gives addon build hooks a host that lists addons but
 /// cannot install, remove, turn on or move them.
 pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool) -> Result<Built> {
@@ -581,6 +599,14 @@ pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool
         }
     }
     let resolved = resolve(&p, &addons)?;
+    let std16 = match p.is_vanilla() {
+        true => BTreeMap::new(),
+        false => crate::stdlib::deps::read_all(store, &addons),
+    };
+    let deps = crate::stdlib::deps::for_order(profile, &resolved.order, &addons, &std16);
+    if let Some(stop) = deps.stop_text() {
+        return Err(Error::Dependencies(stop));
+    }
     let mut built = Built {
         order: resolved.order.clone(),
         warnings: skipped
@@ -593,6 +619,16 @@ pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool
         },
         ..Built::default()
     };
+    built
+        .warnings
+        .extend(deps.of(crate::stdlib::deps::Level::Warn).map(|f| f.line()));
+    built.lines.extend(
+        deps.of(crate::stdlib::deps::Level::Hint)
+            .map(|f| format!("registry: {}", f.line())),
+    );
+    built
+        .lines
+        .extend(deps.notes.iter().map(|n| format!("registry: {n}")));
     built.report = Report {
         profile: profile.into(),
         built_at: crate::conflicts::now(),
@@ -723,6 +759,8 @@ pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool
     }
     let mut head_puts = crate::heads::Puts::default();
     let mut outputs = BTreeMap::new();
+    let replaced = replaced_operations(&std16, loader_dir().as_deref());
+    let mut left_to_core = false;
     for id in &resolved.order {
         let m = &addons[id];
         let mut out = OutputBuilder::default();
@@ -754,6 +792,15 @@ pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool
         }
         for (kind, rel) in m.operations.op_files() {
             if package.is_some() && kind == FileKind::Database {
+                continue;
+            }
+            if replaced.get(id.as_str()).is_some_and(|r| r.replaces(rel)) {
+                left_to_core = true;
+                hasher.update(format!("replaced {rel};"));
+                built.lines.push(format!(
+                    "registry: {}: {rel} is applied by the core from the addon's registry records",
+                    m.name
+                ));
                 continue;
             }
             let file = render_file(&dir.join(rel), kind, m, &p, &mut hasher)?;
@@ -878,6 +925,8 @@ pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool
         }
         outputs.insert(id.clone(), out.finish());
     }
+    // The core applies registry records at boot only when it loads at the early stage.
+    runtime.assets.early_stage |= left_to_core;
     if head_puts.pending() {
         let path = original(&store.root, game, GVDB);
         let stock = crate::heads::labels(&Gvdb::parse(&std::fs::read(&path).map_err(io_err(&path))?)?);
@@ -980,6 +1029,38 @@ pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool
     hasher.update(sha256_file(&db_src)?);
     let order: Vec<&AddonManifest> = resolved.order.iter().map(|id| &addons[id]).collect();
     hash_unread(&mut hasher, store, game, &order, planner.erp_ops(), &resolve)?;
+    let std_index = loader_dir()
+        .is_some()
+        .then(|| {
+            crate::stdlib::index::Index::plan(profile, &resolved.order, &addons, &std16, &store.addons_dir())
+        })
+        .flatten();
+    if let Some(placed) = &std_index {
+        hasher.update(crate::stdlib::index::Index::stamp(placed)?);
+        for id in &resolved.order {
+            for path in std16.get(id).into_iter().flat_map(|s| &s.files.missing) {
+                built.warnings.push(format!(
+                    "{}: its registry data names {path}, which isn't a file or folder inside the addon; the game \
+                     reports it missing",
+                    addons[id].name
+                ));
+            }
+        }
+    }
+    let room_asked = std16
+        .values()
+        .any(|s| resolved.order.contains(&s.id) && s.is_std())
+        .then(|| {
+            crate::stdlib::room::asked(
+                crate::stdlib::reports::Room::read(&store.root, Some(&game.dir)).as_ref(),
+                profile,
+                &resolved.order,
+            )
+        })
+        .flatten();
+    if let Some(asked) = room_asked {
+        hasher.update(format!("room {asked};"));
+    }
     built.buildhash = hex(&hasher.finalize())[..16].to_owned();
     built.overlay = store.overlay_dir(profile, &built.buildhash);
     let (lines_at, warnings_at) = (built.lines.len(), built.warnings.len());
@@ -1005,7 +1086,7 @@ pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool
     };
     let mut stock_removals = BTreeMap::new();
     let mut kept_lists = BTreeMap::new();
-    if !maps.is_empty() || planner.has_db() {
+    if !maps.is_empty() || planner.has_db() || room_asked.is_some() {
         let shipped = std::fs::read(&db_src).map_err(io_err(&db_src))?;
         let mut db = Gvdb::parse(&shipped)?;
         let stock: HashSet<u64> = db.records.iter().map(|r| r.key).collect();
@@ -1116,22 +1197,38 @@ pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool
             session.owned_items = found.items;
         }
         let cars = grid_size(&db);
+        let mut on_file = true;
         if let Some(staged) = staged {
-            let room = runtime_record_room(runtime_loaded_estimate(staged.records.len()));
+            let loaded = runtime_loaded_estimate(staged.records.len());
+            let room = runtime_record_room(loaded);
             let known: HashSet<u64> = staged.records.iter().map(|r| r.key).collect();
             let created = db.records.iter().filter(|r| !known.contains(&r.key)).count();
+            let route = crate::stdlib::room::route(loaded, created, room_asked);
             match db_edits(&staged, &db) {
                 Ok(_) if created > room => built.lines.push(format!(
                     "database: built into the game file; the addons add {created} record(s) and the game's \
                      database takes {room} more once it has loaded"
                 )),
-                Ok(edits) => {
+                Ok(edits) if route == crate::stdlib::room::Route::Runtime => {
                     runtime.db(edits);
                     db = staged;
+                    on_file = false;
                 }
+                Ok(_) => {}
                 Err(why) => built
                     .warnings
                     .push(format!("database: built into the game file; {why}")),
+            }
+        }
+        if let Some(asked) = room_asked.filter(|_| on_file)
+            && let crate::stdlib::room::Route::File { pad_to, short } =
+                crate::stdlib::room::file_route(db.records.len(), asked)
+        {
+            let added = crate::stdlib::room::pad(&mut db, pad_to);
+            if added > 0 || short > 0 {
+                built
+                    .lines
+                    .push(crate::stdlib::room::line(pad_to, added, asked, short));
             }
         }
         let bytes = db.to_bytes();
@@ -1614,6 +1711,37 @@ pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool
                 }
             }
             session.plugins = plugins.dlls;
+            if let Some(placed) = &std_index {
+                let index = built.overlay.join("registry-index.json");
+                std::fs::create_dir_all(&built.overlay).map_err(io_err(&built.overlay))?;
+                std::fs::write(&index, placed.index.to_json()).map_err(io_err(&index))?;
+                for (rel, src) in placed
+                    .files
+                    .iter()
+                    .map(|(r, s)| (r.clone(), s.clone()))
+                    .chain([(crate::stdlib::index::PATH.to_owned(), index)])
+                {
+                    match built.plan.loader.insert(rel.clone(), src.clone()) {
+                        Some(before) if before != src => {
+                            return Err(Error::Other(format!("{rel} is placed twice")));
+                        }
+                        _ => {}
+                    }
+                }
+                let data: usize = placed.index.addons.iter().map(|a| a.data.len()).sum();
+                let named: usize = placed
+                    .index
+                    .addons
+                    .iter()
+                    .filter_map(|a| std16.get(&a.id))
+                    .map(|s| s.files.files.len())
+                    .sum();
+                built.lines.push(format!(
+                    "registry: index for {} addon(s) with {data} data file(s) and {named} file(s) they name, under \
+                     {LOADER_DIR}/registry and {LOADER_DIR}/{ADDONS_DIR}",
+                    placed.index.addons.len()
+                ));
+            }
         }
         None => built.warnings.push(format!(
             "{CORE_ID}: the in-game loader was not found (native/dist, loader/ beside the swofty command, or {LOADER_ENV}); the game starts without it"
@@ -1652,9 +1780,11 @@ pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool
         .then(|| crate::dbedit::Catalog::open(store, game).ok())
         .flatten();
     let record = |key: u64| {
-        catalog
-            .as_deref()
-            .and_then(|c| crate::conflicts::record_name(c, key))
+        planned.record_names.get(&key).cloned().or_else(|| {
+            catalog
+                .as_deref()
+                .and_then(|c| crate::conflicts::record_name(c, key))
+        })
     };
     let (report, within) = crate::conflicts::summarise(profile, &planned.conflicts, &record);
     built.warnings.extend(report.pairs.iter().map(|p| p.line(&name)));
@@ -2148,6 +2278,53 @@ mod tests {
     use crate::asset::{FileOp, Root, Source};
     use crate::baseline::Identity;
     use crate::launcher::{Addon, Builtin};
+
+    #[test]
+    fn only_a_core_with_the_rows_feature_takes_the_replaced_operations_of_addons_with_data_files() {
+        let root = std::env::temp_dir().join(format!("swofty-replaced-{}", std::process::id()));
+        std::fs::remove_dir_all(&root).ok();
+        let features = root.join(crate::planner::FEATURES_FILE);
+        std::fs::create_dir_all(features.parent().unwrap()).unwrap();
+        let std = |id: &str, data: bool, registry: Option<&str>| crate::stdlib::deps::Std {
+            id: id.into(),
+            name: id.into(),
+            version: semver::Version::new(1, 0, 0),
+            registry: registry.map(|r| crate::stdlib::manifest::RegistryManifest::parse(r).unwrap()),
+            lock: None,
+            data_files: match data {
+                true => vec!["registry/content.json".into()],
+                false => Vec::new(),
+            },
+            records: Vec::new(),
+            files: Default::default(),
+            unreadable: Vec::new(),
+        };
+        let replaces = r#"{ "replaced_operations": ["db/records.json"] }"#;
+        let std16 = BTreeMap::from([
+            ("a.season".to_owned(), std("a.season", true, Some(replaces))),
+            ("b.nodata".to_owned(), std("b.nodata", false, Some(replaces))),
+            (
+                "c.plain".to_owned(),
+                std("c.plain", true, Some(r#"{ "requires": [] }"#)),
+            ),
+            ("d.old".to_owned(), std("d.old", true, None)),
+        ]);
+        assert!(replaced_operations(&std16, None).is_empty(), "no loader");
+        std::fs::write(&features, r#"{ "schema": 1, "features": { "db": "stable" } }"#).unwrap();
+        assert!(
+            replaced_operations(&std16, Some(&root)).is_empty(),
+            "a core without the rows feature"
+        );
+        std::fs::write(
+            &features,
+            r#"{ "schema": 1, "features": { "db": "stable", "registry_rows": "stable" } }"#,
+        )
+        .unwrap();
+        let r = replaced_operations(&std16, Some(&root));
+        assert_eq!(r.keys().copied().collect::<Vec<_>>(), ["a.season"]);
+        assert!(r["a.season"].replaces("db/records.json") && !r["a.season"].replaces("db/season.json"));
+        std::fs::remove_dir_all(&root).ok();
+    }
 
     #[test]
     fn a_missing_or_cut_short_file_names_its_addon_or_the_game() {
@@ -4840,6 +5017,7 @@ mod tests {
     fn a_resource_edit_that_leaves_stale_tsmd_stats_gets_them_rebuilt() {
         use swofty_formats::bxml::{Document, Element, Kind};
         use swofty_formats::erp::{Erp, Fragment, HEADER_LEN, MAGIC, Resource, STORED};
+        let _pin = crate::builtin::LoaderPin::none();
         let root = std::env::temp_dir().join(format!("swofty-build-tsmd-{}", std::process::id()));
         std::fs::remove_dir_all(&root).ok();
         let dir = root.join("game");

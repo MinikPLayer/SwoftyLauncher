@@ -1,0 +1,9 @@
+{
+  "addon.option": {
+    "no_value": {
+      "$comment": "value is required",
+      "type": "toggle",
+      "states": []
+    }
+  }
+}

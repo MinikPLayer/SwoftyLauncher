@@ -1,0 +1,11 @@
+{
+  "career.season": {
+    "swofty.progressive/2017": {
+      "teams": [
+        { "slot": 1, "seats": ["game/fernando_alonso", "game/valtteri_bottas"] },
+        { "slot": 11, "team": "game/manor", "seats": ["game/pascal_wehrlein", "game/esteban_ocon"] }
+      ],
+      "changes": [ { "round": 15, "slot": 8, "seat": 1, "$delete": true } ]
+    }
+  }
+}

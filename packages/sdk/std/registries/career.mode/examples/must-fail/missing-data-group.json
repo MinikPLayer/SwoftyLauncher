@@ -1,0 +1,8 @@
+{
+  "career.mode": {
+    "missing_data_group": {
+      "$comment": "data_group is required",
+      "title": "lng_x"
+    }
+  }
+}

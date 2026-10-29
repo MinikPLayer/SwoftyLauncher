@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "career.driver_ratings 1.0",
+  "x-registry": "career.driver_ratings",
+  "x-version": "1.0",
+  "x-applies": "read",
+  "x-snapshot": true,
+  "x-snapshot-budget": 65536,
+  "description": "career::DriverRatings: a driver's ratings at the start of a season (0-100).",
+  "type": "object",
+  "properties": {
+    "season": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "career.season"
+    },
+    "driver": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "driver.identity"
+    },
+    "experience": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "racecraft": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "awareness": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "pace": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "career.driver_ratings",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "season",
+    "driver"
+  ],
+  "additionalProperties": true,
+  "$defs": {}
+}

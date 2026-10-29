@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "driver.person 1.0",
+  "x-registry": "driver.person",
+  "x-version": "1.0",
+  "x-applies": "boot",
+  "x-snapshot": false,
+  "description": "drivers::Person: a real racing driver. The core owns the person/ ids; driver is resolved to the last enabled driver in load order that is this person.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nationality": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "driver": {
+      "description": "Resolved by the core.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "driver.identity"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "driver.person",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "additionalProperties": true
+}

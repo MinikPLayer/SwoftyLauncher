@@ -1,0 +1,9 @@
+{
+  "livery": {
+    "x": {
+      "$comment": "unlock is owned or game",
+      "vehicle": "game/redbull_2025",
+      "unlock": "free"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "driver.identity": {
+    "no_look": {
+      "$comment": "look is required: a seated driver with no look hangs the session",
+      "names": {
+        "first": "lng_a"
+      }
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "team.identity": {
+    "toro_rosso": {
+      "donor": "game/tororosso",
+      "constructor": "constructor/toro_rosso",
+      "provides": [
+        "constructor/toro_rosso"
+      ],
+      "names": {
+        "title": "lng_cs_team_17_toro_rosso",
+        "code": "STR"
+      },
+      "colours": {
+        "menu": "#0A1E3C",
+        "primary": "#0A1E3C",
+        "secondary": "#C8102E",
+        "tertiary": "#FFFFFF"
+      },
+      "livery_name": "cs17_toro_rosso",
+      "logo": "swofty.classic-seasons-2017/toro_rosso_2017",
+      "stat_id": "auto"
+    }
+  }
+}

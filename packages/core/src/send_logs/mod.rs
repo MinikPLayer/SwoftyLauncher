@@ -351,6 +351,25 @@ impl Bundle {
                 }
             }
         }
+        for name in crate::stdlib::reports::SENT {
+            if let Some(file) = crate::stdlib::reports::found(&store.root, report.game.dir.as_deref(), name) {
+                c.file(format!("game/registry/{name}"), &file, None);
+            }
+        }
+        let careers = crate::stdlib::careers::data_path(&store.root);
+        let careers = if careers.is_file() {
+            Some(careers)
+        } else {
+            report
+                .game
+                .dir
+                .as_ref()
+                .map(|g| g.join(crate::stdlib::careers::GAME_PATH))
+                .filter(|p| p.is_file())
+        };
+        if let Some(careers) = careers {
+            c.file("game/careers/index.json".into(), &careers, None);
+        }
         if let Some(game) = &report.game.dir {
             let game = &crate::overlayfs::files_root(&store.root, game);
             let status = game.join(crate::multiplayer::bridge::STATUS_FILE);

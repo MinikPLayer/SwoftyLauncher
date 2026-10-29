@@ -1,6 +1,6 @@
 use std::ffi::{c_char, c_int, c_void};
 
-pub const SWOFTY_API_VERSION: u32 = 8;
+pub const SWOFTY_API_VERSION: u32 = 9;
 pub const INIT_SYMBOLS: [&str; 2] = ["SwoftyAddonInit", "SwoftyModInit"];
 pub const API_SYMBOLS: [&str; 2] = ["SwoftyAddonApi", "SwoftyModApi"];
 pub const HEADER: &str = include_str!("../include/swofty_api.h");
@@ -611,6 +611,9 @@ pub struct SwoftyApi {
     pub characters: *const SwoftyCharacters,
     pub career_wizard: *const SwoftyCareerWizard,
     pub era: *const SwoftyEra,
+    pub registry: *const c_void,
+    pub hooks: *const c_void,
+    pub services: *const c_void,
 }
 
 pub type SwoftyAddonInitFn = unsafe extern "C" fn(api: *const SwoftyApi) -> c_int;
@@ -697,7 +700,9 @@ mod tests {
 
     #[test]
     fn layout_matches_header() {
-        assert_eq!(std::mem::size_of::<SwoftyApi>(), 176);
+        assert_eq!(std::mem::size_of::<SwoftyApi>(), 200);
+        assert_eq!(std::mem::offset_of!(SwoftyApi, registry), 176);
+        assert_eq!(std::mem::offset_of!(SwoftyApi, services), 192);
         assert_eq!(std::mem::offset_of!(SwoftyApi, era), 168);
         assert_eq!(std::mem::size_of::<SwoftyEraBox>(), 40);
         assert_eq!(std::mem::offset_of!(SwoftyEraBox, order), 32);
@@ -792,6 +797,11 @@ mod tests {
             "#define SWOFTY_API_CAREER_WIZARD 1",
             "const SwoftyEra *era;",
             "#define SWOFTY_API_ERA 1",
+            "const SwoftyRegistry *registry;",
+            "const SwoftyHooks *hooks;",
+            "const SwoftyServices *services;",
+            "#define SWOFTY_REGISTRY_VERSION 1",
+            "SwoftyCoreRegistry(void);",
             "} SwoftyEraBox;",
             "#define SWOFTY_EVENT_CAREER_HUB \"career.hub\"",
             "} SwoftyCareerState;",

@@ -9,6 +9,7 @@ mod colour;
 mod console;
 mod crash_modal;
 mod db;
+mod developer;
 mod discord;
 mod ea_app;
 mod game;

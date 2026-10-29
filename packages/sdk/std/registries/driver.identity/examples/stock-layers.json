@@ -1,0 +1,7 @@
+{
+  "driver.identity": {
+    "game/daniil_kvyat": {
+      "head": "mod.kvyat-face/kvyat|game/kvyat"
+    }
+  }
+}

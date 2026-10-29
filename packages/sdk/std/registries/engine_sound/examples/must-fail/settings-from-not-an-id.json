@@ -1,0 +1,9 @@
+{
+  "engine_sound": {
+    "settings_from_not_an_id": {
+      "$comment": "settings_from is a full record id",
+      "bundle": "sounds/v10_screamer.bdl",
+      "settings_from": "Ferrari 2025"
+    }
+  }
+}

@@ -1,0 +1,1 @@
+{ "career.season": { "a": { "extends": "x/b", "year": 2017 }, "b": { "extends": "x/a", "year": 2018 } } }

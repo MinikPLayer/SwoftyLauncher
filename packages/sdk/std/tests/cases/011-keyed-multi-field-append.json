@@ -1,0 +1,188 @@
+{
+  "name": "multi-field keys, appends and a delete of a missing key",
+  "rule": "an element is matched on every key field (changes: round, slot, seat, in that order in pointers); a key the list doesn't have is appended at the end; \"$delete\" of a key the list doesn't have changes nothing (layers.md#without-code, registry.md#records-are-structs)",
+  "registries": {
+    "career.season": {
+      "applies": "read",
+      "key_fields": {
+        "/teams": [
+          "slot"
+        ],
+        "/changes": [
+          "round",
+          "slot",
+          "seat"
+        ]
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.progressive",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "career.season",
+          "key": "2016",
+          "value": {
+            "data_group": "f1_career_progressive",
+            "year": 2016,
+            "teams": [
+              {
+                "slot": 3,
+                "team": "game/redbull",
+                "seats": [
+                  "game/daniel_ricciardo",
+                  "game/daniil_kvyat"
+                ]
+              }
+            ],
+            "changes": [
+              {
+                "round": 5,
+                "slot": 3,
+                "seat": 1,
+                "out": "game/daniil_kvyat",
+                "in": "game/max_verstappen",
+                "kind": "swap"
+              },
+              {
+                "round": 5,
+                "slot": 8,
+                "seat": 1,
+                "out": "game/max_verstappen",
+                "in": "game/daniil_kvyat",
+                "kind": "swap"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.a",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.season",
+          "target": "swofty.progressive/2016",
+          "patch": {
+            "teams": [
+              {
+                "slot": 2,
+                "team": "game/ferrari",
+                "seats": [
+                  "game/sebastian_vettel",
+                  "game/kimi_raikkonen"
+                ]
+              }
+            ],
+            "changes": [
+              {
+                "round": 5,
+                "slot": 3,
+                "seat": 1,
+                "in": "game/pierre_gasly"
+              },
+              {
+                "round": 9,
+                "slot": 3,
+                "seat": 1,
+                "out": "game/max_verstappen",
+                "in": "game/pierre_gasly",
+                "kind": "stand_in",
+                "until_round": 10
+              },
+              {
+                "round": 20,
+                "slot": 1,
+                "seat": 0,
+                "$delete": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.season": {
+          "swofty.progressive/2016": {
+            "status": "ok",
+            "value": {
+              "data_group": "f1_career_progressive",
+              "year": 2016,
+              "teams": [
+                {
+                  "slot": 3,
+                  "team": "game/redbull",
+                  "seats": [
+                    "game/daniel_ricciardo",
+                    "game/daniil_kvyat"
+                  ]
+                },
+                {
+                  "slot": 2,
+                  "team": "game/ferrari",
+                  "seats": [
+                    "game/sebastian_vettel",
+                    "game/kimi_raikkonen"
+                  ]
+                }
+              ],
+              "changes": [
+                {
+                  "round": 5,
+                  "slot": 3,
+                  "seat": 1,
+                  "out": "game/daniil_kvyat",
+                  "in": "game/pierre_gasly",
+                  "kind": "swap"
+                },
+                {
+                  "round": 5,
+                  "slot": 8,
+                  "seat": 1,
+                  "out": "game/max_verstappen",
+                  "in": "game/daniil_kvyat",
+                  "kind": "swap"
+                },
+                {
+                  "round": 9,
+                  "slot": 3,
+                  "seat": 1,
+                  "out": "game/max_verstappen",
+                  "in": "game/pierre_gasly",
+                  "kind": "stand_in",
+                  "until_round": 10
+                }
+              ]
+            },
+            "origins": {
+              "/teams/slot=2": "mod.a",
+              "/changes/round=5,slot=3,seat=1/in": "mod.a",
+              "/changes/round=9,slot=3,seat=1": "mod.a"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

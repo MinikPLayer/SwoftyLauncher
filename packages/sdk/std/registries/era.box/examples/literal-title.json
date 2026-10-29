@@ -1,0 +1,12 @@
+{
+  "era.box": {
+    "literal_title": {
+      "package": "mod.esp/f1_2017_v10",
+      "title": {
+        "literal": "F1 2017 (V10)"
+      },
+      "image": "#overrides.home_screen.tiles_solo_6x6[esp_f1_2017_v10]",
+      "order": 2018
+    }
+  }
+}

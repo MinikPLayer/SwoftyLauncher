@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "team.identity 1.0",
+  "x-registry": "team.identity",
+  "x-version": "1.0",
+  "x-applies": "boot",
+  "x-snapshot": false,
+  "description": "teams::Identity: one entrants.teams row, with its names, colours, logo and the side data the game finds by its label. A new team copies every key of its donor's row (story_info included); keys this schema doesn't list ride in the record as they are.",
+  "type": "object",
+  "properties": {
+    "donor": {
+      "description": "The stock row it copies (new teams); a variant copies its base's.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "team.identity"
+    },
+    "constructor": {
+      "description": "The real team it is; null: a fictional team.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "team.constructor"
+    },
+    "provides": {
+      "description": "The constructor/ ids this team provides: the last enabled provider in load order is what a reference to the id resolves to. A stock team provides its real team's id.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^constructor/[a-z0-9_]+$"
+      },
+      "uniqueItems": true
+    },
+    "names": {
+      "$ref": "#/$defs/names"
+    },
+    "colours": {
+      "$ref": "#/$defs/colours"
+    },
+    "wear": {
+      "description": "team_wear_*: null follows colours (the kit follows primary).",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/colours"
+        }
+      ]
+    },
+    "livery_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "logo": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "team.logo"
+    },
+    "audio_id": {
+      "type": "string"
+    },
+    "prestige": {
+      "type": "integer"
+    },
+    "nationality": {
+      "type": "string"
+    },
+    "stat_id": {
+      "$ref": "#/$defs/stat_id"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "team.identity",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "names",
+    "livery_name"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "names": {
+      "description": "teams::Names: display_name, display_name_short, display_name_super_short and display_name_code.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "short_name": {
+          "$ref": "#/$defs/text"
+        },
+        "super_short": {
+          "$ref": "#/$defs/text"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z0-9]{1,4}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "colours": {
+      "description": "teams::Colours: ui_team_colour, primary_colour, secondary_colour and tertiary_colour.",
+      "type": "object",
+      "properties": {
+        "menu": {
+          "$ref": "#/$defs/colour"
+        },
+        "primary": {
+          "$ref": "#/$defs/colour"
+        },
+        "secondary": {
+          "$ref": "#/$defs/colour"
+        },
+        "tertiary": {
+          "$ref": "#/$defs/colour"
+        }
+      },
+      "additionalProperties": false
+    },
+    "text": {
+      "description": "A Text: a lang key as a string, or a literal.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literal": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "colour": {
+      "description": "A Colour: \"#RRGGBB\" or \"#AARRGGBB\".",
+      "type": "string",
+      "pattern": "^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"
+    },
+    "stat_id": {
+      "description": "A StatId: an explicit id, or \"auto\" (absent: \"auto\") for the core to allocate one.",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "auto"
+        }
+      ]
+    }
+  }
+}

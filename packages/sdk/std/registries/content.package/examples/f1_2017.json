@@ -1,0 +1,57 @@
+{
+  "content.package": {
+    "f1_2017": {
+      "title": "lng_cs_f1_2017",
+      "entrant_list": "cs_f1_2017",
+      "season": 2017,
+      "calendar": "swofty.classic-seasons-2017/f1_2017",
+      "teams": [
+        {
+          "key": "mercedes",
+          "team": "swofty.classic-seasons-2017/mercedes",
+          "vehicle": "swofty.classic-seasons-2017/mercedes",
+          "drivers": [
+            {
+              "driver": "game/lewis_hamilton",
+              "number": 44
+            },
+            {
+              "driver": "game/valtteri_bottas",
+              "number": 77
+            }
+          ]
+        },
+        {
+          "key": "ferrari",
+          "team": "swofty.classic-seasons-2017/ferrari",
+          "vehicle": "swofty.classic-seasons-2017/ferrari",
+          "drivers": [
+            {
+              "driver": "game/sebastian_vettel",
+              "number": 5
+            },
+            {
+              "driver": "game/kimi_raikkonen",
+              "number": 7
+            }
+          ]
+        },
+        {
+          "key": "redbull",
+          "team": "swofty.classic-seasons-2017/redbull",
+          "vehicle": "swofty.classic-seasons-2017/redbull",
+          "drivers": [
+            {
+              "driver": "game/daniel_ricciardo",
+              "number": 3
+            },
+            {
+              "driver": "game/max_verstappen",
+              "number": 33
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "name": "an edit whose result fails validation is dropped as a whole",
+  "rule": "the core validates each edit's result; a failing layer is dropped whole: every field it set and every record a failing selector touches lose its change, with one refusal naming the record that failed; other layers still apply (layers.md#validation)",
+  "registries": {
+    "career.driver_ratings": {
+      "applies": "read",
+      "schema": {
+        "type": "object",
+        "required": [
+          "season",
+          "driver"
+        ],
+        "properties": {
+          "season": {
+            "type": "string"
+          },
+          "driver": {
+            "type": "string"
+          },
+          "experience": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "racecraft": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "awareness": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "pace": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          }
+        }
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.progressive",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "career.driver_ratings",
+          "key": "2017/a",
+          "value": {
+            "season": "swofty.progressive/2017",
+            "driver": "game/a",
+            "experience": 90,
+            "racecraft": 80,
+            "awareness": 80,
+            "pace": 80
+          }
+        },
+        {
+          "op": "add",
+          "registry": "career.driver_ratings",
+          "key": "2017/b",
+          "value": {
+            "season": "swofty.progressive/2017",
+            "driver": "game/b",
+            "experience": 50,
+            "racecraft": 50,
+            "awareness": 50,
+            "pace": 50
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.bad",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.driver_ratings",
+          "target": "swofty.progressive/2017/a",
+          "patch": {
+            "experience": 140,
+            "pace": 99
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.sel",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.driver_ratings",
+          "select": {
+            "ids": "swofty.progressive/*"
+          },
+          "edit": [
+            {
+              "op": "add",
+              "path": "/experience",
+              "value": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod.ok",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.driver_ratings",
+          "target": "swofty.progressive/2017/b",
+          "patch": {
+            "pace": 77
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.driver_ratings": {
+          "swofty.progressive/2017/a": {
+            "status": "ok",
+            "value": {
+              "season": "swofty.progressive/2017",
+              "driver": "game/a",
+              "experience": 90,
+              "racecraft": 80,
+              "awareness": 80,
+              "pace": 80
+            },
+            "origins": {}
+          },
+          "swofty.progressive/2017/b": {
+            "status": "ok",
+            "value": {
+              "season": "swofty.progressive/2017",
+              "driver": "game/b",
+              "experience": 50,
+              "racecraft": 50,
+              "awareness": 50,
+              "pace": 77
+            },
+            "origins": {
+              "/pace": "mod.ok"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [
+        {
+          "addon": "mod.bad",
+          "registry": "career.driver_ratings",
+          "id": "swofty.progressive/2017/a",
+          "op": 0,
+          "reason": "invalid"
+        },
+        {
+          "addon": "mod.sel",
+          "registry": "career.driver_ratings",
+          "id": "swofty.progressive/2017/a",
+          "op": 0,
+          "reason": "invalid"
+        }
+      ]
+    }
+  ]
+}

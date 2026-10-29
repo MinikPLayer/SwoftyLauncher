@@ -287,13 +287,15 @@ static void gdb_put(uint8_t *db, const char *path, uint8_t tag, const char *text
     fake_gdb_insert(db, fnv64(path), tag, buf);
 }
 
+static uint64_t gdb_slots = 1024;
+
 void *gdb_load_impl(uint8_t *db, void *cfg)
 {
     (void)cfg;
     memset(db, 0, 0xf8);
     g_fake_gdb = db;
     *(void ***)(db + 8) = fa_vt;
-    rm_init((RMap *)(db + 0xa8), 1024);
+    rm_init((RMap *)(db + 0xa8), gdb_slots);
     gdb_put(db, "ai.general_ai_settings.max_test_time", 1, "300");
     gdb_put(db, "fake.retype_me", 0, "5");
     gdb_put(db, "fake.keep", 0, "7");
@@ -940,14 +942,43 @@ static void *fake_vt_stub(void)
     return NULL;
 }
 
+static void files_mode(void)
+{
+    static const struct {
+        const char *path, *want, *what;
+    } reads[] = {
+        {"audio/2025/bundles/t_v10.bdl", "T.FILES2 V10", "files: the game opens the bundle path and reads the later addon's file"},
+        {"Audio/2025/Bundles/T_V10.BDL", "T.FILES2 V10", "files: the path matches in any case"},
+        {"/game/audio/2025/bundles/t_v10.bdl", "T.FILES2 V10", "files: a /game/ path is redirected too"},
+        {"audio/2025/bundles/t_kept.bdl", "GAME KEPT", "files: a bundle the addon's folder lacks reads the game folder's copy"},
+        {"audio/2025/bundles/ferrari_2025.bdl", "STOCK FERRARI", "files: other bundles are untouched"},
+    };
+    for (size_t i = 0; i < sizeof reads / sizeof *reads; i++) {
+        uint8_t *buf = NULL;
+        size_t n = 0;
+        int src = fs_read(reads[i].path, &buf, &n);
+        printf("      %s from %s: '%s'\n", reads[i].path, src == 1 ? "archive" : src == 2 ? "disk" : "nowhere", buf ? (char *)buf : "");
+        expect(src == 2 && buf && !strcmp((char *)buf, reads[i].want), reads[i].what);
+        free(buf);
+    }
+    void **count = fake_gdb_lookup("audio.audio_bundle_settings._audio_bundle_settings_instancecount_");
+    void **name = fake_gdb_lookup("audio.audio_bundle_settings.audio_bundle_settings_4.bundle_name");
+    expect(count && *count && *(int32_t *)((uint8_t *)*count + 8) == 5 && name && *name &&
+               !strcmp(*(char **)((uint8_t *)*name + 8), "t_v10"),
+           "files: the engine sounds' bundle settings rows went into the database inside the load");
+}
+
 int main(int argc, char **argv)
 {
     const char *mode = argc > 1 ? argv[1] : "none";
     rm_init((RMap *)(fake_alias_obj + 8), 64);
     rm_insert((RMap *)(fake_alias_obj + 8), fnv64("2025_asset_groups/swofty/aliased.erp"), 1);
     int real = !strcmp(mode, "real");
+    int files = !strcmp(mode, "files");
+    if (files)
+        gdb_slots = 1 << 14;
     int gated = !strcmp(mode, "gated");
-    int early = !strcmp(mode, "early") || real, late = !strcmp(mode, "late") || gated, replace = !strcmp(mode, "replace");
+    int early = !strcmp(mode, "early") || real || files, late = !strcmp(mode, "late") || gated, replace = !strcmp(mode, "replace");
     int on = (early || late) && !real;
     setvbuf(stdout, NULL, _IONBF, 0);
     GetModuleFileNameW(NULL, game_dir_w, MAX_PATH);
@@ -1013,6 +1044,11 @@ int main(int argc, char **argv)
     uint64_t mres = fake_parse_manifest(fake_manifest, NULL, NULL);
     g_fake_manifest = fake_manifest;
     expect(mres == 0, "boot step 24: manifest parsed");
+    if (files) {
+        files_mode();
+        printf("%s (%d failure(s))\n", fails ? "FAILED" : "ALL PASSED", fails);
+        return fails != 0;
+    }
 
     static uint8_t module[0x200];
     static LangSet sets[0x13];

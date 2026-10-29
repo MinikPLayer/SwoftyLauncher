@@ -1,0 +1,167 @@
+{
+  "name": "a selector runs once on a variant it also matches",
+  "rule": "when a selector matches a variant, the run the variant would inherit through its base is skipped and the selector runs on the variant among the variant's own layers, by load order: mod.v/a = (10 + 5 from mod.b on the base) -> x2 mod.s -> +1 mod.l = 31, not 62 (layers.md#a-selector-runs-once-per-record)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 10,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.v",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "test.thing",
+          "key": "a",
+          "base": "game/a",
+          "patch": {
+            "name": "v"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.s",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "select": {
+            "ids": "*"
+          },
+          "edit": [
+            {
+              "op": "mul",
+              "path": "/n",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod.b",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "edit": [
+            {
+              "op": "add",
+              "path": "/n",
+              "value": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod.l",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "mod.v/a",
+          "edit": [
+            {
+              "op": "add",
+              "path": "/n",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 25,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.b"
+            }
+          },
+          "mod.v/a": {
+            "status": "ok",
+            "value": {
+              "name": "v",
+              "n": 31,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/name": "mod.v",
+              "/n": "mod.l"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "field",
+          "registry": "test.thing",
+          "id": "game/a",
+          "pointer": "/n",
+          "addons": [
+            "mod.s",
+            "mod.b"
+          ],
+          "winner": "mod.b"
+        },
+        {
+          "kind": "field",
+          "registry": "test.thing",
+          "id": "mod.v/a",
+          "pointer": "/n",
+          "addons": [
+            "mod.s",
+            "mod.b",
+            "mod.l"
+          ],
+          "winner": "mod.l"
+        }
+      ],
+      "refusals": []
+    }
+  ]
+}

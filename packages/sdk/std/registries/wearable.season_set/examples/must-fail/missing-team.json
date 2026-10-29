@@ -1,0 +1,8 @@
+{
+  "wearable.season_set": {
+    "no_team": {
+      "$comment": "team is required",
+      "season": 2016
+    }
+  }
+}

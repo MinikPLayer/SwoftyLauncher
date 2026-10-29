@@ -1,0 +1,20 @@
+{
+  "vehicle": {
+    "redbull_2021": {
+      "label": "rb16b",
+      "donor": "game/redbull_2025",
+      "performance_class": "f1",
+      "model": {
+        "erp": "imports/rb16b.erp",
+        "prefix": "teams/redbull/",
+        "kinds": [
+          "textures",
+          "materials",
+          "idf",
+          "wep"
+        ]
+      },
+      "stat_id": 412
+    }
+  }
+}

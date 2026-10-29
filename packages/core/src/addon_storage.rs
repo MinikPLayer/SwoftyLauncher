@@ -26,6 +26,11 @@ pub const DIR: &str = "addon-storage";
 /// files in the data folder for the session. The next install removes it.
 pub const MARK: &str = ".swofty-data-folder";
 
+/// The folder in the data folder that keeps each launcher profile's copy of every addon's files,
+/// `addon-profiles/<id>/<profile>/` (docs/std/launcher.md "Profiles"), outside the addon's own
+/// storage so the game never sees it.
+pub const PROFILES_DIR: &str = "addon-profiles";
+
 /// The loader's own folder under `swofty/addons/`.
 const CORE_DIR: &str = "core";
 
@@ -175,6 +180,398 @@ pub fn put_back(data: &Path, game: &Path, id: &str, planned: &BTreeSet<String>) 
     }
     prune(&from)?;
     Ok(moved)
+}
+
+// Each launcher profile has its own copy of every addon's storage. Between sessions the
+// addon's storage (`addon-storage/<id>/`) holds the files of one profile, named in
+// `addon-profiles/<id>/.current`; the copies of the others are in `addon-profiles/<id>/<profile>/`.
+//
+// - The first time 1.6 touches an addon's storage (no `.current`), it is the 1.5 storage that every
+//   profile shared. It is copied to `.legacy` before anything else happens, and never deleted.
+//   A profile that existed before 1.6 and has no copy starts from it; a profile created under
+//   1.6 (listed in `addon-profiles/.created.json`) starts empty.
+// - Switching profiles saves the storage as the current profile's copy, then swaps in the next
+//   profile's copy: staged in `.incoming`, marked ready, renamed into place, `.current`
+//   rewritten. A swap that stops half way is finished, or undone, by the next storage call.
+// - A profile duplicated or renamed while its session runs follows that session: its writes are
+//   saved under the new name when the session ends.
+
+const CURRENT: &str = ".current";
+const LEGACY: &str = ".legacy";
+const INCOMING: &str = ".incoming";
+const OUTGOING: &str = ".outgoing";
+const SAVING: &str = ".saving";
+const SAVED_OLD: &str = ".saved-old";
+const FOLLOW: &str = ".follow.json";
+const CREATED: &str = ".created.json";
+/// `.current` when the storage holds nothing of any profile's: its profile was deleted.
+const NOBODY: &str = ":none";
+
+pub fn copies_dir(data: &Path, id: &str) -> PathBuf {
+    data.join(PROFILES_DIR).join(id)
+}
+
+pub fn profile_dir(data: &Path, id: &str, profile: &str) -> PathBuf {
+    copies_dir(data, id).join(profile)
+}
+
+fn ready(dir: &Path) -> PathBuf {
+    let mut name = dir.file_name().unwrap_or_default().to_os_string();
+    name.push(".ready");
+    dir.with_file_name(name)
+}
+
+/// The addon's storage files, without [`MARK`].
+fn shared_files(dir: &Path) -> Result<Vec<String>> {
+    if !dir.is_dir() {
+        return Ok(Vec::new());
+    }
+    Ok(files(dir)?.into_iter().filter(|rel| rel != MARK).collect())
+}
+
+fn copy_with_time(from: &Path, to: &Path) -> Result<()> {
+    if let Some(dir) = to.parent() {
+        std::fs::create_dir_all(dir).map_err(io_err(dir))?;
+    }
+    std::fs::copy(from, to).map_err(io_err(to))?;
+    if let Ok(t) = std::fs::metadata(from).and_then(|m| m.modified())
+        && let Ok(f) = std::fs::OpenOptions::new().write(true).open(to)
+    {
+        f.set_modified(t).ok();
+    }
+    Ok(())
+}
+
+fn remove_tree(dir: &Path) -> Result<()> {
+    if dir.exists() {
+        with_retry(dir, || std::fs::remove_dir_all(dir))?;
+    }
+    Ok(())
+}
+
+fn remove_file(path: &Path) -> Result<()> {
+    if path.exists() {
+        with_retry(path, || std::fs::remove_file(path))?;
+    }
+    Ok(())
+}
+
+fn rename(from: &Path, to: &Path) -> Result<()> {
+    with_retry(from, || std::fs::rename(from, to))
+}
+
+/// A complete copy of `source` (or an empty folder) at `staging`, replacing whatever was there.
+fn stage(source: Option<&Path>, staging: &Path) -> Result<()> {
+    remove_tree(staging)?;
+    std::fs::create_dir_all(staging).map_err(io_err(staging))?;
+    if let Some(src) = source {
+        for rel in shared_files(src)? {
+            copy_with_time(&src.join(&rel), &staging.join(&rel))?;
+        }
+    }
+    Ok(())
+}
+
+/// Put the complete `staging` in place of `target`, through `aside`, with `label` in the ready
+/// marker for [`finish`]. Nothing is lost if it stops at any point: [`heal`] finishes it.
+fn swap(
+    staging: &Path,
+    target: &Path,
+    aside: &Path,
+    label: &str,
+    done: &dyn Fn(&str) -> Result<()>,
+) -> Result<()> {
+    let mark = ready(staging);
+    std::fs::write(&mark, label).map_err(io_err(&mark))?;
+    finish(staging, target, aside, done)
+}
+
+fn finish(staging: &Path, target: &Path, aside: &Path, done: &dyn Fn(&str) -> Result<()>) -> Result<()> {
+    let mark = ready(staging);
+    let label = std::fs::read_to_string(&mark).map_err(io_err(&mark))?;
+    if staging.exists() {
+        if target.exists() {
+            if aside.exists() {
+                return Err(crate::Error::Other(format!(
+                    "{} and {} both exist; move one away by hand",
+                    target.display(),
+                    aside.display()
+                )));
+            }
+            rename(target, aside)?;
+        }
+        if let Some(dir) = target.parent() {
+            std::fs::create_dir_all(dir).map_err(io_err(dir))?;
+        }
+        rename(staging, target)?;
+    }
+    done(label.trim())?;
+    remove_file(&mark)?;
+    remove_tree(aside)
+}
+
+/// Finish a swap that was marked ready, or drop a staging copy that wasn't.
+fn heal(staging: &Path, target: &Path, aside: &Path, done: &dyn Fn(&str) -> Result<()>) -> Result<()> {
+    if ready(staging).is_file() {
+        return finish(staging, target, aside, done);
+    }
+    remove_tree(staging)?;
+    if !target.exists() && aside.exists() {
+        rename(aside, target)?;
+    }
+    remove_tree(aside)
+}
+
+fn read_text(path: &Path) -> Option<String> {
+    std::fs::read_to_string(path)
+        .ok()
+        .map(|s| s.trim().to_owned())
+        .filter(|s| !s.is_empty())
+}
+
+fn write_text(path: &Path, text: &str) -> Result<()> {
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(io_err(dir))?;
+    }
+    let tmp = path.with_extension("tmp");
+    std::fs::write(&tmp, text).map_err(io_err(&tmp))?;
+    rename(&tmp, path)
+}
+
+fn current(data: &Path, id: &str) -> Option<String> {
+    read_text(&copies_dir(data, id).join(CURRENT))
+}
+
+fn set_current(data: &Path, id: &str, profile: &str) -> Result<()> {
+    write_text(&copies_dir(data, id).join(CURRENT), profile)
+}
+
+fn created(data: &Path) -> BTreeSet<String> {
+    std::fs::read(data.join(PROFILES_DIR).join(CREATED))
+        .ok()
+        .and_then(|b| serde_json::from_slice(&b).ok())
+        .unwrap_or_default()
+}
+
+fn follows(data: &Path, id: &str) -> std::collections::BTreeMap<String, String> {
+    std::fs::read(copies_dir(data, id).join(FOLLOW))
+        .ok()
+        .and_then(|b| serde_json::from_slice(&b).ok())
+        .unwrap_or_default()
+}
+
+fn set_follows(data: &Path, id: &str, f: &std::collections::BTreeMap<String, String>) -> Result<()> {
+    let path = copies_dir(data, id).join(FOLLOW);
+    match f.is_empty() {
+        true => remove_file(&path),
+        false => write_text(&path, &serde_json::to_string(f).expect("serialisable")),
+    }
+}
+
+/// Finish or undo whatever a storage call left half done for the addon.
+fn recover(data: &Path, id: &str) -> Result<()> {
+    let copies = copies_dir(data, id);
+    if !copies.is_dir() {
+        return Ok(());
+    }
+    heal(
+        &copies.join(INCOMING),
+        &addon_dir(data, id),
+        &copies.join(OUTGOING),
+        &|p| set_current(data, id, p),
+    )?;
+    let (saving, old) = (copies.join(SAVING), copies.join(SAVED_OLD));
+    match read_text(&ready(&saving)) {
+        Some(label) => finish(&saving, &profile_dir(data, id, &label), &old, &|_| Ok(())),
+        None => {
+            remove_tree(&saving)?;
+            remove_tree(&old)
+        }
+    }
+}
+
+/// Save `source` (the storage, or another copy) as `profile`'s copy.
+fn save_as(data: &Path, id: &str, source: Option<&Path>, profile: &str) -> Result<()> {
+    let copies = copies_dir(data, id);
+    let saving = copies.join(SAVING);
+    stage(source, &saving)?;
+    swap(
+        &saving,
+        &profile_dir(data, id, profile),
+        &copies.join(SAVED_OLD),
+        profile,
+        &|_| Ok(()),
+    )
+}
+
+/// Before anything else touches a 1.5 storage, a copy of it as `.legacy`.
+fn keep_legacy(data: &Path, id: &str) -> Result<()> {
+    let copies = copies_dir(data, id);
+    let legacy = copies.join(LEGACY);
+    if legacy.is_dir() {
+        return Ok(());
+    }
+    let storage = addon_dir(data, id);
+    let saving = copies.join(SAVING);
+    stage(storage.is_dir().then_some(storage.as_path()), &saving)?;
+    swap(&saving, &legacy, &copies.join(SAVED_OLD), LEGACY, &|_| Ok(()))
+}
+
+/// Where `profile`'s files for the addon are now: the storage itself, a copy, or nowhere.
+enum Holder {
+    Storage,
+    Copy(PathBuf),
+    Empty,
+}
+
+fn holder(data: &Path, id: &str, profile: &str, now: Option<&str>) -> Holder {
+    let copy = profile_dir(data, id, profile);
+    if now == Some(profile) {
+        return Holder::Storage;
+    }
+    if copy.is_dir() {
+        return Holder::Copy(copy);
+    }
+    if created(data).contains(profile) {
+        return Holder::Empty;
+    }
+    let legacy = copies_dir(data, id).join(LEGACY);
+    match (now, legacy.is_dir()) {
+        (None, _) => Holder::Storage,
+        (_, true) => Holder::Copy(legacy),
+        (_, false) => Holder::Empty,
+    }
+}
+
+/// After a session: what the storage holds now becomes the copy of the profile it belongs to, and
+/// of any profile duplicated or renamed from it while the session ran.
+pub fn save_current(data: &Path, id: &str) -> Result<()> {
+    recover(data, id)?;
+    let Some(now) = current(data, id).filter(|p| p != NOBODY) else {
+        return Ok(());
+    };
+    let storage = addon_dir(data, id);
+    let source = storage.is_dir().then_some(storage.as_path());
+    save_as(data, id, source, &now)?;
+    let mut f = follows(data, id);
+    let followers: Vec<String> = f
+        .iter()
+        .filter(|(_, of)| **of == now)
+        .map(|(k, _)| k.clone())
+        .collect();
+    for name in &followers {
+        save_as(data, id, source, name)?;
+        f.remove(name);
+    }
+    set_follows(data, id, &f)
+}
+
+/// Before a session of `profile`: the addon's storage holds that profile's files. The files it
+/// held are saved first as their profile's copy, or as `.legacy` when they are the 1.5 storage.
+pub fn load_profile(data: &Path, id: &str, profile: &str) -> Result<bool> {
+    recover(data, id)?;
+    let now = current(data, id);
+    if now.as_deref() == Some(profile) {
+        return Ok(false);
+    }
+    let storage = addon_dir(data, id);
+    match now.as_deref() {
+        None => keep_legacy(data, id)?,
+        Some(NOBODY) => {}
+        Some(other) => {
+            save_as(data, id, storage.is_dir().then_some(storage.as_path()), other)?;
+        }
+    }
+    let source = match holder(data, id, profile, now.as_deref()) {
+        Holder::Storage => {
+            set_current(data, id, profile)?;
+            return Ok(false);
+        }
+        Holder::Copy(p) => Some(p),
+        Holder::Empty => None,
+    };
+    let copies = copies_dir(data, id);
+    let incoming = copies.join(INCOMING);
+    stage(source.as_deref(), &incoming)?;
+    swap(&incoming, &storage, &copies.join(OUTGOING), profile, &|p| {
+        set_current(data, id, p)
+    })?;
+    Ok(true)
+}
+
+/// The addons with storage or copies in the data folder.
+fn stored(data: &Path) -> BTreeSet<String> {
+    [dir(data), data.join(PROFILES_DIR)]
+        .iter()
+        .filter_map(|d| std::fs::read_dir(d).ok())
+        .flatten()
+        .flatten()
+        .filter(|e| e.file_type().is_ok_and(|t| t.is_dir()))
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .filter(|n| !n.starts_with('.') && valid(n))
+        .collect()
+}
+
+fn session_of(data: &Path, profile: &str) -> bool {
+    crate::journal::Journal::open(data).is_ok_and(|open| open.iter().any(|j| j.profile == profile))
+}
+
+/// A new profile: a copy of `from`'s storage, or empty storage of its own. While `from`'s session
+/// runs, the new profile also gets that session's writes when it ends.
+pub fn profile_created(data: &Path, name: &str, from: Option<&str>) -> Result<()> {
+    let mut made = created(data);
+    if made.insert(name.to_owned()) {
+        write_text(
+            &data.join(PROFILES_DIR).join(CREATED),
+            &serde_json::to_string(&made).expect("serialisable"),
+        )?;
+    }
+    let running = from.is_some_and(|f| session_of(data, f));
+    for id in stored(data) {
+        recover(data, &id)?;
+        remove_tree(&profile_dir(data, &id, name))?;
+        let Some(from) = from else {
+            continue;
+        };
+        let now = current(data, &id);
+        let source = match holder(data, &id, from, now.as_deref()) {
+            Holder::Storage => {
+                let storage = addon_dir(data, &id);
+                storage.is_dir().then_some(storage)
+            }
+            Holder::Copy(p) => Some(p),
+            Holder::Empty => None,
+        };
+        save_as(data, &id, source.as_deref(), name)?;
+        if running {
+            let mut f = follows(data, &id);
+            f.insert(name.to_owned(), from.to_owned());
+            set_follows(data, &id, &f)?;
+        }
+    }
+    Ok(())
+}
+
+pub fn profile_renamed(data: &Path, from: &str, to: &str) -> Result<()> {
+    profile_created(data, to, Some(from))?;
+    profile_deleted(data, from)
+}
+
+/// A deleted profile's copies go. When the storage holds its files, they belong to the profile it
+/// was renamed to while its session ran, or to nobody.
+pub fn profile_deleted(data: &Path, name: &str) -> Result<()> {
+    for id in stored(data) {
+        recover(data, &id)?;
+        remove_tree(&profile_dir(data, &id, name))?;
+        let mut f = follows(data, &id);
+        let heir = f.iter().find(|(_, of)| *of == name).map(|(k, _)| k.clone());
+        f.retain(|k, of| k != name && of != name);
+        if current(data, &id).as_deref() == Some(name) {
+            set_current(data, &id, heir.as_deref().unwrap_or(NOBODY))?;
+        }
+        set_follows(data, &id, &f)?;
+    }
+    Ok(())
 }
 
 /// Whether `a` was modified after `b`.

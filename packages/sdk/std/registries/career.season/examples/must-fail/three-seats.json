@@ -1,0 +1,20 @@
+{
+  "career.season": {
+    "three_seats": {
+      "$comment": "seats holds exactly two references",
+      "data_group": "f1_career_progressive",
+      "year": 2017,
+      "teams": [
+        {
+          "slot": 1,
+          "team": "game/mercedes",
+          "seats": [
+            "game/lewis_hamilton",
+            "game/valtteri_bottas",
+            "game/george_russell"
+          ]
+        }
+      ]
+    }
+  }
+}

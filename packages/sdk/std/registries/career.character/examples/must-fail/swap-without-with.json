@@ -1,0 +1,13 @@
+{
+  "career.character": {
+    "swap_half": {
+      "$comment": "a swap names the row it shows in with",
+      "data_group": "f1_career_1990",
+      "swaps": [
+        {
+          "character": "agent"
+        }
+      ]
+    }
+  }
+}

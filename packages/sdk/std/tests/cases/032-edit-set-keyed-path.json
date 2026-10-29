@@ -1,0 +1,162 @@
+{
+  "name": "code edits address keyed elements by key",
+  "rule": "an edit path uses the keyed form (\"/teams/slot=4/team\"); set changes a value, add and mul change a number; the origin is the keyed pointer (reading.md#origins)",
+  "registries": {
+    "career.season": {
+      "applies": "read",
+      "key_fields": {
+        "/teams": [
+          "slot"
+        ],
+        "/changes": [
+          "round",
+          "slot",
+          "seat"
+        ]
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.progressive",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "career.season",
+          "key": "2017",
+          "value": {
+            "data_group": "f1_career_progressive",
+            "year": 2017,
+            "teams": [
+              {
+                "slot": 1,
+                "team": "game/mercedes",
+                "seats": [
+                  "game/lewis_hamilton",
+                  "game/valtteri_bottas"
+                ]
+              },
+              {
+                "slot": 4,
+                "team": "game/mclaren",
+                "seats": [
+                  "game/fernando_alonso",
+                  "game/stoffel_vandoorne"
+                ]
+              },
+              {
+                "slot": 11,
+                "team": null,
+                "seats": []
+              }
+            ],
+            "changes": [
+              {
+                "round": 15,
+                "slot": 8,
+                "seat": 1,
+                "out": "game/daniil_kvyat",
+                "in": "game/pierre_gasly",
+                "kind": "swap"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.e",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.season",
+          "target": "swofty.progressive/2017",
+          "edit": [
+            {
+              "op": "set",
+              "path": "/teams/slot=4/team",
+              "value": "game/honda"
+            },
+            {
+              "op": "set",
+              "path": "/changes/round=15,slot=8,seat=1/kind",
+              "value": "stand_in"
+            },
+            {
+              "op": "add",
+              "path": "/year",
+              "value": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.season": {
+          "swofty.progressive/2017": {
+            "status": "ok",
+            "value": {
+              "data_group": "f1_career_progressive",
+              "year": 2017,
+              "teams": [
+                {
+                  "slot": 1,
+                  "team": "game/mercedes",
+                  "seats": [
+                    "game/lewis_hamilton",
+                    "game/valtteri_bottas"
+                  ]
+                },
+                {
+                  "slot": 4,
+                  "team": "game/honda",
+                  "seats": [
+                    "game/fernando_alonso",
+                    "game/stoffel_vandoorne"
+                  ]
+                },
+                {
+                  "slot": 11,
+                  "team": null,
+                  "seats": []
+                }
+              ],
+              "changes": [
+                {
+                  "round": 15,
+                  "slot": 8,
+                  "seat": 1,
+                  "out": "game/daniil_kvyat",
+                  "in": "game/pierre_gasly",
+                  "kind": "stand_in"
+                }
+              ]
+            },
+            "origins": {
+              "/teams/slot=4/team": "mod.e",
+              "/changes/round=15,slot=8,seat=1/kind": "mod.e"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

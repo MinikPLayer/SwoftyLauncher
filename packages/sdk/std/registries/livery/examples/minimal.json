@@ -1,0 +1,8 @@
+{
+  "livery": {
+    "repaint": {
+      "vehicle": "game/redbull_2025",
+      "textures": "livery/"
+    }
+  }
+}

@@ -138,17 +138,11 @@ void when_code_ready(const char *what, void (*fn)());
 
 namespace {
 
-void items_load()
+bool hooks_ready = false;
+
+void hook_owned()
 {
-    base = swofty::api->module_base();
-    if (!load_config()) {
-        swofty::log("[items] no \"owned_items\" in settings.json; ownership check left alone");
-        return;
-    }
-    swofty::log("[items] settings.json: %zu mod item(s) to report as owned", items.size());
-    for (auto &it : items)
-        swofty::log("[items]   0x%08x %s (%s)", it.key, it.what.c_str(), it.addon.c_str());
-    if (items.empty())
+    if (h_owned || !hooks_ready || items.empty())
         return;
     uintptr_t at = find(T_OWNED);
     if (!at)
@@ -164,6 +158,32 @@ void items_load()
                 (unsigned long long)(at - base));
 }
 
+void items_load()
+{
+    base = swofty::api->module_base();
+    hooks_ready = true;
+    if (!load_config() && items.empty()) {
+        swofty::log("[items] no \"owned_items\" in settings.json; ownership check left alone");
+        return;
+    }
+    swofty::log("[items] %zu mod item(s) to report as owned", items.size());
+    for (auto &it : items)
+        swofty::log("[items]   0x%08x %s (%s)", it.key, it.what.c_str(), it.addon.c_str());
+    hook_owned();
+}
+
+}
+
+namespace runtime {
+void own_item(uint32_t key, const std::string &addon, const std::string &what)
+{
+    for (auto &it : items)
+        if (it.key == key)
+            return;
+    items.push_back({key, addon, what});
+    swofty::log("[items] 0x%08x %s (%s) reported as owned", key, what.c_str(), addon.c_str());
+    hook_owned();
+}
 }
 
 SWOFTY_ON_LOAD

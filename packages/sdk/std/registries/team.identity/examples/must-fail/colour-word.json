@@ -1,0 +1,14 @@
+{
+  "team.identity": {
+    "colour_word": {
+      "$comment": "a colour is #RRGGBB or #AARRGGBB",
+      "names": {
+        "title": "lng_x"
+      },
+      "colours": {
+        "primary": "red"
+      },
+      "livery_name": "x"
+    }
+  }
+}

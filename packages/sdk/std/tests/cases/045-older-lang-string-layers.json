@@ -1,0 +1,139 @@
+{
+  "name": "a 1.5 lang::set is the addon's global layer of game/<key>, and a 1.6 addon's layer competes in load order",
+  "rule": "the core provides game/<lng key> with empty text; swofty::lang::set writes the calling addon's global layer of it, one language per text key; a later addon's layer on the same language wins and the conflict names both, while a different language merges (compatibility.md#an-older-addon-on-16, layers.md#precedence)",
+  "registries": {
+    "lang.string": {
+      "applies": "read"
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "lang.string",
+      "key": "lng_team_mer_title",
+      "value": {
+        "text": {}
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "lang.string",
+      "key": "lng_team_fer_title",
+      "value": {
+        "text": {}
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.classic-seasons-2016",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "lang.string",
+          "target": "game/lng_team_mer_title",
+          "patch": {
+            "text": {
+              "*": "Mercedes AMG Petronas"
+            }
+          },
+          "stage": "on_load"
+        },
+        {
+          "op": "layer",
+          "registry": "lang.string",
+          "target": "game/lng_team_fer_title",
+          "patch": {
+            "text": {
+              "*": "Scuderia Ferrari"
+            }
+          },
+          "stage": "on_load"
+        }
+      ]
+    },
+    {
+      "id": "mod.names",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "lang.string",
+          "target": "game/lng_team_mer_title",
+          "patch": {
+            "text": {
+              "*": "Mercedes-AMG Petronas F1 Team"
+            }
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "lang.string",
+          "target": "game/lng_team_fer_title",
+          "patch": {
+            "text": {
+              "fra": "Scuderia Ferrari HP"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "lang.string": {
+          "game/lng_team_fer_title": {
+            "status": "ok",
+            "value": {
+              "text": {
+                "*": "Scuderia Ferrari",
+                "fra": "Scuderia Ferrari HP"
+              }
+            },
+            "origins": {
+              "/text/*": "swofty.classic-seasons-2016",
+              "/text/fra": "mod.names"
+            }
+          },
+          "game/lng_team_mer_title": {
+            "status": "ok",
+            "value": {
+              "text": {
+                "*": "Mercedes-AMG Petronas F1 Team"
+              }
+            },
+            "origins": {
+              "/text/*": "mod.names"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "field",
+          "registry": "lang.string",
+          "id": "game/lng_team_mer_title",
+          "pointer": "/text/*",
+          "addons": [
+            "swofty.classic-seasons-2016",
+            "mod.names"
+          ],
+          "winner": "mod.names"
+        }
+      ],
+      "refusals": []
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "driver.stats 1.0",
+  "x-registry": "driver.stats",
+  "x-version": "1.0",
+  "x-applies": "boot",
+  "x-snapshot": false,
+  "description": "drivers::Stats: a DriverStatisticsHolder, the stock ratings from a driver's first season to his peak.",
+  "type": "object",
+  "properties": {
+    "driver": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "driver.identity"
+    },
+    "experience": {
+      "$ref": "#/$defs/curve"
+    },
+    "racecraft": {
+      "$ref": "#/$defs/curve"
+    },
+    "awareness": {
+      "$ref": "#/$defs/curve"
+    },
+    "pace": {
+      "$ref": "#/$defs/curve"
+    },
+    "focus": {
+      "$ref": "#/$defs/curve"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "driver.stats",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "driver"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "curve": {
+      "description": "drivers::Curve: the rating in the driver's first season and at his peak.",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "peak": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

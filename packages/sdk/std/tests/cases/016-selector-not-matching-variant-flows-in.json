@@ -1,0 +1,107 @@
+{
+  "name": "a selector that matches the base but not the variant reaches the variant through the base",
+  "rule": "a variant's base value for \"where\" is its chain's provider values (the root's add and every variant patch) with no layers; when the selector doesn't match the variant, the variant inherits the selector's run on the base (layers.md#a-selector-runs-once-per-record)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 1,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.v",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "test.thing",
+          "key": "a",
+          "base": "game/a",
+          "patch": {
+            "kind": "f2"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.s",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "select": {
+            "where": {
+              "kind": "f1"
+            }
+          },
+          "patch": {
+            "n": 9
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 9,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.s"
+            }
+          },
+          "mod.v/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 9,
+              "kind": "f2",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.v",
+              "/n": "mod.s"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

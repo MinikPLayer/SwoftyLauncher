@@ -1,0 +1,19 @@
+{
+  "career.season": {
+    "slot_out_of_range": {
+      "$comment": "teams/slot is 1-12; 13 is out of range",
+      "data_group": "f1_career_progressive",
+      "year": 2017,
+      "teams": [
+        {
+          "slot": 13,
+          "team": "game/haas",
+          "seats": [
+            "game/romain_grosjean",
+            "game/kevin_magnussen"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "career.wizard 1.0",
+  "x-registry": "career.wizard",
+  "x-version": "1.0",
+  "x-applies": "content",
+  "x-snapshot": false,
+  "description": "career::Wizard: new-career setup steps for one data group. The 1.5 swofty::career::wizard calls provide one per calling addon and data group, rewritten by every call.",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "career.content"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "data_group": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "maxLength": 63
+    },
+    "starts_in_f1": {
+      "type": "boolean",
+      "default": false
+    },
+    "tile_routes": {
+      "type": "array",
+      "x-key": [
+        "from"
+      ],
+      "items": {
+        "$ref": "#/$defs/route"
+      },
+      "description": "the route a tile press opens, in order; from \"\": any route"
+    },
+    "replace_steps": {
+      "type": "array",
+      "x-key": [
+        "at"
+      ],
+      "items": {
+        "$ref": "#/$defs/swap"
+      },
+      "description": "a setup step shown instead of another"
+    },
+    "force_options": {
+      "type": "array",
+      "x-key": [
+        "at"
+      ],
+      "items": {
+        "$ref": "#/$defs/swap"
+      },
+      "description": "a setup option used instead of another"
+    },
+    "confirm_routes": {
+      "type": "array",
+      "x-key": [
+        "from"
+      ],
+      "items": {
+        "$ref": "#/$defs/route"
+      },
+      "description": "the route the final confirm opens, in order; from \"\": any route"
+    },
+    "hide_driver_tabs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Choose Driver tabs left out"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "career.wizard",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "data_group"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "step": {
+      "description": "career::WizardStep: one setup screen after the game's own.",
+      "type": "object",
+      "properties": {
+        "route": {
+          "type": "string"
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "route"
+      ],
+      "additionalProperties": false
+    },
+    "route": {
+      "description": "career::WizardRoute: from this route (empty: any) to that one.",
+      "type": "object",
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "additionalProperties": false
+    },
+    "swap": {
+      "description": "career::WizardSwap: a step or option number and the one used instead.",
+      "type": "object",
+      "properties": {
+        "at": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "with": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        }
+      },
+      "required": [
+        "at",
+        "with"
+      ],
+      "additionalProperties": false
+    },
+    "text": {
+      "description": "A Text: a lang key as a string, or a literal.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literal": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

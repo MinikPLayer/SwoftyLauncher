@@ -1,0 +1,10 @@
+{
+  "engine_sound": {
+    "redbull_2024_stock": {
+      "bundle": {
+        "stock": "audio/2025/bundles/redbull_2025.bdl"
+      },
+      "settings_from": "game/redbull_2025"
+    }
+  }
+}

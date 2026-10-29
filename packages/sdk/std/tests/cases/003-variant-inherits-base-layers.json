@@ -1,0 +1,118 @@
+{
+  "name": "a variant starts from its base's effective value",
+  "rule": "effective(variant) = effective(base) + the variant's patch + layers on the variant; a layer on the base flows in whatever its load-order place (bases.md#how-a-variant-resolves)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 1,
+        "kind": "f1",
+        "items": [
+          {
+            "key": "k1",
+            "v": 1
+          }
+        ]
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.l",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "n": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.v",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "test.thing",
+          "key": "a2",
+          "base": "game/a",
+          "patch": {
+            "name": "a2"
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 5,
+              "kind": "f1",
+              "items": [
+                {
+                  "key": "k1",
+                  "v": 1
+                }
+              ]
+            },
+            "origins": {
+              "/n": "mod.l"
+            }
+          },
+          "mod.v/a2": {
+            "status": "ok",
+            "value": {
+              "name": "a2",
+              "n": 5,
+              "kind": "f1",
+              "items": [
+                {
+                  "key": "k1",
+                  "v": 1
+                }
+              ]
+            },
+            "origins": {
+              "/n": "mod.l",
+              "/name": "mod.v"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

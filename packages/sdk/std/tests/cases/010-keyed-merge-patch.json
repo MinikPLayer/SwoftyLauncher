@@ -1,0 +1,175 @@
+{
+  "name": "a merge patch matches keyed list elements by key",
+  "rule": "keyed elements merge by key (fields not named are kept), lists that aren't keyed are replaced whole, \"$delete\": true removes the element with that key; the example of layers.md#without-code",
+  "registries": {
+    "career.season": {
+      "applies": "read",
+      "key_fields": {
+        "/teams": [
+          "slot"
+        ],
+        "/changes": [
+          "round",
+          "slot",
+          "seat"
+        ]
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.progressive",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "career.season",
+          "key": "2017",
+          "value": {
+            "data_group": "f1_career_progressive",
+            "year": 2017,
+            "teams": [
+              {
+                "slot": 1,
+                "team": "game/mercedes",
+                "seats": [
+                  "game/lewis_hamilton",
+                  "game/valtteri_bottas"
+                ]
+              },
+              {
+                "slot": 4,
+                "team": "game/mclaren",
+                "seats": [
+                  "game/fernando_alonso",
+                  "game/stoffel_vandoorne"
+                ]
+              },
+              {
+                "slot": 11,
+                "team": null,
+                "seats": []
+              }
+            ],
+            "changes": [
+              {
+                "round": 15,
+                "slot": 8,
+                "seat": 1,
+                "out": "game/daniil_kvyat",
+                "in": "game/pierre_gasly",
+                "kind": "swap"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "tails.whatif-history",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.season",
+          "target": "swofty.progressive/2017",
+          "patch": {
+            "teams": [
+              {
+                "slot": 1,
+                "seats": [
+                  "game/fernando_alonso",
+                  "game/valtteri_bottas"
+                ]
+              },
+              {
+                "slot": 4,
+                "seats": [
+                  "game/lewis_hamilton",
+                  "game/stoffel_vandoorne"
+                ]
+              },
+              {
+                "slot": 11,
+                "team": "game/manor",
+                "seats": [
+                  "game/pascal_wehrlein",
+                  "game/esteban_ocon"
+                ]
+              }
+            ],
+            "changes": [
+              {
+                "round": 15,
+                "slot": 8,
+                "seat": 1,
+                "$delete": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.season": {
+          "swofty.progressive/2017": {
+            "status": "ok",
+            "value": {
+              "data_group": "f1_career_progressive",
+              "year": 2017,
+              "teams": [
+                {
+                  "slot": 1,
+                  "team": "game/mercedes",
+                  "seats": [
+                    "game/fernando_alonso",
+                    "game/valtteri_bottas"
+                  ]
+                },
+                {
+                  "slot": 4,
+                  "team": "game/mclaren",
+                  "seats": [
+                    "game/lewis_hamilton",
+                    "game/stoffel_vandoorne"
+                  ]
+                },
+                {
+                  "slot": 11,
+                  "team": "game/manor",
+                  "seats": [
+                    "game/pascal_wehrlein",
+                    "game/esteban_ocon"
+                  ]
+                }
+              ],
+              "changes": []
+            },
+            "origins": {
+              "/teams/slot=1/seats": "tails.whatif-history",
+              "/teams/slot=4/seats": "tails.whatif-history",
+              "/teams/slot=11/team": "tails.whatif-history",
+              "/teams/slot=11/seats": "tails.whatif-history"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

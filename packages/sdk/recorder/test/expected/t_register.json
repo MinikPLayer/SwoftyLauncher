@@ -1,0 +1,180 @@
+{
+  "recorder": 1,
+  "addon": "t.recorder",
+  "result": 1,
+  "registries": {
+    "engine_sound": "engine_sound",
+    "vehicle": "vehicle",
+    "career.mode": "career.mode"
+  },
+  "records": [
+    {
+      "op": "add",
+      "registry": "engine_sound",
+      "key": "v10",
+      "id": "t.recorder/v10",
+      "value": {
+        "bundle": "sounds/v10.bdl",
+        "settings_from": "game/ferrari_2025",
+        "tuning_from": null
+      }
+    },
+    {
+      "op": "add",
+      "registry": "vehicle",
+      "key": "ferrari_v10",
+      "id": "t.recorder/ferrari_v10",
+      "value": {
+        "package": null,
+        "label": "ferrari_v10",
+        "donor": "swofty.classic-seasons-2017/ferrari",
+        "model": null,
+        "engine_sound": "t.recorder/v10",
+        "livery": "mod.liveries/red?",
+        "handling": null,
+        "power_unit": null,
+        "ai": {
+          "track_pack": null,
+          "asset_filename": "auto"
+        },
+        "performance_class": "f1",
+        "performance_tier": 0,
+        "tyre_wear_scale": 1,
+        "stat_id": "auto"
+      }
+    },
+    {
+      "op": "variant",
+      "registry": "career.mode",
+      "key": "v10_career",
+      "id": "t.recorder/v10_career",
+      "base": "game/f1_career_2026",
+      "value": {
+        "data_group": "f1_career_v10",
+        "save_container": "",
+        "title": "lng_v10_title",
+        "kind": "driver_career",
+        "freeze": "per_season",
+        "stat_id": "auto"
+      }
+    }
+  ],
+  "providers": [],
+  "layers": [
+    {
+      "registry": "vehicle",
+      "id": "swofty.classic-seasons-2017/ferrari",
+      "scope": "profile",
+      "edit": true,
+      "in": [
+        {
+          "mode": "time_trial"
+        }
+      ],
+      "result": {
+        "package": null,
+        "label": "",
+        "donor": null,
+        "model": null,
+        "engine_sound": "t.recorder/v10",
+        "livery": null,
+        "handling": null,
+        "power_unit": null,
+        "ai": {
+          "track_pack": null,
+          "asset_filename": "auto"
+        },
+        "performance_class": "f1",
+        "performance_tier": 0,
+        "tyre_wear_scale": 1,
+        "stat_id": "auto"
+      }
+    },
+    {
+      "registry": "vehicle",
+      "select": {
+        "prefix": "game/",
+        "except": [
+          "game/safety_car"
+        ]
+      },
+      "scope": "global",
+      "edit": true,
+      "result": {
+        "package": null,
+        "label": "",
+        "donor": null,
+        "model": null,
+        "engine_sound": null,
+        "livery": null,
+        "handling": null,
+        "power_unit": null,
+        "ai": {
+          "track_pack": null,
+          "asset_filename": "auto"
+        },
+        "performance_class": "f1",
+        "performance_tier": 0,
+        "tyre_wear_scale": 1.2,
+        "stat_id": "auto"
+      }
+    }
+  ],
+  "calls": [],
+  "subscriptions": [
+    {
+      "point": "career.season.start",
+      "phase": "after",
+      "priority": 0,
+      "in": [
+        {
+          "content": "swofty.progressive/f1_career_progressive"
+        }
+      ]
+    }
+  ],
+  "points": [
+    {
+      "point": "t.recorder.season.apply",
+      "payload_version": 1
+    }
+  ],
+  "services": {
+    "published": [
+      {
+        "name": "t.history",
+        "version": 2,
+        "size": 16
+      }
+    ],
+    "required": [
+      {
+        "name": "other.api",
+        "min_version": 1,
+        "min_size": 4
+      }
+    ]
+  },
+  "events": [],
+  "reads": [],
+  "options": [
+    {
+      "id": "wear",
+      "value": "high"
+    }
+  ],
+  "log": [],
+  "unexpected": [],
+  "refused": [
+    {
+      "call": "add",
+      "registry": "engine_sound",
+      "id": "t.recorder/Not A Key/x",
+      "result": 3,
+      "error": "add: 'Not A Key/x' is not a key"
+    }
+  ],
+  "engine": true,
+  "dll": "t_register.dll",
+  "status": "ok"
+}

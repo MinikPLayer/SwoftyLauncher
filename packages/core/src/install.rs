@@ -365,6 +365,10 @@ impl<'a> Installer<'a> {
     fn rollback(&self, j: Journal, hashes: &mut Hashes) -> Result<(Vec<Drift>, Vec<String>)> {
         let ids = addon_storage::ids(j.entries.iter().map(|e| e.path.as_str()));
         let kept = self.keep_storage(&ids, std::slice::from_ref(&j))?;
+        for id in &ids {
+            addon_storage::save_current(self.data, id)?;
+        }
+        crate::stdlib::careers::sync(self.data, Some(&self.game.dir), Some(&j.profile)).ok();
         let mut report = Vec::new();
         let same_build = j.build_id == self.game.identity.build_id;
         for e in j.entries.iter().rev() {
@@ -635,6 +639,17 @@ impl<'a> Installer<'a> {
         if plan.is_vanilla() {
             return Ok(());
         }
+        let mut with_state;
+        let plan = if plan.loader.is_empty() {
+            plan
+        } else {
+            let file = crate::stdlib::state::stage(self.data)?;
+            with_state = plan.clone();
+            with_state
+                .loader
+                .insert(crate::stdlib::state::FILE.to_owned(), file);
+            &with_state
+        };
         let loaded = self.baseline()?;
         let space = self.space(plan, &loaded);
         for (dir, v, need) in &space {
@@ -952,6 +967,7 @@ impl<'a> Installer<'a> {
         }
         let planned: BTreeSet<String> = sources.keys().map(|rel| placed::key(rel)).collect();
         for id in addon_storage::ids(sources.keys().copied()) {
+            addon_storage::load_profile(self.data, &id, &plan.profile)?;
             let moved = addon_storage::put_back(self.data, &self.game.dir, &id, &planned)?;
             if !moved.is_empty() {
                 (self.out)(&format!(
@@ -959,6 +975,11 @@ impl<'a> Installer<'a> {
                     moved.len(),
                     addon_storage::addon_dir(self.data, &id).display()
                 ));
+            }
+        }
+        if !plan.loader.is_empty() {
+            for line in crate::stdlib::state::migrate(self.data, &self.game.dir)? {
+                (self.out)(&line);
             }
         }
         j.commit()
@@ -974,6 +995,7 @@ impl<'a> Installer<'a> {
         }
         let loader = self.path(LOADER_DIR);
         if loader.is_dir() {
+            crate::stdlib::careers::keep(self.data, &self.game.dir)?;
             let ids = addon_storage::present(&self.game.dir)?;
             self.keep_storage(&ids, &Journal::open(self.data)?)?;
             let logs = self.data.join("sessions/orphaned-logs");

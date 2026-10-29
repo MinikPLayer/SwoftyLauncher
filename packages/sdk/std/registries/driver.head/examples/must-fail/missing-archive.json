@@ -1,0 +1,8 @@
+{
+  "driver.head": {
+    "no_archive": {
+      "$comment": "archive is required",
+      "rig_from": "game/male_ls222"
+    }
+  }
+}

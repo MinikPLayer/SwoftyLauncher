@@ -1,0 +1,12 @@
+{
+  "career.calendar": {
+    "round_zero": {
+      "$comment": "round is at least 1",
+      "rounds": [
+        {
+          "round": 0
+        }
+      ]
+    }
+  }
+}

@@ -18,13 +18,14 @@ mkdir -p "$OUT/game" "$OUT/stages" "$OUT/packed" "$OUT/filled"
 "${PIN[@]}" zig cc -target x86_64-windows-gnu -O2 -o "$OUT/filled/F1_25.exe" fake_filled_iat.c -luser32 &
 cp -r ../dist/. "$OUT/game/"
 cp -r ../dist/. "$OUT/filled/"
-mkdir -p "$OUT/game/swofty/mods/core"
+mkdir -p "$OUT/game/swofty/mods/core" "$OUT/register"
 mv "$OUT/game/swofty/addons/core/swofty_gamelog.dll" "$OUT/game/swofty/addons/core/log_channels.tsv" "$OUT/game/swofty/mods/core/"
 for m in addons/t_*.cpp; do
     name=$(basename "${m%.cpp}")
     case $name in
     t_chain_b) dest=$OUT/game/swofty/mods ;;
     t_stage_*) dest=$OUT/stages ;;
+    t_register) dest=$OUT/register ;;
     t_packed*) dest=$OUT/packed ;;
     t_ntpage | t_int3hook) dest=$OUT ;;
     *) dest=$OUT/game/swofty/addons ;;
@@ -105,7 +106,7 @@ count() {
     if [[ $n == "$2" ]]; then echo "ok  : $1"; else echo "FAIL: $1 (logged $n times, want $2)"; status=1; fi
 }
 CACHE=$OUT/game/swofty/cache/scan-cache.tsv
-for mode in trigger fallback vm settings settings_local session gamelog_off assets assets_ro nearfull nopool cache_ro; do
+for mode in trigger fallback vm settings settings_local session state gamelog_off assets assets_ro nearfull nopool cache_ro; do
     echo "==== $mode"
     if [[ $mode == cache_ro ]]; then
         rm -rf "$OUT/game/swofty/cache" "$WINEPREFIX"/drive_c/users/*/AppData/Local/Swofty/cache/game
@@ -170,6 +171,16 @@ EOF
         chmod -R a-w "$OUT/game/swofty/addons/example.sample-mod"
         [[ -w $OUT/game/swofty/addons/example.sample-mod ]] && ro_skip=1
     fi
+    if [[ $mode == state ]]; then
+        STATE_DIR="$OUT/state-dir-üス"
+        rm -rf "$STATE_DIR" "$OUT/game/swofty/registry/ids.json" "$OUT/game/swofty/registry/room.json"
+        mkdir -p "$OUT/game/swofty/registry"
+        printf '{"version":1,"ids":{"track":{"wine.state/old":{"id":4242}}}}' >"$OUT/game/swofty/registry/ids.json"
+        python3 - "$OUT/game/swofty/state.json" "$(winepath -w "$STATE_DIR" | tr -d '\r')" <<'EOF'
+import json, sys
+json.dump({'version': 1, 'state_dir': sys.argv[2]}, open(sys.argv[1], 'w'))
+EOF
+    fi
     gl_level=; gl_rate=
     [[ $mode == gamelog_off ]] && gl_level=off
     gl_channels=
@@ -196,8 +207,22 @@ EOF
         once "addons: a dll in both folders loads from addons only" 'addon t_drop\.dll: also in .*[\]swofty[\]mods, skipped'
         once "mixins: a binding bindings.json does not list is named as missing" 'addon t_want\.dll needs wine-test:Fake_Unlisted, which bindings\.json does not list'
         once "mixins: a listed binding that does not match stays unresolved" 'addon t_want\.dll needs wine-test:Fake_Missing, which does not resolve on this build'
-        check "addons: SwoftyAddonInit is called" 'addon t_chain_a\.dll: loaded at .*, calling SwoftyAddonInit \(API v8\)'
-        check "addons: SWOFTY_MOD exports SwoftyAddonInit" 'addon t_conflict_y\.dll: loaded at .*, calling SwoftyAddonInit \(API v8\)'
+        check "addons: SwoftyAddonInit is called" 'addon t_chain_a\.dll: loaded at .*, calling SwoftyAddonInit \(API v9\)'
+        once "apply: the boot plan runs the content appliers with no records" '\[apply\] boot plan: [0-9]+ boot applier\(s\), 0 new database key\(s\) for the value map; nothing for the database to apply'
+        check "apply: every boot applier plans no database keys with no content records" '\[apply\] [a-z_.]+ boot: 0 new database key\(s\) planned; no addon records or layers'
+        count "apply: no boot applier plans a database key" 0 '\[apply\] [a-z_.]+ boot: [1-9][0-9]* new database key\(s\) planned'
+        once "apply: the boot moment runs once with nothing to apply" '\[apply\] boot: [0-9]+ applier\(s\); 0 applied, 0 put back, 0 refused'
+        count "apply: no content rows read the database file" 0 '\[apply\] content: read'
+        once "apply: the read moment installs at the window stage" '\[apply\] read: [0-9]+ read path\(s\) installed at the window stage'
+        once "room: a profile with nothing to size leaves the value map alone" "\\[registry\\] room: nothing to size \\(no older addons' database edits, no 1\\.6 database records\\); the value map is the game's own"
+        once "room: room.json is written after boot" '\[registry\] room report written to .*registry.room\.json'
+        count "room: no reserve hook without anything to size" 0 'site_Gdb_ReserveTarget hooked'
+        python3 - "$OUT/game/swofty/registry/room.json" <<'PY' && echo "ok  : room: room.json says not_needed and names the profile" || { echo "FAIL: room: room.json says not_needed and names the profile"; status=1; }
+import json, sys
+r = json.load(open(sys.argv[1]))
+assert r['version'] == 1 and r['presize'] == 'not_needed' and r['profile'] and r['registry']['asked_keys'] == 0, r
+PY
+        check "addons: SWOFTY_MOD exports SwoftyAddonInit" 'addon t_conflict_y\.dll: loaded at .*, calling SwoftyAddonInit \(API v9\)'
         if grep -q "core mixin set 'swofty_core.dll (flow states)'" "$LOG"; then
             once "career: the flow-state site is a core mixin set of its own" "core mixin set 'swofty_core\.dll \(flow states\)': 1 mixin"
             once "career: a missing flow-state site drops only its own set" 'addon swofty_core\.dll \(flow states\) dropped: needs site_FeFlow_SetStateStatus'
@@ -223,6 +248,19 @@ EOF
         done
     fi
     case $mode in
+    state)
+        once "state: the core names the folder the launcher gave it" '\[state\] the core.s state files are in .*state-dir-.*\(from swofty/state\.json\)'
+        once "state: the old stat-id store moves to it" '\[registry\] stat ids: moved ids\.json from the game folder to .*state-dir-.*registry.ids\.json'
+        once "state: the moved stat ids are loaded" '\[registry\] stat ids: ids\.json holds 1 id\(s\)'
+        once "state: room.json is written there" '\[registry\] room report written to .*state-dir-.*registry.room\.json'
+        count "state: nothing fails to write" 0 '\[state\] .*can.t write to'
+        if [[ -s $STATE_DIR/registry/room.json && -s $STATE_DIR/registry/ids.json && ! -e $OUT/game/swofty/registry/room.json && ! -e $OUT/game/swofty/registry/ids.json ]]; then
+            echo "ok  : state: room.json and ids.json are in the state folder and not in the game folder"
+        else
+            echo "FAIL: state: room.json and ids.json are in the state folder and not in the game folder"; status=1
+        fi
+        rm -rf "$STATE_DIR" "$OUT/game/swofty/state.json"
+        ;;
     trigger)
         once "hook pool: the loader reserves it next to the image at attach" 'hook pool: 2048 KB reserved at [0-9A-Fa-f]+ \((above|below) the image\)'
         once "hook pool: the core adopts it" '\[core\] hook pool: 2048 KB at 0x[0-9a-f]+ \(base[-+]0x[0-9a-f]+\), reserved at loader attach'
@@ -415,7 +453,7 @@ EOF
     fi
     count "$mode: no SDK calls, no api lines" 0 '\[assets\] api:'
     if [[ $ITEMS && $req ]]; then
-        once "items: owned_items summary" '\[items\] settings\.json: 1 mod item\(s\) to report as owned'
+        once "items: owned_items summary" '\[items\] 1 mod item\(s\) to report as owned'
         once "items: key without 0x skipped" "\\[items\\] skipping owned_items entry key 'f01d03c7'"
         once "items: ownership check hooked" '\[items\] ownership check hooked at base\+0x[0-9a-f]+'
         once "items: mod key logged once" '\[items\] reporting mod item 0xf01d03c7 \(se_livery 22, rmdesigns\.alphatauri-orlen-livery\) as owned'
@@ -631,6 +669,8 @@ SWOFTY_EARLY_STAGE=1 "${PIN[@]}" xvfb-run -a wine "$SG/F1_25.exe" stages || stat
 echo "---- $LOG (stages)"
 grep -v '  section ' "$LOG"
 check "stages: early stage on from the environment" 'early stage: on \(SWOFTY_EARLY_STAGE=1\)'
+once "stages: the boot moment runs at the early stage" '\[apply\] boot: [0-9]+ applier\(s\); 0 applied, 0 put back, 0 refused'
+once "stages: the room line at the early stage" "\\[registry\\] room: nothing to size"
 check "stages: early plugin list read from settings.json" 'early stage: plugin t_stage_early\.dll has "early": true'
 check "stages: early trigger fired inside the game's CreateMutexW" "trigger: KERNEL32!CreateMutexW from .* \(\.text\) name 'Codemasters F1 25' on thread .*loading addons now \(early stage\)"
 once "stages: the window-stage plugin waits for the window" 'addon t_stage_late\.dll: loads at the window stage'
@@ -776,4 +816,34 @@ once "filled: RegisterClassExW is found in the filled table" 'trigger armed: gam
 once "filled: CreateWindowExW is found in the filled table" 'trigger armed: game IAT slot USER32!CreateWindowExW at [0-9A-Fa-f]+ \(was [0-9A-Fa-f]+\), in the import table the exe filled at load'
 once "filled: the window stage runs at RegisterClassExW" 'stage: window \(USER32!RegisterClassExW from [0-9A-Fa-f]+ \(\.text\)\), addons were loaded at the early stage'
 count "filled: the fallback watcher leaves the window stage to the armed slots" 0 'waiting for a visible main window for the window stage'
+echo "==== register"
+SR=$OUT/register/game
+rm -rf "$SR"
+cp -r "$OUT/game" "$SR"
+rm -f "$SR"/swofty/addons/t_*.dll "$SR"/swofty/mods/t_*.dll "$SR/swofty/loader.log"
+cp "$OUT/register/t_register.dll" "$SR/swofty/addons/"
+python3 - "$SR/swofty" <<'EOF'
+import json, os, sys
+root = sys.argv[1]
+json.dump({'schema': 1, 'profile': 'wine-test', 'addons': [{'id': 't.register', 'dlls': ['t_register.dll'], 'options': []}]},
+          open(root + '/settings.json', 'w'))
+os.makedirs(root + '/registry', exist_ok=True)
+os.makedirs(root + '/addons/wine.data/registry', exist_ok=True)
+json.dump({'version': 1, 'profile': 'wine-test', 'order': ['t.register', 'wine.data'],
+           'data': {'wine.data': ['addons/wine.data/registry/records.json']}}, open(root + '/registry/index.json', 'w'))
+json.dump({'wine.thing': {'extra': {'name': 'extra', 'n': 7}}}, open(root + '/addons/wine.data/registry/records.json', 'w'))
+EOF
+LOG=$SR/swofty/loader.log
+env -u SWOFTY_EARLY_STAGE "${PIN[@]}" xvfb-run -a wine "$SR/F1_25.exe" register || status=1
+echo "---- $LOG (register)"
+grep -v '  section ' "$LOG"
+check "register: a dll that exports SwoftyAddonRegister turns the early stage on" 'early stage: on for 1 addon dll\(s\) that export SwoftyAddonRegister'
+check "register: SwoftyAddonRegister is called at the early stage" 'addon t_register\.dll: calling SwoftyAddonRegister \(API v9\) at the early stage'
+check "register: index.json's data file waits for its registry and lands on declare" '\[registry\] wine\.thing: declared; applying 1 call'
+check "register: the code record and a data-only addon's record read back" '\[t_register\] on_load: t\.register/one n=1, wine\.data/extra n=7'
+awk '/addon t_register\.dll: calling SwoftyAddonRegister/ && !a {a = NR} /\[t_register\] register: SWOFTY_REGISTER runs/ && !b {b = NR}
+     /fake game: the game database loads now/ && !c {c = NR} /addon t_register\.dll: loaded at .*, calling SwoftyAddonInit/ && !d {d = NR}
+     END {exit !(a && b && c && d && a < b && b < c && c < d)}' "$LOG" &&
+    echo "ok  : register: the register pass, then the database load, then SwoftyAddonInit" ||
+    { echo "FAIL: register: the register pass, then the database load, then SwoftyAddonInit"; status=1; }
 exit $status

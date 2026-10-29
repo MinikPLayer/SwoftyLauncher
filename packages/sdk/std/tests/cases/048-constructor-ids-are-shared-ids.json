@@ -1,0 +1,234 @@
+{
+  "name": "constructor ids are shared ids: a team record lists the ids it provides and the last enabled provider wins",
+  "rule": "constructor/ ids are core-owned shared ids; team.identity records list them in provides, constructor/<key> resolves to the last enabled provider in load order, the loser is listed as a provider conflict and with no enabled provider the id is no_record (providers.md#shared-ids, std/systems/teams.md#real-teams)",
+  "registries": {
+    "team.identity": {
+      "applies": "boot"
+    },
+    "team.constructor": {
+      "applies": "boot",
+      "shared": {
+        "provider_registry": "team.identity",
+        "provides": "/provides",
+        "resolved": "/team"
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "team.identity",
+      "key": "williams",
+      "value": {
+        "names": {
+          "title": "lng_x",
+          "code": "WIL"
+        },
+        "livery_name": "wil"
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "team.constructor",
+      "key": "williams",
+      "value": {
+        "name": "Williams",
+        "country": "great_britain",
+        "team": null
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "team.constructor",
+      "key": "hrt",
+      "value": {
+        "name": "HRT",
+        "country": "spain",
+        "team": null
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "creator.career-2012",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "team.identity",
+          "key": "hrt",
+          "base": "game/williams",
+          "patch": {
+            "names": {
+              "title": "lng_hrt",
+              "code": "HRT"
+            },
+            "livery_name": "career2012_hrt",
+            "provides": [
+              "constructor/hrt"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "creator.williams-2017",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "team.identity",
+          "key": "williams",
+          "value": {
+            "names": {
+              "title": "lng_x",
+              "code": "WIL"
+            },
+            "livery_name": "wil",
+            "provides": [
+              "constructor/williams"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "creator.williams-2018",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "team.identity",
+          "key": "williams",
+          "value": {
+            "names": {
+              "title": "lng_x",
+              "code": "WIL"
+            },
+            "livery_name": "wil",
+            "provides": [
+              "constructor/williams"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "team.constructor": {
+          "constructor/williams": {
+            "status": "ok",
+            "value": {
+              "name": "Williams",
+              "country": "great_britain",
+              "team": "creator.williams-2018/williams"
+            },
+            "origins": {}
+          },
+          "constructor/hrt": {
+            "status": "ok",
+            "value": {
+              "name": "HRT",
+              "country": "spain",
+              "team": "creator.career-2012/hrt"
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "provider",
+          "registry": "team.constructor",
+          "id": "constructor/williams",
+          "pointer": "/team",
+          "addons": [
+            "creator.williams-2017",
+            "creator.williams-2018"
+          ],
+          "winner": "creator.williams-2018"
+        }
+      ],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": [
+          "creator.williams-2018"
+        ]
+      },
+      "expect": {
+        "team.constructor": {
+          "constructor/williams": {
+            "status": "ok",
+            "value": {
+              "name": "Williams",
+              "country": "great_britain",
+              "team": "creator.williams-2017/williams"
+            },
+            "origins": {}
+          },
+          "constructor/hrt": {
+            "status": "ok",
+            "value": {
+              "name": "HRT",
+              "country": "spain",
+              "team": "creator.career-2012/hrt"
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": [
+          "creator.williams-2017",
+          "creator.williams-2018",
+          "creator.career-2012"
+        ]
+      },
+      "expect": {
+        "team.constructor": {
+          "constructor/williams": {
+            "status": "no_record"
+          },
+          "constructor/hrt": {
+            "status": "no_record"
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

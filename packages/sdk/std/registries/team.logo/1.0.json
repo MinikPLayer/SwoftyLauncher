@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "team.logo 1.0",
+  "x-registry": "team.logo",
+  "x-version": "1.0",
+  "x-applies": "read",
+  "x-snapshot": false,
+  "description": "teams::Logo: one image per place a logo shows. The core builds the texture arrays slice by slice from every logo record.",
+  "type": "object",
+  "properties": {
+    "images": {
+      "type": "object",
+      "properties": {
+        "driver_select": {
+          "$ref": "#/$defs/path"
+        },
+        "team_select": {
+          "$ref": "#/$defs/path"
+        },
+        "hud": {
+          "$ref": "#/$defs/path"
+        },
+        "broadcast": {
+          "$ref": "#/$defs/path"
+        },
+        "hub": {
+          "$ref": "#/$defs/path"
+        }
+      },
+      "additionalProperties": false
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "team.logo",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "images"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "path": {
+      "description": "A Path: a file or folder in the addon's folder, the game's original file (stock), or resources in an archive. null: empty.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[^/\\\\][^\\\\]*$"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "stock": {
+              "type": "string",
+              "pattern": "^[^/\\\\][^\\\\]*$"
+            }
+          },
+          "required": [
+            "stock"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "erp": {
+              "type": "string",
+              "pattern": "^[^/\\\\][^\\\\]*$"
+            },
+            "prefix": {
+              "type": "string"
+            },
+            "kinds": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "enum": [
+                  "textures",
+                  "materials",
+                  "idf",
+                  "wep"
+                ]
+              }
+            }
+          },
+          "required": [
+            "erp",
+            "prefix",
+            "kinds"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "erp": {
+              "type": "string",
+              "pattern": "^[^/\\\\][^\\\\]*$"
+            },
+            "resources": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^eaid://"
+              }
+            }
+          },
+          "required": [
+            "erp",
+            "resources"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

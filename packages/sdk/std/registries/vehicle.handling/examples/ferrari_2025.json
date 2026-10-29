@@ -1,0 +1,24 @@
+{
+  "vehicle.handling": {
+    "ferrari_2025": {
+      "class": "f1",
+      "damage_scale": 1.0,
+      "chassis": {
+        "mass": 798.0
+      },
+      "rad_upgrades": [
+        {
+          "name": "aero_1",
+          "changes": [
+            {
+              "section": "f1_aero",
+              "key": "front_coeff_lift_multiplier",
+              "op": "*",
+              "value": 1.05
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

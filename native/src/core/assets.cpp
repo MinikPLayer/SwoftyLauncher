@@ -184,6 +184,14 @@ bool file_size(const std::string &rel, uint64_t *size)
     return true;
 }
 
+bool file_size_routed(const std::string &rel, uint64_t *size)
+{
+    if (file_size(rel, size))
+        return true;
+    std::string target;
+    return runtime::file_route_target(rel, target) && file_size(target, size);
+}
+
 uintptr_t find(const Target &t)
 {
     uintptr_t at = 0;
@@ -986,7 +994,7 @@ void apply(uint8_t *m, const char *when, const runtime::Overlay *ov)
                 fail("ERP path '" + ep.path + "' must look like 2025_asset_groups/<path>.erp");
                 break;
             }
-            if (!file_size(ep.path, &ep.size)) {
+            if (!file_size_routed(ep.path, &ep.size)) {
                 fail("ERP not found on disk: " + narrow(game_root) + ep.path);
                 break;
             }

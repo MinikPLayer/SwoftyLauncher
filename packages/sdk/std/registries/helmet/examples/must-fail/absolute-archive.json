@@ -1,0 +1,8 @@
+{
+  "helmet": {
+    "absolute": {
+      "$comment": "the archive is inside the addon's folder",
+      "archive": "C:\\helmets\\a.erp"
+    }
+  }
+}

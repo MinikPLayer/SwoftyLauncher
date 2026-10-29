@@ -1,0 +1,9 @@
+{
+  "vehicle.package": {
+    "cs_2017_ferrari": {
+      "donor": "game/f1_2025",
+      "resource_path": "cs_2017_vehicle_package/teams/[FILENAME]/wep/[FILENAME]",
+      "driver_animation_set": "cs_2017"
+    }
+  }
+}

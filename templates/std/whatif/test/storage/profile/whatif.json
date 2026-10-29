@@ -1,0 +1,8 @@
+{
+  "seats": {
+    "2017": { "1": ["game/fernando_alonso", "game/valtteri_bottas"] }
+  },
+  "ratings": {
+    "2017": { "game/fernando_alonso": { "pace": 96 } }
+  }
+}

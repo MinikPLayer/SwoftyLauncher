@@ -12,6 +12,23 @@
 namespace runtime::save_splice {
 
 constexpr size_t NAME_LIMIT = 63;
+// W4: the career snapshots' own root container (native/src/core/snapshots/format.hpp), and the bag
+// type id its body's layout assumes: type ids are four characters in memory order ('pbag' for a bag,
+// 'dstr' for the length-prefixed string it carries the data in), read from the game at arm time.
+constexpr const char *ENTRY_NAME = "swofty_registry";
+constexpr uint32_t ENTRY_BAG_TYPE = 0x67616270u;
+
+// W4: what the career snapshots plug into the splice (save_splice.cpp): the body kept at a root
+// load (null when the save has none), a new body to write at a profile save (false: write the kept
+// one, or none), and whether the save wrote it.
+struct EntryHooks {
+    void (*loaded)(const std::vector<uint8_t> *body) = nullptr;
+    bool (*saving)(std::vector<uint8_t> &body) = nullptr;
+    void (*written)(bool ok) = nullptr;
+};
+void set_entry_hooks(const EntryHooks &h);
+// Empty when the splice can write the entry; otherwise why it can't (nothing is written then).
+std::string entry_blocked();
 constexpr size_t MAX_KEPT = 32;
 constexpr uint64_t MAX_BODY = 64ull << 20;
 constexpr uint64_t MAX_TOTAL = 128ull << 20;

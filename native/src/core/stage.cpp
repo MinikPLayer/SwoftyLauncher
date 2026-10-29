@@ -2,6 +2,8 @@
 
 #include <swofty/mixin.hpp>
 
+#include "state_logic.hpp"
+
 #include <mutex>
 
 namespace runtime {
@@ -17,7 +19,7 @@ const Feature FEATURES[] = {{"group", true},    {"erp", true},        {"db", tru
                             {"lang", true},     {"file", false},      {"events", true},
                             {"storage", true},  {"overlay", false},   {"telemetry", false},
                             {"shaders", false}, {"career", true},     {"popup", true},
-                            {"postfx", false}};
+                            {"postfx", false},  {"registry_rows", true}};
 
 std::once_flag config_once;
 json::Value config_doc;
@@ -129,6 +131,46 @@ const std::wstring &swofty_root()
 {
     config();
     return swofty_dir;
+}
+
+const std::wstring &state_root()
+{
+    static std::wstring dir;
+    static std::once_flag once;
+    std::call_once(once, [] {
+        std::wstring want;
+        std::string from;
+        wchar_t env[MAX_PATH * 2] = {};
+        DWORD n = GetEnvironmentVariableW(wide(state_logic::ENV).c_str(), env, MAX_PATH * 2);
+        if (n && n < MAX_PATH * 2) {
+            want = state_logic::root(std::wstring(env, n));
+            from = std::string("the ") + state_logic::ENV + " variable";
+        } else {
+            json::Value doc;
+            std::string text = read_file(swofty_root() + wide(state_logic::FILE), size_t(1) << 16);
+            if (!text.empty() && json::parse(text, doc) && doc.type == json::Value::Obj) {
+                want = state_logic::root(wide(doc[state_logic::KEY].str()));
+                from = std::string("swofty/") + state_logic::FILE;
+            }
+        }
+        if (want.empty())
+            return;
+        for (size_t i = want.find(L'\\', 3); i != std::wstring::npos; i = want.find(L'\\', i + 1))
+            CreateDirectoryW(want.substr(0, i).c_str(), nullptr);
+        std::wstring probe = want + L".swofty-write-test";
+        HANDLE h = CreateFileW(probe.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
+                               FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_HIDDEN | FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+        if (h == INVALID_HANDLE_VALUE) {
+            swofty::log("[state] %s names %s, which the game can't write to (error %lu); the core's state files stay in "
+                        "swofty/registry/ in the game folder",
+                        from.c_str(), narrow(want).c_str(), GetLastError());
+            return;
+        }
+        CloseHandle(h);
+        dir = want;
+        swofty::log("[state] the core's state files are in %s (from %s)", narrow(want).c_str(), from.c_str());
+    });
+    return dir;
 }
 
 bool enabled(const char *feature, const char *what)

@@ -281,6 +281,7 @@ void ready()
     net_trace_setup();
     netplay_setup();
     netplay_drive_setup();
+    testagent_setup();
     perf::start();
 }
 

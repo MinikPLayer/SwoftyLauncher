@@ -1,0 +1,540 @@
+{
+ "engine_sound": {
+  "ferrari": {
+   "bundle": "sounds/cs19_ferrari.bdl",
+   "settings_from": "game/ferrari_2025"
+  },
+  "honda": {
+   "bundle": "sounds/cs19_honda.bdl",
+   "settings_from": "game/honda_2025"
+  },
+  "mercedes": {
+   "bundle": "sounds/cs19_mercedes.bdl",
+   "settings_from": "game/mercedes_2025"
+  },
+  "renault": {
+   "bundle": "sounds/cs19_renault.bdl",
+   "settings_from": "game/renault_2025"
+  }
+ },
+ "vehicle.package": {
+  "cs_2019": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2019_vehicle_package/teams/[FILENAME]/wep/[FILENAME]",
+   "driver_animation_set": "cs_2019",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://cs_2019_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 91
+  },
+  "cs_2019_mercedes": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2019_vehicle_package/teams/mercedes/wep/mercedes",
+   "driver_animation_set": "cs_2019",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://cs_2019_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 92
+  },
+  "cs_2019_ferrari": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2019_vehicle_package/teams/ferrari/wep/ferrari",
+   "driver_animation_set": "cs_2019",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://cs_2019_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 93
+  },
+  "cs_2019_redbull": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2019_vehicle_package/teams/redbull/wep/redbull",
+   "driver_animation_set": "cs_2019",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://cs_2019_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 94
+  },
+  "cs_2019_mclaren": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2019_vehicle_package/teams/mclaren/wep/mclaren",
+   "driver_animation_set": "cs_2019",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://cs_2019_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 95
+  },
+  "cs_2019_lotus": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2019_vehicle_package/teams/lotus/wep/lotus",
+   "driver_animation_set": "cs_2019",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://cs_2019_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 96
+  },
+  "cs_2019_toro_rosso": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2019_vehicle_package/teams/toro_rosso/wep/toro_rosso",
+   "driver_animation_set": "cs_2019",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://cs_2019_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 97
+  },
+  "cs_2019_force_india": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2019_vehicle_package/teams/force_india/wep/force_india",
+   "driver_animation_set": "cs_2019",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://cs_2019_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 98
+  },
+  "cs_2019_sauber": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2019_vehicle_package/teams/sauber/wep/sauber",
+   "driver_animation_set": "cs_2019",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://cs_2019_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 99
+  },
+  "cs_2019_haas": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2019_vehicle_package/teams/haas/wep/haas",
+   "driver_animation_set": "cs_2019",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://cs_2019_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 100
+  },
+  "cs_2019_williams": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2019_vehicle_package/teams/williams/wep/williams",
+   "driver_animation_set": "cs_2019",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://cs_2019_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 101
+  }
+ },
+ "vehicle": {
+  "mercedes": {
+   "label": "cs19_mercedes",
+   "donor": "game/mercedes_2025",
+   "performance_tier": 0,
+   "tyre_wear_scale": 1.04,
+   "stat_id": 540,
+   "package": "swofty.classic-seasons-2019/cs_2019_mercedes",
+   "ai": {
+    "asset_filename": "redbull"
+   },
+   "engine_sound": "swofty.classic-seasons-2019/mercedes",
+   "audio_switch": "f1_m_Mercedes",
+   "audio_from": "f1_m_mercedes",
+   "livery": "swofty.classic-seasons-2019/mercedes"
+  },
+  "ferrari": {
+   "label": "cs19_ferrari",
+   "donor": "game/ferrari_2025",
+   "performance_tier": 0,
+   "tyre_wear_scale": 1.03,
+   "stat_id": 541,
+   "package": "swofty.classic-seasons-2019/cs_2019_ferrari",
+   "ai": {
+    "asset_filename": "mclaren"
+   },
+   "engine_sound": "swofty.classic-seasons-2019/ferrari",
+   "audio_switch": "f1_m_Ferrari",
+   "audio_from": "f1_m_ferrari",
+   "livery": "swofty.classic-seasons-2019/ferrari"
+  },
+  "redbull": {
+   "label": "cs19_redbull",
+   "donor": "game/redbull_2025",
+   "performance_tier": 0,
+   "tyre_wear_scale": 1.02,
+   "stat_id": 542,
+   "package": "swofty.classic-seasons-2019/cs_2019_redbull",
+   "ai": {
+    "asset_filename": "ferrari"
+   },
+   "engine_sound": "swofty.classic-seasons-2019/honda",
+   "audio_switch": "f1_m_Red_bull",
+   "audio_from": "f1_m_red_bull",
+   "livery": "swofty.classic-seasons-2019/redbull"
+  },
+  "mclaren": {
+   "label": "cs19_mclaren",
+   "donor": "game/mclaren_2025",
+   "performance_tier": 0,
+   "tyre_wear_scale": 1.01,
+   "stat_id": 543,
+   "package": "swofty.classic-seasons-2019/cs_2019_mclaren",
+   "ai": {
+    "asset_filename": "mercedes"
+   },
+   "engine_sound": "swofty.classic-seasons-2019/renault",
+   "audio_switch": "f1_m_Mclaren",
+   "audio_from": "f1_m_mclaren",
+   "livery": "swofty.classic-seasons-2019/mclaren"
+  },
+  "lotus": {
+   "label": "cs19_lotus",
+   "donor": "game/lotus_2025",
+   "performance_tier": 1,
+   "tyre_wear_scale": 1.0,
+   "stat_id": 544,
+   "package": "swofty.classic-seasons-2019/cs_2019_lotus",
+   "ai": {
+    "asset_filename": "haas"
+   },
+   "engine_sound": "swofty.classic-seasons-2019/renault",
+   "audio_switch": "f1_m_Alpine",
+   "audio_from": "f1_m_alpine",
+   "livery": "swofty.classic-seasons-2019/lotus"
+  },
+  "toro_rosso": {
+   "label": "cs19_toro_rosso",
+   "donor": "game/toro_rosso_2025",
+   "performance_tier": 2,
+   "tyre_wear_scale": 0.97,
+   "stat_id": 545,
+   "package": "swofty.classic-seasons-2019/cs_2019_toro_rosso",
+   "ai": {
+    "asset_filename": "sauber"
+   },
+   "engine_sound": "swofty.classic-seasons-2019/honda",
+   "audio_switch": "f1_m_Rb",
+   "audio_from": "f1_m_rb",
+   "livery": "swofty.classic-seasons-2019/toro_rosso"
+  },
+  "force_india": {
+   "label": "cs19_force_india",
+   "donor": "game/force_india_2025",
+   "performance_tier": 2,
+   "tyre_wear_scale": 0.96,
+   "stat_id": 546,
+   "package": "swofty.classic-seasons-2019/cs_2019_force_india",
+   "ai": {
+    "asset_filename": "lotus"
+   },
+   "engine_sound": "swofty.classic-seasons-2019/mercedes",
+   "audio_switch": "f1_m_Aston_martin",
+   "audio_from": "f1_m_aston_martin",
+   "livery": "swofty.classic-seasons-2019/force_india"
+  },
+  "sauber": {
+   "label": "cs19_sauber",
+   "donor": "game/sauber_2025",
+   "performance_tier": 1,
+   "tyre_wear_scale": 0.98,
+   "stat_id": 547,
+   "package": "swofty.classic-seasons-2019/cs_2019_sauber",
+   "ai": {
+    "asset_filename": "force_india"
+   },
+   "engine_sound": "swofty.classic-seasons-2019/ferrari",
+   "audio_switch": "f1_m_Sauber",
+   "audio_from": "f1_m_sauber",
+   "livery": "swofty.classic-seasons-2019/sauber"
+  },
+  "haas": {
+   "label": "cs19_haas",
+   "donor": "game/haas_2025",
+   "performance_tier": 1,
+   "tyre_wear_scale": 0.99,
+   "stat_id": 548,
+   "package": "swofty.classic-seasons-2019/cs_2019_haas",
+   "ai": {
+    "asset_filename": "williams"
+   },
+   "engine_sound": "swofty.classic-seasons-2019/ferrari",
+   "audio_switch": "f1_m_Haas",
+   "audio_from": "f1_m_haas",
+   "livery": "swofty.classic-seasons-2019/haas"
+  },
+  "williams": {
+   "label": "cs19_williams",
+   "donor": "game/williams_2025",
+   "performance_tier": 2,
+   "tyre_wear_scale": 0.95,
+   "stat_id": 549,
+   "package": "swofty.classic-seasons-2019/cs_2019_williams",
+   "ai": {
+    "asset_filename": "toro_rosso"
+   },
+   "engine_sound": "swofty.classic-seasons-2019/mercedes",
+   "audio_switch": "f1_m_Williams",
+   "audio_from": "f1_m_williams",
+   "livery": "swofty.classic-seasons-2019/williams"
+  }
+ },
+ "livery": {
+  "mercedes": {
+   "vehicle": "swofty.classic-seasons-2019/mercedes",
+   "archive": "cars/teams/mercedes/wep/mercedes.erp"
+  },
+  "ferrari": {
+   "vehicle": "swofty.classic-seasons-2019/ferrari",
+   "archive": "cars/teams/ferrari/wep/ferrari.erp"
+  },
+  "redbull": {
+   "vehicle": "swofty.classic-seasons-2019/redbull",
+   "archive": "cars/teams/redbull/wep/redbull.erp"
+  },
+  "mclaren": {
+   "vehicle": "swofty.classic-seasons-2019/mclaren",
+   "archive": "cars/teams/mclaren/wep/mclaren.erp"
+  },
+  "lotus": {
+   "vehicle": "swofty.classic-seasons-2019/lotus",
+   "archive": "cars/teams/lotus/wep/lotus.erp"
+  },
+  "toro_rosso": {
+   "vehicle": "swofty.classic-seasons-2019/toro_rosso",
+   "archive": "cars/teams/toro_rosso/wep/toro_rosso.erp"
+  },
+  "force_india": {
+   "vehicle": "swofty.classic-seasons-2019/force_india",
+   "archive": "cars/teams/force_india/wep/force_india.erp"
+  },
+  "sauber": {
+   "vehicle": "swofty.classic-seasons-2019/sauber",
+   "archive": "cars/teams/sauber/wep/sauber.erp"
+  },
+  "haas": {
+   "vehicle": "swofty.classic-seasons-2019/haas",
+   "archive": "cars/teams/haas/wep/haas.erp"
+  },
+  "williams": {
+   "vehicle": "swofty.classic-seasons-2019/williams",
+   "archive": "cars/teams/williams/wep/williams.erp"
+  }
+ },
+ "content.package": {
+  "f1_2019": {
+   "title": "lng_cs_f1_2019",
+   "entrant_list": "cs_f1_2019",
+   "season": 2019,
+   "teams": [
+    {
+     "key": "mercedes",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2019/mercedes",
+     "drivers": [
+      {
+       "driver": "game/lewis_hamilton",
+       "number": 44,
+       "look": null
+      },
+      {
+       "driver": "game/valtteri_bottas",
+       "number": 77,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "ferrari",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2019/ferrari",
+     "drivers": [
+      {
+       "driver": "game/sebastian_vettel",
+       "number": 5,
+       "look": null
+      },
+      {
+       "driver": "game/charles_leclerc",
+       "number": 16,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "redbull",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2019/redbull",
+     "drivers": [
+      {
+       "driver": "game/max_verstappen",
+       "number": 33,
+       "look": null
+      },
+      {
+       "driver": "game/pierre_gasly",
+       "number": 10,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "mclaren",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2019/mclaren",
+     "drivers": [
+      {
+       "driver": "game/carlos_sainz-jr",
+       "number": 55,
+       "look": null
+      },
+      {
+       "driver": "game/lando_norris",
+       "number": 4,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "lotus",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2019/lotus",
+     "drivers": [
+      {
+       "driver": "game/daniel_ricciardo",
+       "number": 3,
+       "look": null
+      },
+      {
+       "driver": "game/nico_hulkenberg",
+       "number": 27,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "toro_rosso",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2019/toro_rosso",
+     "drivers": [
+      {
+       "driver": "game/daniil_kvyat",
+       "number": 26,
+       "look": null
+      },
+      {
+       "driver": "game/alex_albon",
+       "number": 23,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "force_india",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2019/force_india",
+     "drivers": [
+      {
+       "driver": "game/sergio_perez",
+       "number": 11,
+       "look": null
+      },
+      {
+       "driver": "game/lance_stroll",
+       "number": 18,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "sauber",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2019/sauber",
+     "drivers": [
+      {
+       "driver": "game/kimi_raikkonen",
+       "number": 7,
+       "look": null
+      },
+      {
+       "driver": "game/antonio_giovinazzi",
+       "number": 99,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "haas",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2019/haas",
+     "drivers": [
+      {
+       "driver": "game/romain_grosjean",
+       "number": 8,
+       "look": null
+      },
+      {
+       "driver": "game/kevin_magnussen",
+       "number": 20,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "williams",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2019/williams",
+     "drivers": [
+      {
+       "driver": "game/george_russell",
+       "number": 63,
+       "look": null
+      },
+      {
+       "driver": "game/robert_kubica",
+       "number": 88,
+       "look": null
+      }
+     ]
+    }
+   ],
+   "stat_id": 108,
+   "database": {
+    "entrant_list": "cs_f1_2019",
+    "scenario_stat_id": 18,
+    "entrant_list_from": "f1_2025",
+    "entrant_list_set": {
+     "leaderboard": "classic",
+     "previous_season_driver_standings": ""
+    },
+    "standings": "cs_f1_teams_2019",
+    "standings_from": "f1_teams_2024",
+    "entrant_prefix": "cs2019-",
+    "looks": {
+     "mercedes/lewis_hamilton": "2019-cs_mercedes_lewis_hamilton",
+     "mercedes/valtteri_bottas": "2019-cs_mercedes_valtteri_bottas",
+     "ferrari/sebastian_vettel": "2019-cs_ferrari_sebastian_vettel",
+     "ferrari/charles_leclerc": "2019-cs_ferrari_charles_leclerc",
+     "redbull/max_verstappen": "2019-cs_redbull_max_verstappen",
+     "redbull/pierre_gasly": "2019-cs_redbull_pierre_gasly",
+     "mclaren/carlos_sainz-jr": "2019-cs_mclaren_carlos_sainz-jr",
+     "mclaren/lando_norris": "2019-cs_mclaren_lando_norris",
+     "lotus/daniel_ricciardo": "2019-cs_lotus_daniel_ricciardo",
+     "lotus/nico_hulkenberg": "2019-cs_lotus_nico_hulkenberg",
+     "toro_rosso/daniil_kvyat": "2019-cs_toro_rosso_daniil_kvyat",
+     "toro_rosso/alex_albon": "2019-cs_toro_rosso_alex_albon",
+     "force_india/sergio_perez": "2019-cs_force_india_sergio_perez",
+     "force_india/lance_stroll": "2019-cs_force_india_lance_stroll",
+     "sauber/kimi_raikkonen": "2019-cs_sauber_kimi_raikkonen",
+     "sauber/antonio_giovinazzi": "2019-cs_sauber_antonio_giovinazzi",
+     "haas/romain_grosjean": "2019-cs_haas_romain_grosjean",
+     "haas/kevin_magnussen": "2019-cs_haas_kevin_magnussen",
+     "williams/george_russell": "2019-cs_williams_george_russell",
+     "williams/robert_kubica": "2019-cs_williams_robert_kubica"
+    },
+    "content_sets": [
+     "2025",
+     "2026"
+    ]
+   }
+  }
+ },
+ "era.box": {
+  "f1_2019": {
+   "package": "swofty.classic-seasons-2019/f1_2019",
+   "image": "#overrides.home_screen.tiles_solo_6x6[cs_f1_2019]",
+   "order": 2019
+  }
+ }
+}

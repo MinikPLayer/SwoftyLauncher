@@ -1,0 +1,100 @@
+{
+  "driver.identity": {
+    "felipe_nasr": {
+      "names": {
+        "first": {
+          "literal": "Felipe"
+        },
+        "last": {
+          "literal": "Nasr"
+        },
+        "full": {
+          "literal": "Felipe Nasr"
+        },
+        "code": "NAS"
+      },
+      "nationality": "brazil",
+      "look": null
+    },
+    "esteban_gutierrez": {
+      "names": {
+        "first": {
+          "literal": "Esteban"
+        },
+        "last": {
+          "literal": "Gutiérrez"
+        },
+        "full": {
+          "literal": "Esteban Gutiérrez"
+        },
+        "code": "GUT"
+      },
+      "nationality": "mexico",
+      "look": null
+    },
+    "stoffel_vandoorne": {
+      "names": {
+        "first": {
+          "literal": "Stoffel"
+        },
+        "last": {
+          "literal": "Vandoorne"
+        },
+        "full": {
+          "literal": "Stoffel Vandoorne"
+        },
+        "code": "VAN"
+      },
+      "nationality": "belgium",
+      "look": null
+    },
+    "brendon_hartley": {
+      "names": {
+        "first": {
+          "literal": "Brendon"
+        },
+        "last": {
+          "literal": "Hartley"
+        },
+        "full": {
+          "literal": "Brendon Hartley"
+        },
+        "code": "HAR"
+      },
+      "nationality": "new_zealand",
+      "look": null
+    },
+    "sergey_sirotkin": {
+      "names": {
+        "first": {
+          "literal": "Sergey"
+        },
+        "last": {
+          "literal": "Sirotkin"
+        },
+        "full": {
+          "literal": "Sergey Sirotkin"
+        },
+        "code": "SIR"
+      },
+      "nationality": "default",
+      "look": null
+    },
+    "rio_haryanto": {
+      "names": {
+        "first": {
+          "literal": "Rio"
+        },
+        "last": {
+          "literal": "Haryanto"
+        },
+        "full": {
+          "literal": "Rio Haryanto"
+        },
+        "code": "HAR"
+      },
+      "nationality": "indonesia",
+      "look": null
+    }
+  }
+}

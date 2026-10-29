@@ -1,0 +1,8 @@
+{
+  "livery": {
+    "x": {
+      "$comment": "vehicle is required",
+      "textures": "livery/"
+    }
+  }
+}

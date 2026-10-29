@@ -271,6 +271,10 @@ pub(crate) struct AddonsPage {
     advanced: bool,
     changes: HashMap<String, Changes>,
     drop: Option<DropAt>,
+    /// From the core's reports of the last session: each addon's status lines, and the registry
+    /// conflicts with the addons each is about.
+    status: std::collections::BTreeMap<String, Vec<String>>,
+    registry_conflicts: Vec<(Vec<String>, swofty_core::stdlib::reports::Conflict)>,
     _search: Subscription,
 }
 
@@ -305,6 +309,8 @@ impl AddonsPage {
             advanced: false,
             changes: HashMap::new(),
             drop: None,
+            status: Default::default(),
+            registry_conflicts: Vec::new(),
             _search: changed,
         }
     }
@@ -706,6 +712,18 @@ impl Shell {
         let last = (!self.vanilla())
             .then(|| conflicts::last(&self.store, &profile))
             .flatten();
+        let game = self.panel_install().map(|i| i.dir);
+        let registry = swofty_core::stdlib::reports::Conflicts::read(&self.store.root, game.as_deref());
+        let room = swofty_core::stdlib::reports::Room::read(&self.store.root, game.as_deref());
+        self.addons.status = swofty_core::stdlib::reports::status_lines(registry.as_ref(), room.as_ref());
+        self.addons.registry_conflicts = registry
+            .map(|c| {
+                c.registry
+                    .into_iter()
+                    .map(|e| (e.addons().into_iter().map(str::to_owned).collect(), e))
+                    .collect()
+            })
+            .unwrap_or_default();
         let checked = self.addons.report.take().filter(|r| r.profile == profile);
         self.addons.report = match (last, checked) {
             (Some(l), Some(c)) => Some(if c.built_at > l.built_at { c } else { l }),
@@ -2363,6 +2381,20 @@ impl Shell {
                     .flex_shrink_0()
                     .gap(px(4.))
                     .justify_end()
+                    .when_some(
+                        self.addons.status.get(&id).filter(|l| !l.is_empty()),
+                        |d, lines| {
+                            let first = lines[0].clone();
+                            let tip = format!("As of your last session: {}", lines.join("; "));
+                            d.child(
+                                pill(IconName::TriangleAlert, first, p.warning)
+                                    .id(SharedString::from(format!("status-{id}")))
+                                    .max_w(px(240.))
+                                    .truncate()
+                                    .tooltip(move |window, cx| Tooltip::new(tip.clone()).build(window, cx)),
+                            )
+                        },
+                    )
                     .when(self.update_ready(m), |d| {
                         let to = self.catalog_update(&id).map(|u| format!("v{}", u.to.version));
                         d.child(
@@ -2871,6 +2903,15 @@ impl Shell {
         };
         let stale = report
             .is_some_and(|r| !r.is_current(&self.library.profile) || self.changed_since(id, r.built_at));
+        let name = |a: &str| self.addon_name(a);
+        let registry: Vec<String> = self
+            .addons
+            .registry_conflicts
+            .iter()
+            .filter(|(about, _)| about.iter().any(|a| a == id))
+            .map(|(_, e)| e.line(&name))
+            .chain(self.addons.status.get(id).into_iter().flatten().cloned())
+            .collect();
         let pairs: Vec<&Pair> = self.pairs_of(id).collect();
         let rows: Vec<AnyElement> = pairs
             .iter()
@@ -2930,6 +2971,27 @@ impl Shell {
                         .overflow_hidden()
                         .children(rows),
                 )
+            })
+            .when(!registry.is_empty(), |d| {
+                d.child(
+                    div()
+                        .text_size(px(12.))
+                        .text_color(p.text_placeholder)
+                        .child("In game, as of your last session"),
+                )
+                .children(registry.into_iter().map(|line| {
+                    h_flex()
+                        .gap(px(6.))
+                        .items_start()
+                        .text_size(px(13.))
+                        .text_color(p.text_muted)
+                        .child(
+                            Icon::new(IconName::TriangleAlert)
+                                .size(px(14.))
+                                .text_color(p.warning),
+                        )
+                        .child(line)
+                }))
             })
     }
 

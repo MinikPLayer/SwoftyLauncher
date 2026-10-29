@@ -1,0 +1,18 @@
+{
+  "career.wizard": {
+    "route_twice": {
+      "$comment": "two tile routes share the key from",
+      "data_group": "f1_career_progressive",
+      "tile_routes": [
+        {
+          "from": "",
+          "to": "a"
+        },
+        {
+          "from": "",
+          "to": "b"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "name": "a shared id goes to the last enabled provider in load order",
+  "rule": "venue/, person/ and constructor/ ids are core-owned; the record's resolved field names the last enabled provider in load order, the loser is listed as a provider conflict, and with no enabled provider the shared id is no_record (providers.md#shared-ids)",
+  "registries": {
+    "track": {
+      "applies": "boot"
+    },
+    "track.venue": {
+      "applies": "boot",
+      "shared": {
+        "provider_registry": "track",
+        "provides": "/provides",
+        "resolved": "/track"
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "track.venue",
+      "key": "sochi",
+      "value": {
+        "name": "Sochi",
+        "track": null
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.sochi",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "track",
+          "key": "sochi",
+          "value": {
+            "code": "sochi",
+            "provides": [
+              "venue/sochi"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "community.sochi-2014",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "track",
+          "key": "sochi",
+          "value": {
+            "code": "sochi14",
+            "provides": [
+              "venue/sochi"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "track.venue": {
+          "venue/sochi": {
+            "status": "ok",
+            "value": {
+              "name": "Sochi",
+              "track": "community.sochi-2014/sochi"
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "provider",
+          "registry": "track.venue",
+          "id": "venue/sochi",
+          "pointer": "/track",
+          "addons": [
+            "mod.sochi",
+            "community.sochi-2014"
+          ],
+          "winner": "community.sochi-2014"
+        }
+      ],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": [
+          "community.sochi-2014"
+        ]
+      },
+      "expect": {
+        "track.venue": {
+          "venue/sochi": {
+            "status": "ok",
+            "value": {
+              "name": "Sochi",
+              "track": "mod.sochi/sochi"
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": [
+          "community.sochi-2014",
+          "mod.sochi"
+        ]
+      },
+      "expect": {
+        "track.venue": {
+          "venue/sochi": {
+            "status": "no_record"
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

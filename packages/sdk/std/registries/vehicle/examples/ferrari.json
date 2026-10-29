@@ -1,0 +1,22 @@
+{
+  "vehicle": {
+    "ferrari": {
+      "package": "swofty.classic-seasons-2017/cs_2017_ferrari",
+      "label": "cs17_ferrari",
+      "donor": "game/ferrari_2025",
+      "model": "cars/ferrari/",
+      "engine_sound": "swofty.classic-seasons-2017/ferrari",
+      "livery": "swofty.classic-seasons-2017/ferrari",
+      "handling": "swofty.classic-seasons-2017/ferrari",
+      "power_unit": "game/ferrari_2025",
+      "ai": {
+        "track_pack": "swofty.classic-seasons-2017/ferrari",
+        "asset_filename": "auto"
+      },
+      "performance_class": "f1",
+      "performance_tier": 2,
+      "tyre_wear_scale": 1.04,
+      "stat_id": "auto"
+    }
+  }
+}

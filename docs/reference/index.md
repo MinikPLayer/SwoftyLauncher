@@ -1,55 +1,128 @@
 ---
-title: Developer overview
-description: What you can make for Swofty Launcher — mods, data addons, engine plugins, launcher plugins and menu edits — where each one starts, and the tools that help.
+title: What you can build
+description: What you can make for Swofty Launcher - content, whole game systems, careers, in-game code, launcher pages and imported mods - registered in code on the registry, and where each part of the docs starts.
 ---
 
-# Developer overview
+# What you can build
 
-You can make two kinds of content for Swofty Launcher. A **mod** is content players drop on the launcher's **Mods** page: a `.serps` package, `.erp` files or a community track zip. An **addon** is a folder or `.swoftyaddon` file with a `swofty.json`, installed on the **Addons** page. Find what you want to make below, then start on its first page.
+You build **addons**: a folder with a `swofty.json` that players install on the **Addons** page. An addon can add content (a season, a car, a livery, a track, an engine sound), a whole system the game doesn't have (a tyre range, a points system, a career), code that runs in the game, or pages in the launcher. Players can also drop **mods** (`.serps` packages, game-file zips, track zips) on the importer, which turns them into addons.
 
-## What do you want to make?
+Everything an addon adds goes into **the registry**: shared, typed data every addon can provide, read and build on, registered in code. Start there.
 
-| You want to | Build | Start at |
-|---|---|---|
-| Share database, text or texture changes you made in Simplified Studio | A `.serps` mod | [Mods](/reference/mods/) |
-| Share a community track | A track package (a mod) | [Track packages](/reference/mods/tracks) |
-| Change database values, in-game text, textures or models with exact edits, optionally behind a setting | A data addon | [Data addons](/reference/data/) |
-| Move, add or restyle elements on a menu screen | A menu edit, shipped in a data addon | [Menus and UI](/reference/ui/) |
-| Add a screen or a home tile in game | An addon with `screens` and an engine plugin | [In-game UI](/reference/addons/in-game-ui) |
-| Run your own code in the game: hook engine functions, read telemetry, draw an overlay | An engine plugin | [Engine plugins](/reference/addons/native-plugins) |
-| Add a launcher page, an importer, a `swofty` command or a build step | A launcher plugin | [Launcher plugins](/reference/addons/launcher-api) |
+## One addon, start to finish
 
-Every addon follows the same five steps, whatever it holds. They're on [Addons](/reference/addons/).
+<Split>
 
-## The three building blocks
+An engine sound pack that gives the 2017 Ferrari a V10. It adds its sound under its own key, and layers Classic Seasons' 2017 Ferrari to use it. No copied files.
 
-An addon is made from up to three blocks. Its `swofty.json` lists each one it uses, and one addon can use all three.
+`SWOFTY_REGISTER` runs at every game start, before the game loads its database. The core puts the change into the game live.
 
-**Operations.** Data changes listed under `operations` in `swofty.json`: set a database field, replace a texture, add a line of text, copy a file, register a screen. The launcher applies them when it builds a profile, to copies of the game's files or in memory while the game boots. An addon with only operations is a **data addon**; it needs no compiler. See [Operations](/reference/data/operations) for every kind.
+The **Without code** tab is the same addon with no DLL: data files in `registry/`.
 
-**Engine plugin.** A Windows x86-64 DLL named in `operations.native`. The in-game loader loads it into F1 25 and hands it the `SwoftyApi`, which hooks engine functions through [the mixin system](/reference/addons/hooking) and gives access to the [standard library](/reference/std/): events, overlay, telemetry, database reads, storage, settings and logging. See [Engine plugins](/reference/addons/native-plugins).
+<template #example>
+<Example root="mod.esp" code-file="native/src/esp.cpp" data-file="registry/sounds.json" files="swofty.json, native/build.sh, native/esp.dll, sounds/v10_screamer.bdl, registry/layers.json">
+<template #code>
 
-**Launcher plugin.** A program named in the `launcher` block. The launcher runs it as a subprocess that speaks newline-delimited JSON, and it adds sidebar pages, an importer for dropped files, ops at build time, `swofty` subcommands and a line on the profile card. See [Launcher plugins](/reference/addons/launcher-api).
+```cpp
+#include <swofty/registry.hpp>
+#include <swofty/systems/sounds.hpp>
+#include <swofty/systems/cars.hpp>
 
-[Settings](/reference/addons/settings) work with all three: a `db` setting fills values in operations, and a `native` setting reaches the engine plugin while the game runs.
+using namespace swofty;
+
+SWOFTY_REGISTER
+{
+    auto v10 = sounds::engine_sounds.add("v10_screamer", {
+        .bundle = file("sounds/v10_screamer.bdl"),
+        .settings_from = sounds::engine_sounds["game/ferrari_2025"],
+    });
+
+    cars::vehicles.layer(cars::vehicles["swofty.classic-seasons-2017/ferrari"], [=](cars::Vehicle &v) {
+        v.engine_sound = v10;
+    });
+}
+
+SWOFTY_ADDON()
+```
+
+</template>
+<template #data>
+
+```json
+// registry/sounds.json: your sound, under your own key
+{ "engine_sound": { "v10_screamer": { "bundle": "sounds/v10_screamer.bdl", "settings_from": "game/ferrari_2025" } } }
+```
+
+```json
+// registry/layers.json: a layer on Classic Seasons' 2017 Ferrari
+{ "vehicle": { "swofty.classic-seasons-2017/ferrari": { "engine_sound": "mod.esp/v10_screamer" } } }
+```
+
+</template>
+</Example>
+</template>
+</Split>
+
+`swofty.json` names the addon, its DLL and what it needs. Nothing it registers goes in a manifest:
+
+```json
+{
+  "schema_version": 1,
+  "id": "mod.esp",
+  "name": "V10 Engine Sounds",
+  "version": "1.0.0",
+  "author": "you",
+  "category": "cars",
+  "compat": { "game": "f1_25", "launcher": ">=1.6.0" },
+  "requires": [ { "id": "swofty.classic-seasons-2017" } ],
+  "operations": { "native": [ { "dll": "native/esp.dll" } ] }
+}
+```
+
+The data-file version leaves out `operations`: the core finds `registry/` by its folder name.
+
+```sh
+native/build.sh
+swofty addons install ./mod.esp
+swofty addons enable mod.esp
+swofty run --apply    # Time Trial, F1 2017, Ferrari
+```
+
+`swofty/loader.log`:
+
+```text
+[registry] register: mod.esp (esp.dll) 1 engine_sound, 1 layer on vehicle (early stage, 0.4 ms)
+[registry] vehicle swofty.classic-seasons-2017/ferrari: edit by mod.esp changed /engine_sound -> mod.esp/v10_screamer
+[registry] applied at boot: engine_sound 1 (1 bundle path redirected to mod.esp), vehicle 1 (3 database records)
+```
+
+## The parts of the docs
+
+- **[Guides](/make/)**: build one real addon from an empty folder to publishing: a livery, an engine sound pack, a what-if history editor, a track, a year pack, a career mode, or a system of your own.
+- **[The registry](/std/)**: what every addon builds on. Records under your own keys, providers, layers, bases and variants, scopes, when changes apply, versioning.
+- **[Game systems](/std/systems/)**: one page per system the game has: cars, liveries, teams, drivers, helmets and suits, sounds, tracks, tyres, power units, sessions and weekends, weather, AI, career, UI and strings, graphics. Each says what you can provide and change, the hook points, and the limits.
+  - **[Your own systems](/std/systems/custom)**: bring a system the game doesn't have, and let others extend it.
+- **[Connecting addons](/std/events)**: events through the whole game, hooks on game functions, services between addons, the core's operations, and dependencies with guards that stop players cleanly when something's missing.
+- **[In-game code](/reference/addons/native-plugins)**: engine plugins (Windows DLLs) with the mixin system and the in-game libraries: events, overlay, telemetry, database reads, storage, career, popups, the race HUD, strings.
+- **[Launcher plugins](/reference/addons/launcher-api)**: pages in the launcher, importers, build steps and `swofty` commands, and how a page saves settings your in-game code applies as a layer.
+- **[Mods and importing](/std/importer)**: what the importer recognises in a mod, and how to make `.serps` packages and track zips.
+- **[Packaging and publishing](/reference/addons/publishing)**: `swofty.json`, `registry.json`, and publishing to the Addon Browser.
+- **[Reference](/reference/cli)**: the command line, the C ABI, compatibility with addons made for 1.5 and earlier, build operations, the game database, ERP archives and the Engine API.
 
 ## Tools
 
-| Tool | What it does | Page |
-|---|---|---|
-| Swofty UI | Browses, renders and edits the game's menu scenes (`.idf`), and exports checked scenes for an addon. Releases ship it as `bin/swofty-ui` | [Swofty UI](/reference/ui/swofty-ui) |
-| `swofty` | The command line: install and enable addons, import mods, build a profile, run the game and follow its logs, restore the game folder | [Command line](/reference/cli) |
-| `tools/gamedb.py` | Dumps the game database and gets or sets one value by path | [Game database tools](/reference/gamedb/tools#python-tools) |
-| `tools/map_check.py` | Checks a profile built with tracks against the game it was built from, using the build's `plan.json` | [Game database tools](/reference/gamedb/tools#python-tools) |
-| `tools/idf.py` | Prints a menu scene's elements and edits them from the command line | [UI scenes](/reference/ui/idf#tools) |
+```text
+swofty              the command line: install and enable addons, import mods, build a profile, run the game,
+                    follow its logs, restore the game folder                         /reference/cli
+Swofty UI           browse, render and edit menu scenes (.idf), export checked scenes; releases ship it as
+                    bin/swofty-ui                                                    /reference/ui/swofty-ui
+tools/gamedb.py     dump the game database, get or set one value by path             /reference/gamedb/tools
+tools/map_check.py  check a profile built with tracks against its game, using the build's plan.json
+tools/idf.py        print a menu scene's elements and edit them from the command line /reference/ui/idf
+```
 
 The Python tools are in the repository's `tools/` folder. Releases don't ship them, except Swofty UI.
 
-## Reference
+## Older addons
 
-- [Addon manifest](/reference/addons/manifest): every `swofty.json` field.
-- [Database operations](/reference/ops/database), [ERP operations](/reference/ops/erp), [File operations](/reference/ops/files), [UI patches](/reference/ops/ui-patches) and [Asset op files](/reference/addons/asset-api): every operation.
-- [Game database](/reference/gamedb), [ERP archives](/reference/erp) and [`!pkg` resources](/reference/pkg): the game's file formats.
-- [Assets from older F1 games](/reference/old-games): where F1 2016 to F1 24 keep helmets, faces, suits, engine sounds and cars, and how they're ported to F1 25.
-- [Engine API](/reference/game/): the engine functions and structs an engine plugin can call and hook.
-- [Development](/reference/development): build the launcher from source.
+Addons made for 1.5 and earlier keep working: operations in `swofty.json`, engine plugins, launcher plugins and imported mods. See [Compatibility](/std/compatibility).

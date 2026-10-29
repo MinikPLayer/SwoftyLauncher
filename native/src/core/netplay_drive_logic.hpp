@@ -39,8 +39,102 @@ struct Command {
     Category category = Category::none;
     std::string ip;
     int self = 0, base = 0;
+    std::string name;
     std::string error;
 };
+
+// The game keeps a presence name in 128-byte buffers (the fixed name resolver's slot and the presence
+// name message, Ne_PresenceNameResolverFixed_AddName 0x14412a320), so a driver name is at most 127 bytes.
+constexpr size_t DRIVER_NAME_BYTES = 127;
+
+// One UTF-8 sequence at s[i]: its length with the code point in cp, or 0 for an invalid, overlong or
+// surrogate sequence.
+inline size_t utf8_at(const std::string &s, size_t i, uint32_t &cp)
+{
+    auto c = static_cast<unsigned char>(s[i]);
+    size_t n = c < 0x80 ? 1 : (c >> 5) == 6 ? 2 : (c >> 4) == 14 ? 3 : (c >> 3) == 30 ? 4 : 0;
+    if (!n || i + n > s.size())
+        return 0;
+    cp = n == 1 ? c : c & (0x7fu >> n);
+    for (size_t k = 1; k < n; k++) {
+        auto d = static_cast<unsigned char>(s[i + k]);
+        if ((d & 0xc0) != 0x80)
+            return 0;
+        cp = cp << 6 | (d & 0x3fu);
+    }
+    static constexpr uint32_t least[] = {0, 0, 0x80, 0x800, 0x10000};
+    if (cp < least[n] || cp > 0x10ffff || (cp >= 0xd800 && cp < 0xe000))
+        return 0;
+    return n;
+}
+
+// Control characters, line and paragraph separators, and characters that draw nothing: soft hyphen,
+// zero-width and bidi marks, fillers, variation selectors, tags.
+inline bool invisible(uint32_t cp)
+{
+    return cp < 0x20 || (cp >= 0x7f && cp <= 0x9f) || cp == 0xad || cp == 0x34f || cp == 0x61c || cp == 0x115f ||
+           cp == 0x1160 || cp == 0x17b4 || cp == 0x17b5 || (cp >= 0x180b && cp <= 0x180f) ||
+           (cp >= 0x200b && cp <= 0x200f) || (cp >= 0x2028 && cp <= 0x202e) || (cp >= 0x2060 && cp <= 0x206f) ||
+           cp == 0x3164 || (cp >= 0xfe00 && cp <= 0xfe0f) || cp == 0xfeff || cp == 0xffa0 ||
+           (cp >= 0xfff9 && cp <= 0xfffb) || (cp >= 0x1d173 && cp <= 0x1d17a) || (cp >= 0xe0000 && cp <= 0xe0fff);
+}
+
+inline bool blank(uint32_t cp)
+{
+    return cp == 0x20 || cp == 0xa0 || cp == 0x1680 || (cp >= 0x2000 && cp <= 0x200a) || cp == 0x202f ||
+           cp == 0x205f || cp == 0x3000;
+}
+
+// The signed-in name as the game's driver carries it: invalid UTF-8, control and invisible characters
+// dropped, spaces trimmed and runs of them made one space, cut to DRIVER_NAME_BYTES at a character
+// boundary. Empty keeps the game's own name.
+inline std::string driver_name(const std::string &raw)
+{
+    std::string out;
+    bool space = false;
+    for (size_t i = 0; i < raw.size();) {
+        uint32_t cp = 0;
+        size_t n = utf8_at(raw, i, cp);
+        if (!n) {
+            i++;
+            continue;
+        }
+        if (invisible(cp) || blank(cp)) {
+            space = space || (blank(cp) && !out.empty());
+            i += n;
+            continue;
+        }
+        if (out.size() + (space ? 1 : 0) + n > DRIVER_NAME_BYTES)
+            break;
+        if (space)
+            out += ' ';
+        space = false;
+        out.append(raw, i, n);
+        i += n;
+    }
+    return out;
+}
+
+// %XX escapes decoded; false for a malformed escape.
+inline bool percent_decode(const std::string &in, std::string &out)
+{
+    auto hex = [](char c) {
+        return c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
+    };
+    out.clear();
+    for (size_t i = 0; i < in.size(); i++) {
+        if (in[i] != '%') {
+            out += in[i];
+            continue;
+        }
+        int hi = i + 2 < in.size() ? hex(in[i + 1]) : -1, lo = hi >= 0 ? hex(in[i + 2]) : -1;
+        if (lo < 0)
+            return false;
+        out += char(hi << 4 | lo);
+        i += 2;
+    }
+    return true;
+}
 
 inline const char *op_name(Op o)
 {
@@ -150,6 +244,11 @@ inline Command parse(const std::string &text)
             c.error = "configure needs args.base, a port from 1 to 65281";
         else if (GAME_PORT > c.base && GAME_PORT <= c.base + 254)
             c.error = "args.base " + std::to_string(c.base) + " puts the game port 21414 inside the bridge's ports (base+1 to base+254)";
+        const json::Value &name = args["name"];
+        if (name.type == json::Value::Str)
+            c.name = driver_name(name.s);
+        else if (name.type != json::Value::Null && c.error.empty())
+            c.error = "args.name, the driver name, must be a string";
     } else if (c.op == Op::join) {
         c.ip = args["ip"].str();
         if (!valid_ipv4(c.ip))

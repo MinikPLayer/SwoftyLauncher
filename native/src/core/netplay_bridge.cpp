@@ -4,6 +4,7 @@
 #include <iphlpapi.h>
 
 #include "imports.hpp"
+#include "netplay_drive_logic.hpp"
 #include "netplay_session.hpp"
 #include "runtime.hpp"
 
@@ -17,7 +18,8 @@
 // In-game half of the netplay bridge. The launcher starts the game with SWOFTY_NETPLAY set, which
 // installs these hooks; they pass everything through until a room is configured at runtime
 // (netplay_session.hpp, set by the netplay command channel), and read the room on every call.
-// SWOFTY_NETPLAY=self=<N>;base=<BASE> also configures that room at startup. In a room, member M is
+// SWOFTY_NETPLAY=self=<N>;base=<BASE>[;name=<percent-encoded UTF-8>] also configures that room at
+// startup, name being the signed-in name for the driver. In a room, member M is
 // 10.77.0.M:21414 to the game and 127.0.0.1:BASE+M on this machine, where the launcher relays it. Only
 // sockaddrs change, never payload bytes:
 //   sendto (every ws2_32 import slot): 10.77.0.M:21414, M != self, goes to 127.0.0.1:BASE+M.
@@ -96,16 +98,30 @@ bool number(const char *&p, long &out)
     return true;
 }
 
-bool parse(const char *v, int &self, int &base)
+bool parse(const char *v, int &self, int &base, std::string &name)
 {
     long s = -1, b = -1;
+    bool named = false;
     for (const char *p = v;;) {
-        long *dst = !strncmp(p, "self=", 5) ? &s : !strncmp(p, "base=", 5) ? &b : nullptr;
-        if (!dst || *dst >= 0)
-            return false;
-        p += 5;
-        if (!number(p, *dst))
-            return false;
+        if (!strncmp(p, "name=", 5)) {
+            if (named)
+                return false;
+            named = true;
+            p += 5;
+            const char *end = strchr(p, ';');
+            std::string raw;
+            if (!runtime::drive::percent_decode(std::string(p, end ? size_t(end - p) : strlen(p)), raw))
+                return false;
+            name = runtime::drive::driver_name(raw);
+            p = end ? end : p + strlen(p);
+        } else {
+            long *dst = !strncmp(p, "self=", 5) ? &s : !strncmp(p, "base=", 5) ? &b : nullptr;
+            if (!dst || *dst >= 0)
+                return false;
+            p += 5;
+            if (!number(p, *dst))
+                return false;
+        }
         if (!*p)
             break;
         if (*p++ != ';')
@@ -279,17 +295,18 @@ void install(HMODULE lib, const char *dll, std::initializer_list<Fn> fns)
 
 void setup()
 {
-    char v[96] = {};
+    char v[1024] = {};
     DWORD n = GetEnvironmentVariableA("SWOFTY_NETPLAY", v, sizeof v);
     if (!n)
         return;
     int self = 0, base = 0;
-    bool too_long = n >= sizeof v, given = !too_long && parse(v, self, base);
+    std::string name;
+    bool too_long = n >= sizeof v, given = !too_long && parse(v, self, base, name);
     if (!given && (too_long || strchr(v, '=')))
-        swofty::log("[netplay] SWOFTY_NETPLAY=\"%s\" is not self=<1-254>;base=<port>; armed without a room",
+        swofty::log("[netplay] SWOFTY_NETPLAY=\"%s\" is not self=<1-254>;base=<port>[;name=<name>]; armed without a room",
                     too_long ? "(too long)" : v);
-    if (given)
-        runtime::netplay_session::configure(self, base);
+    if (given && runtime::netplay_session::configure(self, base))
+        runtime::netplay_session::set_name(name);
     swprintf(status_path, sizeof status_path / sizeof *status_path, L"%lsnetplay.json", runtime::swofty_root().c_str());
     DeleteFileW(status_path);
     HMODULE ws = LoadLibraryW(L"ws2_32.dll"), ip = LoadLibraryW(L"iphlpapi.dll");
@@ -312,9 +329,10 @@ void setup()
             missing += std::string(missing.empty() ? "" : ", ") + h.name;
     }
     Room r;
-    char now[96];
+    char now[256];
     if (room(r))
-        snprintf(now, sizeof now, "room self=%d base=%d%s", r.self, r.base, given ? " from SWOFTY_NETPLAY" : "");
+        snprintf(now, sizeof now, "room self=%d base=%d%s%s%s", r.self, r.base, given ? " from SWOFTY_NETPLAY" : "",
+                 name.empty() ? "" : ", driver name ", name.c_str());
     else
         snprintf(now, sizeof now, "no room yet");
     swofty::log("[netplay] bridge armed: %s; %s", slots.c_str(), now);

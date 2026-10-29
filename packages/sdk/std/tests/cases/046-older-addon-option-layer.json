@@ -1,0 +1,141 @@
+{
+  "name": "an addon option from settings.json takes another addon's layer, bound to that addon's own option",
+  "rule": "each option of an addon's swofty.json provides an addon.option record under the addon's id and the option id; another addon's layer changes its value only while its own option is on (layers.md#option-bound-layers, compatibility.md#an-older-addon-on-16)",
+  "registries": {
+    "addon.option": {
+      "applies": "read"
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.progressive",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "addon.option",
+          "key": "follow_mode",
+          "stage": "on_load",
+          "value": {
+            "type": "choice",
+            "states": [
+              {
+                "text": "Your driver",
+                "value": "driver"
+              },
+              {
+                "text": "Your team",
+                "value": "team"
+              }
+            ],
+            "value": "driver"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.team-first",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "addon.option",
+          "target": "swofty.progressive/follow_mode",
+          "patch": {
+            "value": "team"
+          },
+          "when": {
+            "option": "follow_team",
+            "on": true
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {
+          "mod.team-first": {
+            "follow_team": true
+          }
+        },
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "addon.option": {
+          "swofty.progressive/follow_mode": {
+            "status": "ok",
+            "value": {
+              "type": "choice",
+              "states": [
+                {
+                  "text": "Your driver",
+                  "value": "driver"
+                },
+                {
+                  "text": "Your team",
+                  "value": "team"
+                }
+              ],
+              "value": "team"
+            },
+            "origins": {
+              "/value": "mod.team-first"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {
+          "mod.team-first": {
+            "follow_team": false
+          }
+        },
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "addon.option": {
+          "swofty.progressive/follow_mode": {
+            "status": "ok",
+            "value": {
+              "type": "choice",
+              "states": [
+                {
+                  "text": "Your driver",
+                  "value": "driver"
+                },
+                {
+                  "text": "Your team",
+                  "value": "team"
+                }
+              ],
+              "value": "driver"
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

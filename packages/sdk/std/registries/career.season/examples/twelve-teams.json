@@ -1,0 +1,109 @@
+{
+  "career.season": {
+    "2012": {
+      "data_group": "f1_career_2012",
+      "year": 2012,
+      "box": null,
+      "calendar": "creator.career-2012/2012",
+      "teams": [
+        {
+          "slot": 1,
+          "team": "creator.career-2012/red_bull",
+          "seats": [
+            "person/sebastian_vettel",
+            "person/mark_webber"
+          ]
+        },
+        {
+          "slot": 2,
+          "team": "creator.career-2012/mclaren",
+          "seats": [
+            "person/jenson_button",
+            "person/lewis_hamilton"
+          ]
+        },
+        {
+          "slot": 3,
+          "team": "creator.career-2012/ferrari",
+          "seats": [
+            "person/fernando_alonso",
+            "person/felipe_massa"
+          ]
+        },
+        {
+          "slot": 4,
+          "team": "creator.career-2012/mercedes",
+          "seats": [
+            "person/michael_schumacher",
+            "person/nico_rosberg"
+          ]
+        },
+        {
+          "slot": 5,
+          "team": "creator.career-2012/lotus",
+          "seats": [
+            "person/kimi_raikkonen",
+            "person/romain_grosjean"
+          ]
+        },
+        {
+          "slot": 6,
+          "team": "creator.career-2012/force_india",
+          "seats": [
+            "person/paul_di_resta",
+            "person/nico_hulkenberg"
+          ]
+        },
+        {
+          "slot": 7,
+          "team": "creator.career-2012/sauber",
+          "seats": [
+            "person/kamui_kobayashi",
+            "person/sergio_perez"
+          ]
+        },
+        {
+          "slot": 8,
+          "team": "creator.career-2012/toro_rosso",
+          "seats": [
+            "person/daniel_ricciardo",
+            "person/jean_eric_vergne"
+          ]
+        },
+        {
+          "slot": 9,
+          "team": "creator.career-2012/williams",
+          "seats": [
+            "person/pastor_maldonado",
+            "person/bruno_senna"
+          ]
+        },
+        {
+          "slot": 10,
+          "team": "creator.career-2012/caterham",
+          "seats": [
+            "person/heikki_kovalainen",
+            "person/vitaly_petrov"
+          ]
+        },
+        {
+          "slot": 11,
+          "team": "creator.career-2012/hrt",
+          "seats": [
+            "person/pedro_de_la_rosa",
+            "person/narain_karthikeyan"
+          ]
+        },
+        {
+          "slot": 12,
+          "team": "creator.career-2012/marussia",
+          "seats": [
+            "person/timo_glock",
+            "person/charles_pic"
+          ]
+        }
+      ],
+      "changes": []
+    }
+  }
+}

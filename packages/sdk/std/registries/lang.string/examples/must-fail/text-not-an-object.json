@@ -1,0 +1,8 @@
+{
+  "lang.string": {
+    "flat": {
+      "$comment": "text maps a language to its text",
+      "text": "F1 2017"
+    }
+  }
+}

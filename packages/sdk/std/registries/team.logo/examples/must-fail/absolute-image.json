@@ -1,0 +1,10 @@
+{
+  "team.logo": {
+    "absolute": {
+      "$comment": "an image path is inside the addon's folder",
+      "images": {
+        "hud": "/home/x/logo.png"
+      }
+    }
+  }
+}

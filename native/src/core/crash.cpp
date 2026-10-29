@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include "apply/moments.hpp"
 #include "blackbox.hpp"
 #include "crash_heap.hpp"
 #include "json.hpp"
@@ -87,6 +88,7 @@ struct Request {
     uintptr_t lo, hi;
     ULONGLONG ms;
     char reason[640];
+    char blame[320];
     uint32_t probes[32];
     int nprobes;
     Snapshot prior;
@@ -620,6 +622,13 @@ void keep_fatal(EXCEPTION_POINTERS *e)
 
 void write_report();
 
+/* Standard library 1.6: the hook-point guard names the before or replace handler whose fault is about
+   to crash the game; a report written on that thread soon after leads with it. */
+char blame_text[320];
+DWORD blame_tid;
+ULONGLONG blame_ms;
+constexpr ULONGLONG BLAME_MS = 10000;
+
 bool request_report(Kind kind, const char *reason, const EXCEPTION_RECORD *rec, const CONTEXT *ctx)
 {
     if (InterlockedCompareExchange(&claimed, 1, 0))
@@ -628,7 +637,13 @@ bool request_report(Kind kind, const char *reason, const EXCEPTION_RECORD *rec, 
     req.tid = GetCurrentThreadId();
     req.ms = GetTickCount64();
     stack_bounds(req.lo, req.hi);
-    snprintf(req.reason, sizeof req.reason, "%s", reason);
+    req.blame[0] = 0;
+    if (blame_text[0] && blame_tid == req.tid && req.ms - blame_ms < BLAME_MS)
+        snprintf(req.blame, sizeof req.blame, "%s", blame_text);
+    if (req.blame[0])
+        snprintf(req.reason, sizeof req.reason, "%s; %s", req.blame, reason);
+    else
+        snprintf(req.reason, sizeof req.reason, "%s", reason);
     req.has_exception = rec != nullptr;
     if (rec) {
         req.rec = *rec;
@@ -1536,7 +1551,10 @@ void step_header(Request &r)
 {
     char now[32];
     local_stamp(now, sizeof now, false);
-    out.put("Swofty crash report\n\n");
+    if (r.blame[0])
+        out.put("Swofty crash report: %s\n\n", r.blame);
+    else
+        out.put("Swofty crash report\n\n");
     out.put("written      %s local time\n", now);
     out.put("reason       %s\n", r.reason);
     out.put("thread       %lu%s\n", r.tid, r.kind == K_EXIT ? " (the exiting thread)" : "");
@@ -1604,6 +1622,7 @@ const Step STEPS[] = {
     {"the Game state section", [](Request &r) { section_state(r); }},
     {"the Black box sections", [](Request &r) { section_blackbox(r); }},
     {"the Swofty probes section", [](Request &r) { section_probes(r); }},
+    {"the registry reports", [](Request &) { swofty_core::apply::moments::crash_reports(); }},
     {"the Addons and Loaded modules sections", [](Request &) { section_modules(); }},
     {"the Threads section",
      [](Request &r) {
@@ -1860,6 +1879,17 @@ namespace blackbox {
 void note(const char *kind, const char *a, const char *b)
 {
     events.put(GetTickCount64(), GetCurrentThreadId(), kind, a, b);
+}
+
+}
+
+namespace runtime {
+
+void crash_blame(const char *text)
+{
+    snprintf(blame_text, sizeof blame_text, "%s", text ? text : "");
+    blame_ms = GetTickCount64();
+    blame_tid = GetCurrentThreadId();
 }
 
 }

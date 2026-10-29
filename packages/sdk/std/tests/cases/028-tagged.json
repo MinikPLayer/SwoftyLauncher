@@ -1,0 +1,195 @@
+{
+  "name": "a tag selector reaches core members, added members and variants of members",
+  "rule": "tagged(tag) matches the core's members, members addons add with tag_add and every variant of a member; members whose record is missing or whose addon is off are skipped; the edit runs once per record (registry.md#tags, layers.md#a-selector-runs-once-per-record)",
+  "registries": {
+    "vehicle": {
+      "applies": "boot"
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "vehicle",
+      "key": "ferrari_2025",
+      "value": {
+        "label": "ferrari_2025",
+        "performance_tier": 0,
+        "tyre_wear_scale": 1.0
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "vehicle",
+      "key": "safety_car",
+      "value": {
+        "label": "safety_car",
+        "performance_tier": 0,
+        "tyre_wear_scale": 1.0
+      }
+    }
+  ],
+  "tags": {
+    "vehicle": {
+      "c/f1_cars": [
+        "game/ferrari_2025",
+        "game/ghost_2025"
+      ]
+    }
+  },
+  "addons": [
+    {
+      "id": "swofty.classic-seasons-2017",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "vehicle",
+          "key": "ferrari",
+          "base": "game/ferrari_2025",
+          "patch": {
+            "label": "cs17_ferrari"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.f1-2021-port",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "vehicle",
+          "key": "redbull_2021",
+          "value": {
+            "label": "rb16b",
+            "performance_tier": 0,
+            "tyre_wear_scale": 1.0
+          }
+        },
+        {
+          "op": "tag_add",
+          "registry": "vehicle",
+          "tag": "c/f1_cars",
+          "id": "mod.f1-2021-port/redbull_2021"
+        }
+      ]
+    },
+    {
+      "id": "mod.off",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "vehicle",
+          "key": "x",
+          "value": {
+            "label": "x",
+            "performance_tier": 0,
+            "tyre_wear_scale": 1.0
+          }
+        },
+        {
+          "op": "tag_add",
+          "registry": "vehicle",
+          "tag": "c/f1_cars",
+          "id": "mod.off/x"
+        }
+      ],
+      "enabled": false
+    },
+    {
+      "id": "someone.tyre-wear",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "vehicle",
+          "select": {
+            "tag": "c/f1_cars"
+          },
+          "edit": [
+            {
+              "op": "mul",
+              "path": "/tyre_wear_scale",
+              "value": 1.2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "vehicle": {
+          "game/ferrari_2025": {
+            "status": "ok",
+            "value": {
+              "label": "ferrari_2025",
+              "performance_tier": 0,
+              "tyre_wear_scale": 1.2
+            },
+            "origins": {
+              "/tyre_wear_scale": "someone.tyre-wear"
+            }
+          },
+          "swofty.classic-seasons-2017/ferrari": {
+            "status": "ok",
+            "value": {
+              "label": "cs17_ferrari",
+              "performance_tier": 0,
+              "tyre_wear_scale": 1.2
+            },
+            "origins": {
+              "/label": "swofty.classic-seasons-2017",
+              "/tyre_wear_scale": "someone.tyre-wear"
+            }
+          },
+          "mod.f1-2021-port/redbull_2021": {
+            "status": "ok",
+            "value": {
+              "label": "rb16b",
+              "performance_tier": 0,
+              "tyre_wear_scale": 1.2
+            },
+            "origins": {
+              "/tyre_wear_scale": "someone.tyre-wear"
+            }
+          },
+          "game/safety_car": {
+            "status": "ok",
+            "value": {
+              "label": "safety_car",
+              "performance_tier": 0,
+              "tyre_wear_scale": 1.0
+            },
+            "origins": {}
+          },
+          "mod.off/x": {
+            "status": "no_record"
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [],
+      "tag_members": [
+        {
+          "registry": "vehicle",
+          "tag": "c/f1_cars",
+          "ids": [
+            "game/ferrari_2025",
+            "mod.f1-2021-port/redbull_2021",
+            "swofty.classic-seasons-2017/ferrari"
+          ]
+        }
+      ]
+    }
+  ]
+}

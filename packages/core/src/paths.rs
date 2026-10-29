@@ -8,7 +8,7 @@ pub fn data_dir() -> PathBuf {
 }
 
 #[cfg(windows)]
-fn platform_data_dir() -> PathBuf {
+pub fn platform_data_dir() -> PathBuf {
     std::env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("."))
@@ -16,7 +16,7 @@ fn platform_data_dir() -> PathBuf {
 }
 
 #[cfg(not(windows))]
-fn platform_data_dir() -> PathBuf {
+pub fn platform_data_dir() -> PathBuf {
     let home = std::env::var_os("HOME")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("."));

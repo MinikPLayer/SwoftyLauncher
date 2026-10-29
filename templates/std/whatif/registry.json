@@ -1,0 +1,6 @@
+{
+  "requires": [
+    { "registry": "career.season", "version": "^1" },
+    { "registry": "career.driver_ratings", "version": "^1" }
+  ]
+}

@@ -27,7 +27,8 @@ Install the launcher with the installer or by hand, then follow the setup steps 
 2. Run `SwoftyLauncherInstaller.exe` on Windows, or `SwoftyLauncherInstaller` on Linux and Steam Deck. Windows may show **Windows protected your PC**; select **More info**, then **Run anyway**.
 3. Under **Install to**, keep the default folder, or select **Browse…** to choose another.
 4. Leave **Add a desktop shortcut** ticked if you want one.
-5. Select **Install**.
+5. Under **Keep addons, profiles and backups in**, keep the folder shown, or choose another; see [Moving the data folder](#moving-the-data-folder).
+6. Select **Install**.
 
 The installer downloads the latest release, checks it against the release's `SHA256SUMS` and extracts it into that folder. It adds **Swofty Launcher** to the Start menu on Windows, or **Swofty Launcher for F1 25** to the app menu on Linux, adds the desktop shortcut if you ticked it, then opens the launcher.
 
@@ -57,7 +58,7 @@ Choose another folder to move the install there. **Move your existing install fr
 3. Points the Start menu or app menu entry at the new folder, along with the desktop shortcut if **Add a desktop shortcut** is ticked, and deletes shortcuts to the old folder.
 4. Installs the latest release in the new folder.
 
-Close the launcher and F1 25 before moving it. Your [data folder](#where-your-files-are-stored) stays where it is. Untick **Move your existing install** to install a second copy and keep the first.
+Close the launcher and F1 25 before moving it. Untick **Move your existing install** to install a second copy and keep the first. Moving the install leaves your [data folder](#where-your-files-are-stored) where it is; to move the data folder, see [Moving the data folder](#moving-the-data-folder).
 
 ## Install by hand
 
@@ -100,7 +101,24 @@ Your addons, mods, profiles, backups and session logs live here, apart from the 
 
 ### Moving the data folder
 
-Setting the `SWOFTY_DATA_DIR` environment variable to a folder makes the launcher and the `swofty` command use that folder as `$DATA`. The `--data-dir` option of `swofty` does the same for one command.
+Run the [installer](#install-with-the-installer), choose an empty or new folder under **Keep addons, profiles and backups in**, or select **Browse…** next to it, then select **Install**. Under the folder, the installer shows what **Install** does with your data. **Install** moves the data folder there, then updates the launcher.
+
+- On Windows, the installer moves `%LOCALAPPDATA%\Swofty` to the new folder and leaves a junction at `%LOCALAPPDATA%\Swofty` that points to it. The launcher, the `swofty` command and the in-game code keep using `%LOCALAPPDATA%\Swofty`.
+- On Linux and Steam Deck, the installer leaves a symbolic link at the folder in the table above.
+- On the same drive, the installer renames the folder. On another drive, it copies the folder, checks the copy against the original, then deletes the original. When the other drive has too little free space, it moves nothing.
+- Choosing another folder later moves the data again and points the junction or link there. Choosing the folder in the table above moves the data back and removes the junction or link.
+- While Swofty Launcher, Swofty UI, the `swofty` command line or F1 25 is open, the installer doesn't move the data and names what to close; close it, then select **Try again**.
+- When a step fails, the installer names the step and doesn't update the launcher. Your data stays in the old folder, or in the new one when only deleting the old copy failed.
+
+To move it by hand on Windows, close the launcher and F1 25, move `%LOCALAPPDATA%\Swofty` to the new folder, then run this in Command Prompt:
+
+```bat
+mklink /J "%LOCALAPPDATA%\Swofty" "D:\SwoftyData"
+```
+
+#### With `SWOFTY_DATA_DIR`
+
+Setting the `SWOFTY_DATA_DIR` environment variable to a folder makes the launcher and the `swofty` command use that folder as `$DATA`. The `--data-dir` option of `swofty` does the same for one command. The in-game code doesn't read `SWOFTY_DATA_DIR`.
 
 ```powershell
 setx SWOFTY_DATA_DIR "D:\SwoftyData"
@@ -111,6 +129,8 @@ export SWOFTY_DATA_DIR=/mnt/games/swofty
 ```
 
 Close the launcher and F1 25, copy the contents of the old data folder into the new one, then start the launcher again.
+
+When `SWOFTY_DATA_DIR` is set, the installer shows its folder under **Keep addons, profiles and backups in**. On Windows, choosing another folder moves the data there and sets `SWOFTY_DATA_DIR` to it. On Linux, the installer doesn't move it; change the variable instead.
 
 ## Updating
 

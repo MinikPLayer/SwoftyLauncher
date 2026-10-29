@@ -1,0 +1,8 @@
+{
+  "engine_sound": {
+    "missing_bundle": {
+      "$comment": "bundle is required",
+      "settings_from": "game/ferrari_2025"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "driver.person": {
+    "nobody": {
+      "$comment": "name is required",
+      "nationality": "finland"
+    }
+  }
+}

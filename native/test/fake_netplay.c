@@ -265,6 +265,27 @@ static SOCKET udp_at(struct sockaddr_in at)
     return s;
 }
 
+static unsigned short loopback_port_outside(unsigned lo, unsigned hi)
+{
+    SOCKET held[32];
+    int count = 0;
+    unsigned short port = 0;
+    while (count < 32) {
+        SOCKET s = udp_at(in4(127, 0, 0, 1, 0));
+        if (s == INVALID_SOCKET)
+            break;
+        unsigned short p = port_of(s);
+        held[count++] = s;
+        if (p < lo || p > hi) {
+            port = p;
+            break;
+        }
+    }
+    while (count > 0)
+        closesocket(held[--count]);
+    return port;
+}
+
 static void from_source(SOCKET game, struct sockaddr_in src, const char *what)
 {
     char line[200];
@@ -535,7 +556,8 @@ int main(void)
     }
     if (helper != INVALID_SOCKET)
         closesocket(helper);
-    from_source(game, in4(127, 0, 0, 1, 0), "an ephemeral loopback port");
+    from_source(game, in4(127, 0, 0, 1, loopback_port_outside((unsigned)base_port, (unsigned)base_port + 255)),
+                "an ephemeral loopback port");
     from_source(game, in4(127, 0, 0, 1, (unsigned)base_port + (unsigned)self_no), "this member's own port BASE+self");
     from_source(game, in4(127, 0, 0, 1, (unsigned)base_port), "BASE+0");
     if (base_port + 255 <= 65535)

@@ -1,0 +1,9 @@
+{
+  "era.box": {
+    "fractional_order": {
+      "$comment": "order is an integer",
+      "package": "swofty.classic-seasons-2017/f1_2017",
+      "order": 2017.5
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "career.content": {
+    "f1-1990": {
+      "mode": null,
+      "tile": null,
+      "model": "game/f1_career_2026",
+      "calendar": null,
+      "after_last": "market",
+      "title": "lng_f1_1990_title",
+      "description": "lng_f1_1990_desc",
+      "data_group": "f1_career_1990",
+      "suffix": "90",
+      "save_container": "driver_career_1990",
+      "car_group": 2,
+      "badge": 0,
+      "entitlement": "",
+      "careers": "driver"
+    }
+  }
+}

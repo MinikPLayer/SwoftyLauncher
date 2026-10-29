@@ -23,6 +23,8 @@ The game folders can sit at the top of the mod, up to three folders down, or in 
 
 Importing the same mod again replaces its addon and keeps its place and switch in every profile.
 
+A mod is compared with the game's clean files, so the Simplified Importer can't import one until the launcher has found F1 25; a track zip needs no game files. A mod that can't be imported or converted is left out, with the reason, such as `Scuderia AlphaTauri ORLEN was not imported. Mods turn into addons once Swofty Launcher finds F1 25.`
+
 ## What a mod becomes
 
 | In the mod | In the addon |
@@ -58,7 +60,7 @@ When a track, or an addon that changes a track's AI racing line, ships files wit
 
 Before 1.3.0, mods lived in a library on a **Mods** page. The first time 1.3.0 starts, the Simplified Importer converts every mod in that library into an addon, in each profile's order and with the same switches. A dialog lists each mod with a tick when it converts or a cross and the reason when it can't. A large library may convert over more than one start; **Convert now** on the Simplified Importer page converts the rest.
 
-The library stays in `$DATA/addon-data/teamsimplified.mods/library/` as the source for **Re-import**.
+Once a mod has converted, the Simplified Importer deletes its copy in `$DATA/addon-data/teamsimplified.mods/library/`. The addon is then the only copy of the mod: to import it again, use the mod's file.
 
 ## When something goes wrong
 
@@ -69,7 +71,7 @@ Every conversion writes a log to `$DATA/addon-data/teamsimplified.mods/logs/`. *
 | Command | Does |
 |---|---|
 | `swofty mods import <path>…` | Import zips, 7z and RAR archives, `.serps` packages, folders, track zips and modded databases |
-| `swofty mods list` | List the library and the addon each mod became |
+| `swofty mods list` | List the mods still in the library: a converted mod leaves it |
 
 Turn the addons on or off and remove them with `swofty addons`; see [Addons](/using/addons#from-a-terminal).
 

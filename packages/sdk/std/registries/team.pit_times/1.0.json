@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "team.pit_times 1.0",
+  "x-registry": "team.pit_times",
+  "x-version": "1.0",
+  "x-applies": "boot",
+  "x-snapshot": false,
+  "description": "teams::PitTimes: one pit_lane.pit_times row, found by the team's label.",
+  "type": "object",
+  "properties": {
+    "team": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "team.identity"
+    },
+    "from": {
+      "description": "Copy another team's row.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "team.pit_times"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "team.pit_times",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "team"
+  ],
+  "additionalProperties": true
+}

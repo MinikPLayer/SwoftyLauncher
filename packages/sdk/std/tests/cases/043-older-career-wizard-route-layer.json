@@ -1,0 +1,139 @@
+{
+  "name": "a career wizard record from 1.5 calls takes another addon's keyed route layer",
+  "rule": "the 1.5 career wizard calls of one addon and data group provide one career.wizard record under that addon's id and the data group; tile_routes is keyed by from, so a layer that sets one route element changes only it, and a $delete removes the any-route (\"\") element; starts_in_f1 is a plain field (compatibility.md#an-older-addon-on-16, layers.md#keyed-lists)",
+  "registries": {
+    "career.wizard": {
+      "applies": "content",
+      "key_fields": {
+        "/tile_routes": [
+          "from"
+        ],
+        "/replace_steps": [
+          "at"
+        ],
+        "/force_options": [
+          "at"
+        ],
+        "/confirm_routes": [
+          "from"
+        ]
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.progressive",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "career.wizard",
+          "key": "f1_career_progressive",
+          "stage": "on_load",
+          "value": {
+            "content": null,
+            "steps": [],
+            "data_group": "f1_career_progressive",
+            "starts_in_f1": true,
+            "tile_routes": [
+              {
+                "from": "",
+                "to": "swofty_progressive_setup"
+              },
+              {
+                "from": "career_mode_select",
+                "to": "swofty_progressive_mode"
+              }
+            ],
+            "replace_steps": [
+              {
+                "at": 3,
+                "with": 5
+              }
+            ],
+            "force_options": [],
+            "confirm_routes": [],
+            "hide_driver_tabs": [
+              "f2"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.setup",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.wizard",
+          "target": "swofty.progressive/f1_career_progressive",
+          "patch": {
+            "starts_in_f1": false,
+            "tile_routes": [
+              {
+                "from": "career_mode_select",
+                "to": "mod_setup"
+              },
+              {
+                "from": "",
+                "$delete": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.wizard": {
+          "swofty.progressive/f1_career_progressive": {
+            "status": "ok",
+            "value": {
+              "content": null,
+              "steps": [],
+              "data_group": "f1_career_progressive",
+              "starts_in_f1": false,
+              "tile_routes": [
+                {
+                  "from": "career_mode_select",
+                  "to": "mod_setup"
+                }
+              ],
+              "replace_steps": [
+                {
+                  "at": 3,
+                  "with": 5
+                }
+              ],
+              "force_options": [],
+              "confirm_routes": [],
+              "hide_driver_tabs": [
+                "f2"
+              ]
+            },
+            "origins": {
+              "/starts_in_f1": "mod.setup",
+              "/tile_routes/from=career_mode_select/to": "mod.setup"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

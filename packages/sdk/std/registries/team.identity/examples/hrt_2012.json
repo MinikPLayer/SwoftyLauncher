@@ -1,0 +1,34 @@
+{
+  "team.identity": {
+    "hrt": {
+      "extends": "game/williams",
+      "constructor": "constructor/hrt",
+      "provides": [
+        "constructor/hrt"
+      ],
+      "names": {
+        "title": {
+          "literal": "HRT F1 Team"
+        },
+        "short_name": {
+          "literal": "HRT"
+        },
+        "super_short": {
+          "literal": "HRT"
+        },
+        "code": "HRT"
+      },
+      "colours": {
+        "menu": "#C8A165",
+        "primary": "#C8A165",
+        "secondary": "#1A1A1A",
+        "tertiary": "#B22222"
+      },
+      "wear": null,
+      "livery_name": "career2012_hrt",
+      "logo": "creator.career-2012/hrt",
+      "prestige": 1,
+      "nationality": "spain"
+    }
+  }
+}

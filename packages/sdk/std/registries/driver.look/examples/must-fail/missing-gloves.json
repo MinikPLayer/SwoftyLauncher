@@ -1,0 +1,9 @@
+{
+  "driver.look": {
+    "no_gloves": {
+      "$comment": "helmet, suit and gloves are required",
+      "helmet": "game/helmet_tier01_livery03",
+      "suit": "game/suit_generic_01"
+    }
+  }
+}

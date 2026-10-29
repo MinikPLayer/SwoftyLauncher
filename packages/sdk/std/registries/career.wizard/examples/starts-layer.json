@@ -1,0 +1,14 @@
+{
+  "career.wizard": {
+    "swofty.progressive/f1_career_progressive": {
+      "starts_in_f1": false,
+      "tile_routes": [
+        {
+          "from": "",
+          "$delete": true
+        }
+      ],
+      "hide_driver_tabs": []
+    }
+  }
+}

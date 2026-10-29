@@ -1,0 +1,27 @@
+{
+  "career.wizard": {
+    "f1_career_progressive": {
+      "content": null,
+      "steps": [],
+      "data_group": "f1_career_progressive",
+      "starts_in_f1": true,
+      "tile_routes": [
+        {
+          "from": "",
+          "to": "swofty_progressive_setup"
+        }
+      ],
+      "replace_steps": [
+        {
+          "at": 3,
+          "with": 5
+        }
+      ],
+      "force_options": [],
+      "confirm_routes": [],
+      "hide_driver_tabs": [
+        "f2"
+      ]
+    }
+  }
+}

@@ -3,6 +3,7 @@
 #include <safetyhook.hpp>
 #include <swofty/mixin.hpp>
 
+#include "apply/moments.hpp"
 #include "events_dispatch.hpp"
 #include "perf.hpp"
 
@@ -16,6 +17,10 @@ std::string hook_error(const safetyhook::MidHook::Error &e);
 }
 
 std::string settings_addon(const void *from, std::string &dll);
+
+namespace swofty_core::hooks {
+void bridge_legacy(const char *event, int64_t a, int64_t b, const void *data);
+}
 
 namespace {
 
@@ -72,6 +77,7 @@ void flow_mid(safetyhook::Context &)
     runtime::netplay_tick();
     runtime::career_content_tick();
     runtime::hub_tick();
+    runtime::testagent_tick();
     if (!perf::frame_claim())
         return;
     double dt = disp.tick(now_seconds());
@@ -86,7 +92,9 @@ void session_enter_mid(safetyhook::Context &)
     static const uint32_t probe = perf::probe("core", "session enter");
     perf::mark("session", "enter");
     perf::Scope p(probe);
+    swofty_core::apply::moments::session_load("Game_GameModule_OnSessionEnter");
     disp.fire(SWOFTY_EVENT_SESSION_START, 0, 0, nullptr, now_seconds());
+    swofty_core::hooks::bridge_legacy(SWOFTY_EVENT_SESSION_START, 0, 0, nullptr);
 }
 
 void race_started_mid(safetyhook::Context &)
@@ -95,6 +103,7 @@ void race_started_mid(safetyhook::Context &)
     perf::mark("race", "start");
     perf::Scope p(probe);
     disp.fire(SWOFTY_EVENT_RACE_START, 0, 0, nullptr, now_seconds());
+    swofty_core::hooks::bridge_legacy(SWOFTY_EVENT_RACE_START, 0, 0, nullptr);
 }
 
 int ev_available()
@@ -269,7 +278,9 @@ size_t events_fire(const char *event, int64_t a, int64_t b, const void *data)
 {
     if (!runtime::enabled("events", nullptr))
         return 0;
-    return disp.fire(event, a, b, data, now_seconds());
+    size_t n = disp.fire(event, a, b, data, now_seconds());
+    swofty_core::hooks::bridge_legacy(event, a, b, data);
+    return n;
 }
 
 void events_drop_module(void *module)

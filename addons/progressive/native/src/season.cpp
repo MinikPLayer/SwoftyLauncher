@@ -31,6 +31,9 @@
 // stand-in's regular driver comes back at the next one. The player is never swapped out; in follow
 // mode a move of his driver moves him (the same move and contract signing as a season's first apply).
 // The changes in force are recorded in the career's store entry (mid_year, mid_round, mid_applied).
+// On a 1.6 core, the first such Team HQ of a season not applied yet, once its Season has race weekends and
+// a current weekend, reports the season's year (career::report_season) before the season apply, so the core
+// fires career.season.start, activates the season's records and freezes its snapshot first.
 // Every career load and Team HQ also records the player's team and the season index in the store
 // entry, for the year on the career's Resume Career card (ProgressiveCardYear,
 // progressive_resume.dll).
@@ -54,9 +57,12 @@
 #include <atomic>
 #include <cmath>
 #include <cstdio>
+#include <array>
 #include <cstring>
+#include <optional>
 #include <map>
 #include <mutex>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -69,6 +75,9 @@
 #include <swofty/events.hpp>
 #include <swofty/mem.hpp>
 #include <swofty/mixin.hpp>
+#include <swofty/registry.hpp>
+#include <swofty/systems/teams.hpp>
+#include <swofty/json.hpp>
 #include <swofty/storage.hpp>
 
 #include "development_logic.hpp"
@@ -79,6 +88,7 @@
 #include "titles_logic.hpp"
 #include "progressive.hpp"
 #include "ratings.hpp"
+#include "records.hpp"
 #include "resume_logic.hpp"
 #include "season_logic.hpp"
 #include "seats.hpp"
@@ -119,11 +129,19 @@ bool data()
     if (g_data_ok)
         return true;
     std::string text, err;
-    if (swofty::storage::read(kYearsPath, text) != swofty::storage::Result::ok) {
+    if (!records::read_years(text, "season")) {
         swofty::log("[progressive] season: %s is missing from swofty/addons/swofty.progressive/", kYearsPath);
         return false;
     }
     g_data_ok = season::parse(text, g_data, err);
+    if (const SwoftyCareerOps *ops = g_data_ok ? records::core_ops() : nullptr; ops && ops->set_slots) {
+        uint32_t teams[season::kSlots];
+        for (int i = 0; i < season::kSlots; ++i)
+            teams[i] = static_cast<uint32_t>(std::max(0, g_data.slots[i].team_stat));
+        int r = ops->set_slots(kGroup, teams, season::kSlots);
+        swofty::log("[progressive] season: career slots of %s set in the core (%s)", kGroup,
+                    r == SWOFTY_ASSET_OK ? "ok" : "refused");
+    }
     swofty::log("[progressive] season: %s %s (%zu years, %zu pool drivers)%s%s", kYearsPath,
                 g_data_ok ? "loaded" : "REFUSED", g_data.years.size(), g_data.pool.size(), err.empty() ? "" : ": ",
                 err.c_str());
@@ -343,21 +361,29 @@ void clear_titles()
         swofty::lang::clear(key);
 }
 
+std::optional<std::array<std::string, 3>> identity_names(const std::string &team)
+{
+    if (!swofty::detail::registry_table())
+        return std::nullopt;
+    std::optional<swofty::teams::Identity> rec = swofty::teams::identities.get(swofty::Ref<swofty::teams::Identity>(team));
+    if (!rec)
+        return std::nullopt;
+    auto literal = [](const swofty::Text &t) { return t.is_literal() ? t.str() : std::string(); };
+    return std::array<std::string, 3>{literal(rec->names.title), literal(rec->names.short_name),
+                                      literal(rec->names.super_short)};
+}
+
 void set_names(int year, const char *why)
 {
     if (!swofty::lang::available() || !data())
         return;
-    const season::Year *y = g_data.year(year);
     size_t set = 0;
-    for (int i = 0; i < season::kSlots; ++i)
-        for (auto &key : g_data.slots[i].name_keys) {
-            if (key.empty())
-                continue;
-            if (year >= season::kLastYear || !y || y->teams[i].name.empty())
-                swofty::lang::clear(key);
-            else if (swofty::lang::set(key, y->teams[i].name) == swofty::lang::Result::ok)
-                ++set;
-        }
+    for (auto &w : season::team_name_writes(g_data, year, identity_names)) {
+        if (w.clear)
+            swofty::lang::clear(w.key);
+        else if (swofty::lang::set(w.key, w.text) == swofty::lang::Result::ok)
+            ++set;
+    }
     set_titles(year, why);
     swofty::lang::refresh();
     g_names_year = year;
@@ -468,8 +494,120 @@ void log_grid(uintptr_t e, const season::Plan &p, const char *when)
                 ten_team_years ? "on" : "off", season::closed_slots(p));
 }
 
+// The season apply through the core's career.apply_lineup (SwoftyCoreCareerOps, standard library 1.6): the
+// plan's moves, repositions, releases, numbers, cars and looks as the core's lineup request, which the core
+// writes with the same sequence apply() below uses. -2: the core could not take it (apply() runs instead).
+int apply_core(const SwoftyCareerOps *ops, const season::Plan &p, const std::vector<Row> &rows, bool visuals,
+               const std::string &why)
+{
+    namespace sj = swofty::json;
+    int plan_team = -1;
+    for (int i = 0; i < season::kSlots; ++i)
+        for (int k = 0; k < lineup::kSeats; ++k)
+            if (p.player != lineup::kNone && p.target[i][k] == p.player)
+                plan_team = g_data.slots[i].team_stat;
+    sj::Value moves = sj::Value::array(), repositions = sj::Value::array(), releases = sj::Value::array(),
+              numbers = sj::Value::array(), cars = sj::Value::array(), looks = sj::Value::array();
+    auto holder = [&](int slot, int seat) -> int64_t {
+        int h = p.holder[slot][seat];
+        return h >= 0 && static_cast<size_t>(h) < rows.size() ? static_cast<int64_t>(stat_of(driver_of(rows[h].rec))) : -1;
+    };
+    for (auto &m : p.moves)
+        moves.push_back(sj::Value::object({{"driver", static_cast<int64_t>(m.driver)},
+                                           {"team", g_data.slots[m.to.slot].team_stat},
+                                           {"seat", m.to.index},
+                                           {"car", p.vehicles[m.to.slot].stat},
+                                           {"holder", holder(m.to.slot, m.to.index)},
+                                           {"mate", holder(m.to.slot, 1 - m.to.index)}}));
+    for (auto &m : p.repositions)
+        repositions.push_back(sj::Value::object({{"driver", static_cast<int64_t>(m.driver)}, {"seat", m.to.index}}));
+    for (uint32_t d : p.releases)
+        releases.push_back(static_cast<int64_t>(d));
+    for (auto &n : p.numbers)
+        numbers.push_back(sj::Value::object({{"driver", static_cast<int64_t>(n.driver)}, {"number", static_cast<int>(n.number)}}));
+    if (visuals) {
+        for (int i = 0; i < season::kSlots; ++i)
+            for (int k = 0; k < lineup::kSeats; ++k)
+                if (p.target[i][k] != lineup::kNone && p.vehicles[i].stat >= 0)
+                    cars.push_back(sj::Value::object({{"driver", static_cast<int64_t>(p.target[i][k])},
+                                                      {"car", p.vehicles[i].stat}}));
+        for (auto &l : p.looks)
+            if (l.stat > 0)
+                looks.push_back(sj::Value::object({{"driver", static_cast<int64_t>(l.driver)}, {"look", l.stat}}));
+    }
+    sj::Value request = sj::Value::object({{"lineup", sj::Value::object({{"year", p.year},
+                                                                           {"why", why},
+                                                                           {"visuals", visuals},
+                                                                           {"player_team", plan_team},
+                                                                           {"moves", std::move(moves)},
+                                                                           {"repositions", std::move(repositions)},
+                                                                           {"releases", std::move(releases)},
+                                                                           {"numbers", std::move(numbers)},
+                                                                           {"cars", std::move(cars)},
+                                                                           {"looks", std::move(looks)}})}});
+    bool teams_op = ops->version >= 3 && ops->apply_teams && season::names_new_teams(g_data, p.year);
+    std::string text = sj::dump(request), report(4096, '\0');
+    size_t len = 0;
+    int r = SWOFTY_REFUSED;
+    if (teams_op) {
+        sj::Value slots = sj::Value::array();
+        for (const season::TeamSlot &t : season::team_slots(g_data, p)) {
+            sj::Value seats = sj::Value::array();
+            for (const std::string &id : t.seats)
+                seats.push_back(id);
+            slots.push_back(sj::Value::object({{"slot", t.slot}, {"team", t.team}, {"seats", std::move(seats)}}));
+        }
+        sj::Value teams_request = sj::Value::object({{"season", sj::Value::object({{"data_group", kGroup},
+                                                                                     {"year", p.year},
+                                                                                     {"teams", std::move(slots)}})},
+                                                     {"lineup", request["lineup"]}});
+        std::string teams_text = sj::dump(teams_request);
+        SwoftyText tin{teams_text.data(), teams_text.size()};
+        r = ops->apply_teams(tin, report.data(), report.size(), &len);
+        if (r == SWOFTY_TOO_SMALL) {
+            report.assign(len + 1, '\0');
+            r = ops->apply_teams(tin, report.data(), report.size(), &len);
+        }
+        if (r == SWOFTY_REFUSED)
+            swofty::log("[progressive] season %d: the core's apply_teams refused the season records; applying the line-up without it", p.year);
+    }
+    if (!teams_op || r == SWOFTY_REFUSED) {
+        SwoftyText in{text.data(), text.size()};
+        r = ops->apply_lineup(in, report.data(), report.size(), &len);
+        if (r == SWOFTY_TOO_SMALL) {
+            report.assign(len + 1, '\0');
+            r = ops->apply_lineup(in, report.data(), report.size(), &len);
+        }
+    }
+    if (r == SWOFTY_ASSET_UNAVAILABLE || r == SWOFTY_ASSET_LATE) {
+        swofty::log("[progressive] season %d: the core's apply_lineup is %s; Progressive applies the seats itself", p.year,
+                    r == SWOFTY_ASSET_LATE ? "late" : "unavailable");
+        return -2;
+    }
+    report.resize(std::min(len, report.size()));
+    sj::Value rep = sj::parse(report);
+    std::string result(rep["result"].as_string("failed"));
+    swofty::log("[progressive] season %d through the core: %s, %lld row(s) written, %lld unchanged, %lld refused, %lld "
+                "number(s) drawn, %lld contract(s) signed, finalise %s (%lld line-up change(s))",
+                p.year, result.c_str(), static_cast<long long>(rep["written"].as_int()),
+                static_cast<long long>(rep["unchanged"].as_int()), static_cast<long long>(rep["refused"].as_int()),
+                static_cast<long long>(rep["numbers"].as_int()), static_cast<long long>(rep["contracts_signed"].as_int()),
+                std::string(rep["finalise"].as_string("-")).c_str(), static_cast<long long>(rep["line_up_changes"].as_int()));
+    if (const sj::Array *why_not = rep["refusals"].if_array())
+        for (const sj::Value &w : *why_not)
+            swofty::log("[progressive]   refused: %s", std::string(w.as_string()).c_str());
+    if (r != SWOFTY_ASSET_OK || result != "ok")
+        return -1;
+    if (rep["written"].as_int() > 0)
+        log_grid(entity(), p, "after the season apply");
+    return static_cast<int>(rep["written"].as_int());
+}
+
 int apply(uintptr_t e, const season::Plan &p, const std::vector<Row> &rows, bool visuals, const std::string &why)
 {
+    if (const SwoftyCareerOps *ops = records::core_ops())
+        if (int n = apply_core(ops, p, rows, visuals, why); n != -2)
+            return n;
     uintptr_t manager = contracts_manager();
     if (!manager) {
         swofty::log("[progressive] season %d REFUSED: no DriverCareerContractsManagerComponent", p.year);
@@ -1749,6 +1887,63 @@ void season_unloaded()
     g_failures = 0;
 }
 
+std::map<std::string, int> g_season_hook;
+std::map<int, season::Year> g_pristine;
+std::set<std::string> g_reported, g_report_waiting;
+
+// The core's career.season.start (records::report_season): the season's year at its moment
+// (season::season_moment), before the season hook and the apply, so both read the frozen season.
+void report_season(uintptr_t e, const store::Career &c, uint32_t game_index, uint32_t index, int year)
+{
+    std::string id = c.key + ":" + std::to_string(index);
+    Calendar cal;
+    bool ready = calendar(e, cal) && cal.current_ok;
+    if (!season::season_moment(c.applied_season, index, ready, g_reported.count(id) != 0))
+        return;
+    g_reported.insert(id);
+    const char *r = records::report_season(year, static_cast<int>(game_index));
+    if (!std::strcmp(r, "late") || !std::strcmp(r, "unavailable")) {
+        g_reported.erase(id);
+        if (!g_report_waiting.insert(id).second)
+            return;
+        swofty::log("[progressive] season %d: the core answered %s to the report for career %s; it is retried at every "
+                    "idle Team HQ until the core takes it",
+                    year, r, c.key.c_str());
+        return;
+    }
+    g_report_waiting.erase(id);
+    swofty::log("[progressive] season %d: reported to the core as season index %u of career %s%s: %s", year, game_index,
+                c.key.c_str(), c.test_seasons ? " (includes test seasons)" : "", r);
+}
+
+// swofty.progressive.season.apply (records.hpp), once per career and year in a session: 1 apply the year
+// (from the changed season when a before handler changed it), 2 a replace handler applied it.
+int season_hook(const std::string &key, int year)
+{
+    std::string id = key + ":" + std::to_string(year);
+    auto it = g_season_hook.find(id);
+    if (it != g_season_hook.end())
+        return it->second;
+    std::string text;
+    int r = records::season_apply(year, text);
+    if (r == 1) {
+        season::Data changed;
+        std::string err;
+        if (season::parse(text, changed, err) && changed.year(year)) {
+            if (!g_pristine.count(year))
+                g_pristine[year] = g_data.years[year];
+            g_data.years[year] = changed.years[year];
+        } else {
+            swofty::log("[progressive] season %d: the changed season was REFUSED (%s); the effective record applies",
+                        year, err.c_str());
+        }
+    } else if (auto p = g_pristine.find(year); p != g_pristine.end()) {
+        g_data.years[year] = p->second;
+        g_pristine.erase(p);
+    }
+    return g_season_hook[id] = r == 2 ? 2 : 1;
+}
+
 void season_hub(const swofty::career::State &state)
 {
     if (!progressive_career())
@@ -1803,9 +1998,17 @@ void season_hub(const swofty::career::State &state)
     }
     if (g_standings_pending == c->key && standings_rebuild(e, "first Team HQ with round 1 sessions"))
         g_standings_pending.clear();
-    if (entity_busy(e) || g_failures >= 3)
+    if (entity_busy(e))
+        return;
+    report_season(e, *c, s.index, index, year);
+    if (g_failures >= 3)
         return;
     player::Verdict before = player_check(e, c, "Team HQ, before the season apply");
+    if (season_hook(c->key, year) == 2) {
+        ratings::season(e, c, index, player, {});
+        contract_left_alone(before, c, year, "a swofty.progressive.season.apply handler applied the season");
+        return;
+    }
     bool new_season = c->applied_season != static_cast<int>(index);
     bool move_player = c->moves == "follow_driver";
     season::Resolve res = resolver();
@@ -2359,4 +2562,29 @@ extern "C" __declspec(dllexport) int ProgressiveRealTeam(uint32_t driver_stat, u
 extern "C" __declspec(dllexport) void ProgressiveNewCareer()
 {
     pg::new_career();
+}
+
+namespace {
+
+uint32_t history_real_team(uint32_t driver_stat, int year)
+{
+    if (year < progressive::season::kFirstYear || year > progressive::season::kLastYear || !pg::data())
+        return 0;
+    int team = pg::real_team(driver_stat, year);
+    return team > 0 ? static_cast<uint32_t>(team) : 0;
+}
+
+int history_career_year()
+{
+    pg::store::Career *c = pg::live_entry();
+    return c && pg::progressive_career() ? pg::live_year(c) : 0;
+}
+
+int history_follow_mode() { return ProgressiveFollowMode(); }
+
+}
+
+SWOFTY_ON_LOAD
+{
+    pg::records::publish(&history_real_team, &history_career_year, &history_follow_mode);
 }

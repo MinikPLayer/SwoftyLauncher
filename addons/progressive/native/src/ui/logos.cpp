@@ -8,7 +8,8 @@
 // and its details logo key (site_Game_DriverSelect_TeamLogoFormat) get the start season's Classic
 // Seasons team key for the career team's label (cards_logic.hpp logo_map(), from data/years.json)
 // while progressive_cards.dll has the start season view of a Progressive wizard active
-// (ProgressiveCardsStartYear). Wizard only: the view is never active in a running career, so Team HQ
+// (ProgressiveCardsStartYear); a slot whose start season names an added team gets that team's own logo key
+// (ProgressiveCardsAddedTeamLogo). Wizard only: the view is never active in a running career, so Team HQ
 // and the other screens keep the career teams' logos. A build where one of the sites does not
 // resolve drops this DLL alone; progressive_cards.dll keeps the cards, cars and team choice.
 
@@ -87,6 +88,23 @@ void load()
     g_ready = true;
 }
 
+using AddedLogo = const char *(*)(const char *label);
+std::atomic<AddedLogo> g_added_logo{nullptr};
+std::atomic<bool> g_added_tried{false};
+
+// The start season's added team in the label's slot (ProgressiveCardsAddedTeamLogo): its own logo key, whose slices
+// the core's team applier built from its team.logo record. Null from a cards DLL without the export.
+const char *added_logo(const char *label)
+{
+    AddedLogo f = g_added_logo.load();
+    if (!f && !g_added_tried.exchange(true)) {
+        HMODULE cards = GetModuleHandleW(L"progressive_cards.dll");
+        f = cards ? reinterpret_cast<AddedLogo>(GetProcAddress(cards, "ProgressiveCardsAddedTeamLogo")) : nullptr;
+        g_added_logo = f;
+    }
+    return f ? f(label) : nullptr;
+}
+
 const char *logo(int site, const char *label)
 {
     static const char *const kSites[] = {"Team Select logo", "Choose Driver badge", "Choose Driver details logo"};
@@ -96,7 +114,8 @@ const char *logo(int site, const char *label)
     load();
     if (!g_ready.load())
         return label;
-    const char *to = pc::logo_for(g_logos, year, label);
+    const char *added = added_logo(label);
+    const char *to = added ? added : pc::logo_for(g_logos, year, label);
     if (to != label && g_logged[site].fetch_add(1) < 3)
         swofty::log("[progressive] logos: %s %d: %s -> %s", kSites[site], year, label, to);
     return to;

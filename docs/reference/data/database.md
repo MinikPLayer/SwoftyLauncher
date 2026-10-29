@@ -5,9 +5,48 @@ description: Change teams, cars, drivers, tracks, rules and unlocks from a data 
 
 # Game database
 
-Teams, cars, drivers, tracks, rules and unlocks live in one file, `game_package/gamedatabases/gamedatabases.2025.bin`. It's a flat list of hashed keys, each with a type tag and a text value. To change it, add [database operations](/reference/ops/database) to your data addon and list the file in `operations.database`. The build applies them to a copy; the file in the game folder stays stock.
+Teams, cars, drivers, tracks, rules and unlocks live in one file, `game_package/gamedatabases/gamedatabases.2025.bin`, which a data addon changes with [database operations](/reference/ops/database).
 
-You need an addon folder with a `swofty.json` first. See [Data addons](./) for the steps around this page.
+## In full
+
+```json [swofty.json]
+{
+  "schema_version": 1,
+  "id": "yourname.grid-12",
+  "name": "Team 12",
+  "version": "1.0.0",
+  "author": "Your Name",
+  "kind": ["database"],
+  "compat": { "game": "f1_25", "game_builds": [">=25251167"] },
+  "operations": { "database": ["db/changes.json"] }
+}
+```
+
+```jsonc [db/changes.json]
+{
+  "schema_version": 1,
+  "ops": [
+    // change a value
+    { "op": "set", "select": "rules.stop_go_penalty", "field": "penalty_duration", "value": "10" },
+    // add a row: a copy of Williams with a new label
+    { "op": "add-row", "table": "entrants.teams",
+      "from": "entrants.teams.team[_metadata_=williams_26]",
+      "set": { "_metadata_": "team12_26", "display_name_code": "T12" } },
+    // rename a track in one dataset's menus
+    { "op": "set", "select": "track_data.game_setup.TrackDataSet[_metadata_=f1_2026].TrackData[_metadata_=melbourne]",
+      "field": "TrackNameData_0.title", "value": "lng_my_track_title" }
+  ]
+}
+```
+
+`swofty build` prints a line per `add-row`, with the new row's path, its new `stat_id` and the number of keys it copied:
+
+```text
+yourname.grid-12: add-row entrants.teams.team_<n> (from entrants.teams.team[_metadata_=williams_26]): stat_id <id> (the source's is <id>)
+yourname.grid-12: add-row entrants.teams.team_<n> (from entrants.teams.team[_metadata_=williams_26]): copied <n> key(s)
+```
+
+The database is a flat list of hashed keys, each with a type tag and a text value. The build applies the ops to a copy; the file in the game folder stays stock. See [Data addons](./) for the steps around this page.
 
 ## 1. Find the key
 

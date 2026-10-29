@@ -353,7 +353,7 @@ fn beside_launcher() -> Option<PathBuf> {
         .and_then(|e| Some(e.parent()?.join(CLI)))
 }
 
-fn cli_path(store: &Store) -> Option<PathBuf> {
+pub(crate) fn cli_path(store: &Store) -> Option<PathBuf> {
     let path = std::env::var_os("PATH").unwrap_or_default();
     beside_launcher()
         .into_iter()

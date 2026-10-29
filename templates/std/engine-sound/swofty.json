@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "id": "mod.esp",
+  "name": "V10 Engine Sounds",
+  "description": "A V10 engine sound on Classic Seasons' 2017 Ferrari, and an F1 2017 (V10) box with the V10 in the Mercedes and the Red Bull too.",
+  "version": "1.0.0",
+  "author": "you",
+  "license": "MIT",
+  "kind": ["native"],
+  "category": "cars",
+  "compat": { "game": "f1_25", "launcher": ">=1.6.0" },
+  "requires": [ { "id": "swofty.classic-seasons-2017" } ],
+  "operations": { "native": [ { "dll": "native/esp.dll", "files": ["sounds/"] } ] }
+}

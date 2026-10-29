@@ -9,6 +9,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <mutex>
 #include <string>
@@ -52,6 +53,7 @@ namespace sp = runtime::save_splice;
 namespace layout = runtime::layout;
 
 constexpr const char *MIXIN = "swofty_core.dll (save splice)";
+constexpr const char *SLOT_MIXIN = "swofty_core.dll (save slot)";
 constexpr size_t CHILD_SLOT = 0x88;
 constexpr size_t FRAME_SELF = 0x30;
 constexpr size_t FRAME_CHILDREN = 0x38;
@@ -71,6 +73,14 @@ std::mutex lock;
 sp::Store store;
 sp::Owed owed;
 uint32_t loads = 0;
+
+// ---- W4 career snapshots (native/src/core/snapshots/): the core's own swofty_registry entry rides in
+// this store like any unclaimed container. The game never claims it, so a load keeps it and a save
+// writes it back; the hooks hand its body to the snapshots at each root load and take a new one at
+// each profile save. ----
+runtime::save_splice::EntryHooks entry_hooks;
+bool entry_put = false;
+// ---- end W4 ----
 
 using WriteBag_t = int (*)(void *codec, void *bag);
 using Lookup_t = const char *(*)(void *table, uint64_t hash);
@@ -184,11 +194,21 @@ int *deserialise_entry(void *self, int *result, void *bag, uint8_t reset_on_erro
     }
     int *r = deserialise_orig(self, result, bag, reset_on_error, groups);
     if (root) {
-        std::lock_guard<std::mutex> g(lock);
-        if (store.size())
-            swofty::log("[saves] profile load %u: kept %zu save container(s) no loaded game mode claims (%llu bytes); "
-                        "the next profile save writes them back",
-                        loads, store.size(), (unsigned long long)store.total());
+        // W4: the swofty_registry body this load kept, for the career snapshots.
+        std::vector<uint8_t> entry;
+        bool has_entry = false;
+        {
+            std::lock_guard<std::mutex> g(lock);
+            if (store.size())
+                swofty::log("[saves] profile load %u: kept %zu save container(s) no loaded game mode claims (%llu "
+                            "bytes); the next profile save writes them back",
+                            loads, store.size(), (unsigned long long)store.total());
+            for (auto &k : store.kept())
+                if (k.name == sp::ENTRY_NAME)
+                    entry = k.body, has_entry = true;
+        }
+        if (live && entry_hooks.loaded)
+            entry_hooks.loaded(has_entry ? &entry : nullptr);
     }
     return r;
 }
@@ -255,13 +275,40 @@ template <class S = g::SaveDataContainer> bool child_names(uintptr_t begin, uint
     }
 }
 
+// W4b: Game_SaveSlotManager_SelectSlot stored the slot it loads at manager+0x280; rbx = that SaveSlotInfo
+// (slot_id +0x0, slot_guid +0x8), rsi = the manager (re/db/structs/SaveSlotInfo.h, SaveSlotManager.h).
+void slot_selected(SwoftyContext *c)
+{
+    uint64_t id = 0, guid = 0;
+    if (c->rbx && mem::read(c->rbx, id) && mem::read(c->rbx + 8, guid))
+        runtime::snapshots_slot_selected(c->rsi, id, guid);
+}
+
 void count_entry(SwoftyContext *c)
 {
     uintptr_t self = 0;
     if (!live || !mem::read(c->rsp + FRAME_SELF, self) || !is_root(self))
         return;
+    // W4: the career snapshots' new swofty_registry body, when they changed since the last write.
+    std::vector<uint8_t> entry;
+    bool has_entry = entry_hooks.saving && entry_hooks.saving(entry);
     std::lock_guard<std::mutex> g(lock);
     owed.take(nullptr);
+    if (entry_put && entry_hooks.written)
+        entry_hooks.written(false);
+    entry_put = false;
+    if (has_entry) {
+        size_t size = entry.size();
+        sp::Add a = store.add(sp::ENTRY_NAME, std::move(entry));
+        entry_put = a == sp::Add::kept || a == sp::Add::replaced;
+        if (!entry_put) {
+            swofty::log("[saves] profile save: the career snapshots' %s entry (%zu bytes) does not fit the save "
+                        "splice's store; not written this time",
+                        sp::ENTRY_NAME, size);
+            if (entry_hooks.written)
+                entry_hooks.written(false);
+        }
+    }
     uint64_t count = 0;
     uintptr_t begin = 0;
     if (!store.size() || !mem::read(c->rsp + FRAME_COUNT, count) || !mem::read(c->rsp + FRAME_CHILDREN, begin))
@@ -328,6 +375,15 @@ void children_entry(SwoftyContext *c)
     mem::read(c->rsp + FRAME_BAG_TYPE, bag_type);
     std::string names;
     int r = write_kept(stream, bag_type, picked, names);
+    // W4: whether the career snapshots' entry went out with this save.
+    bool entry_written = false;
+    if (entry_put) {
+        for (size_t i : picked)
+            entry_written |= i < store.size() && store.kept()[i].name == sp::ENTRY_NAME;
+        entry_put = false;
+        if (entry_hooks.written)
+            entry_hooks.written(!r && entry_written);
+    }
     if (r) {
         *reinterpret_cast<int *>(c->r12) = r;
         c->rip = b.done;
@@ -358,6 +414,8 @@ std::vector<CoreMixins> save_splice_mixins()
     if (offered || !code_ready())
         return out;
     offered = true;
+    // W4b: the career id's save slot, whether or not the splice runs.
+    out.push_back({SLOT_MIXIN, {{"site_Game_SaveSlot_Selected", SWOFTY_MIXIN_SITE, 100, (void *)&slot_selected, nullptr}}});
     char v[16] = {};
     DWORD n = GetEnvironmentVariableA("SWOFTY_SAVE_SPLICE", v, sizeof v);
     if (n && n < sizeof v && (!strcmp(v, "0") || !strcmp(v, "off"))) {
@@ -394,13 +452,43 @@ std::vector<CoreMixins> save_splice_mixins()
 
 void save_splice_commit()
 {
-    if (!offered || settled || !b.done)
+    if (!offered || settled || !b.done) {
+        snapshots_start(false);
         return;
+    }
     settled = true;
     live = core_mixins_active(MIXIN);
     swofty::log("[saves] save splice %s",
                 live ? "armed: save containers no loaded game mode claims are kept through each profile load and save"
                      : "did not install (see the [core] lines)");
+    snapshots_start(live);
 }
+
+// ---- W4 career snapshots ----
+namespace save_splice {
+
+void set_entry_hooks(const EntryHooks &h) { entry_hooks = h; }
+
+std::string entry_blocked()
+{
+    if (!live)
+        return "the save splice is not armed";
+    if constexpr (layout::SAVE_SPLICE) {
+        auto bag_id = reinterpret_cast<Id_t>(
+            method(reinterpret_cast<void *>(b.bag_type), offsetof(g::NePropertyTypeVtbl, id)));
+        uint32_t id = bag_id ? uint32_t(bag_id(reinterpret_cast<void *>(b.bag_type))) : 0;
+        if (id != ENTRY_BAG_TYPE) {
+            char why[96];
+            snprintf(why, sizeof why, "the game's bag type id is %08x, not 'pbag' (%08x)", id, ENTRY_BAG_TYPE);
+            return why;
+        }
+        return {};
+    } else {
+        return "this core lacks the property layout";
+    }
+}
+
+}
+// ---- end W4 ----
 
 }

@@ -1,0 +1,10 @@
+{
+  "team.logo": {
+    "podium": {
+      "$comment": "images holds driver_select, team_select, hud, broadcast and hub only",
+      "images": {
+        "podium": "logos/podium.png"
+      }
+    }
+  }
+}

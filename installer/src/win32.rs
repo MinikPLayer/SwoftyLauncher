@@ -80,6 +80,157 @@ pub fn images(name: &str) -> Vec<String> {
         .collect()
 }
 
+pub fn junction(target: &Path, at: &Path) -> std::io::Result<()> {
+    const GENERIC_WRITE: u32 = 0x4000_0000;
+    const OPEN_EXISTING: u32 = 3;
+    const FILE_FLAG_BACKUP_SEMANTICS: u32 = 0x0200_0000;
+    const FILE_FLAG_OPEN_REPARSE_POINT: u32 = 0x0020_0000;
+    const FSCTL_SET_REPARSE_POINT: u32 = 0x0009_00A4;
+    const IO_REPARSE_TAG_MOUNT_POINT: u32 = 0xA000_0003;
+    #[link(name = "kernel32")]
+    unsafe extern "system" {
+        fn CreateFileW(
+            name: *const u16,
+            access: u32,
+            share: u32,
+            security: *const c_void,
+            disposition: u32,
+            flags: u32,
+            template: *mut c_void,
+        ) -> *mut c_void;
+        fn DeviceIoControl(
+            device: *mut c_void,
+            code: u32,
+            input: *const c_void,
+            input_size: u32,
+            output: *mut c_void,
+            output_size: u32,
+            returned: *mut u32,
+            overlapped: *mut c_void,
+        ) -> i32;
+    }
+    let target = std::path::absolute(target)?;
+    let plain = target.to_string_lossy();
+    let plain = plain.strip_prefix(r"\\?\").unwrap_or(&plain);
+    let print: Vec<u16> = plain.encode_utf16().collect();
+    let substitute: Vec<u16> = r"\??\".encode_utf16().chain(print.iter().copied()).collect();
+    let bytes =
+        |s: &[u16]| u16::try_from(s.len() * 2).map_err(|_| std::io::Error::other("the path is too long"));
+    let (sub, prn) = (bytes(&substitute)?, bytes(&print)?);
+    let mut data: Vec<u8> = Vec::new();
+    data.extend(IO_REPARSE_TAG_MOUNT_POINT.to_le_bytes());
+    data.extend((8 + sub + 2 + prn + 2).to_le_bytes());
+    data.extend([0, 0, 0, 0]);
+    data.extend(sub.to_le_bytes());
+    data.extend((sub + 2).to_le_bytes());
+    data.extend(prn.to_le_bytes());
+    for unit in substitute.iter().chain(&[0]).chain(&print).chain(&[0]) {
+        data.extend(unit.to_le_bytes());
+    }
+    std::fs::create_dir(at)?;
+    let wide: Vec<u16> = at.as_os_str().encode_wide().chain([0]).collect();
+    // SAFETY: `wide` is NUL-terminated, the handle is checked before use and
+    // closed once, and DeviceIoControl reads `data.len()` bytes of `data`.
+    let set = unsafe {
+        let dir = CreateFileW(
+            wide.as_ptr(),
+            GENERIC_WRITE,
+            0,
+            std::ptr::null(),
+            OPEN_EXISTING,
+            FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+            std::ptr::null_mut(),
+        );
+        if dir == INVALID_HANDLE_VALUE {
+            Err(std::io::Error::last_os_error())
+        } else {
+            let mut returned = 0;
+            let ok = DeviceIoControl(
+                dir,
+                FSCTL_SET_REPARSE_POINT,
+                data.as_ptr().cast(),
+                data.len() as u32,
+                std::ptr::null_mut(),
+                0,
+                &mut returned,
+                std::ptr::null_mut(),
+            );
+            let set = if ok != 0 {
+                Ok(())
+            } else {
+                Err(std::io::Error::last_os_error())
+            };
+            CloseHandle(dir);
+            set
+        }
+    };
+    if set.is_err() {
+        std::fs::remove_dir(at).ok();
+    }
+    set
+}
+
+pub fn set_user_env(name: &str, value: &Path) -> std::io::Result<()> {
+    const HKEY_CURRENT_USER: isize = 0x8000_0001_u32 as i32 as isize;
+    const REG_SZ: u32 = 1;
+    const HWND_BROADCAST: isize = 0xffff;
+    const WM_SETTINGCHANGE: u32 = 0x001A;
+    const SMTO_ABORTIFHUNG: u32 = 0x0002;
+    #[link(name = "advapi32")]
+    unsafe extern "system" {
+        fn RegSetKeyValueW(
+            key: isize,
+            sub_key: *const u16,
+            name: *const u16,
+            kind: u32,
+            data: *const c_void,
+            size: u32,
+        ) -> i32;
+    }
+    #[link(name = "user32")]
+    unsafe extern "system" {
+        fn SendMessageTimeoutW(
+            window: isize,
+            msg: u32,
+            wparam: usize,
+            lparam: isize,
+            flags: u32,
+            timeout: u32,
+            result: *mut usize,
+        ) -> isize;
+    }
+    let wide = |s: &std::ffi::OsStr| -> Vec<u16> { s.encode_wide().chain([0]).collect() };
+    let environment = wide("Environment".as_ref());
+    let name = wide(name.as_ref());
+    let data = wide(value.as_os_str());
+    // SAFETY: every string is NUL-terminated and outlives the calls, and the
+    // value's size counts its u16s and the NUL in bytes.
+    unsafe {
+        let status = RegSetKeyValueW(
+            HKEY_CURRENT_USER,
+            environment.as_ptr(),
+            name.as_ptr(),
+            REG_SZ,
+            data.as_ptr().cast(),
+            (data.len() * 2) as u32,
+        );
+        if status != 0 {
+            return Err(std::io::Error::from_raw_os_error(status));
+        }
+        let mut result = 0;
+        SendMessageTimeoutW(
+            HWND_BROADCAST,
+            WM_SETTINGCHANGE,
+            0,
+            environment.as_ptr() as isize,
+            SMTO_ABORTIFHUNG,
+            5000,
+            &mut result,
+        );
+    }
+    Ok(())
+}
+
 /// Starts `exe` in `dir` through the desktop's shell, which runs it as the
 /// signed-in user, unelevated and with the shell's own environment, whatever
 /// this process runs as: `IShellDispatch2::ShellExecute` on the desktop

@@ -1,0 +1,12 @@
+{
+  "vehicle": {
+    "ai_unknown_field": {
+      "$comment": "ai is a closed struct: pace is not a field of cars::AiSlot",
+      "label": "cs17_ferrari",
+      "ai": {
+        "track_pack": "swofty.classic-seasons-2017/ferrari",
+        "pace": 0.98
+      }
+    }
+  }
+}

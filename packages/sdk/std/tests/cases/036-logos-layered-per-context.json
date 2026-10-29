@@ -1,0 +1,182 @@
+{
+  "name": "logo layers from several addons change their own contexts of one team's logo, and all of them apply",
+  "rule": "a logo holds one image per context; a layer is a merge patch on images, so each addon's contexts apply and only a context two addons both set is a contest, decided by load order; a filtered layer applies only where its in() matches (std/systems/teams.md#logos-per-context, layers.md#precedence)",
+  "registries": {
+    "team.logo": {
+      "applies": "read"
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "team.logo",
+      "key": "williams",
+      "value": {
+        "images": {
+          "driver_select": {
+            "stock": "ui/team_logos/williams_driver_select.png"
+          },
+          "team_select": {
+            "stock": "ui/team_logos/williams_team_select.png"
+          },
+          "hud": {
+            "stock": "ui/team_logos/williams_hud.png"
+          },
+          "broadcast": {
+            "stock": "ui/team_logos/williams_broadcast.png"
+          },
+          "hub": {
+            "stock": "ui/team_logos/williams_hub.png"
+          }
+        }
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.classic-seasons-2017",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "team.logo",
+          "target": "game/williams",
+          "patch": {
+            "images": {
+              "driver_select": "logos/williams_2017_driver_select.png",
+              "team_select": "logos/williams_2017_team_select.png"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.badges",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "team.logo",
+          "target": "game/williams",
+          "patch": {
+            "images": {
+              "hud": "badges/williams_hud.png",
+              "broadcast": "badges/williams_broadcast.png"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "swofty.progressive",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "team.logo",
+          "target": "game/williams",
+          "patch": {
+            "images": {
+              "hud": "logos/progressive_williams_hud.png"
+            }
+          },
+          "in": [
+            {
+              "data_group": "f1_career_progressive"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "team.logo": {
+          "game/williams": {
+            "status": "ok",
+            "value": {
+              "images": {
+                "driver_select": "logos/williams_2017_driver_select.png",
+                "team_select": "logos/williams_2017_team_select.png",
+                "hud": "badges/williams_hud.png",
+                "broadcast": "badges/williams_broadcast.png",
+                "hub": {
+                  "stock": "ui/team_logos/williams_hub.png"
+                }
+              }
+            },
+            "origins": {
+              "/images/driver_select": "swofty.classic-seasons-2017",
+              "/images/team_select": "swofty.classic-seasons-2017",
+              "/images/hud": "mod.badges",
+              "/images/broadcast": "mod.badges"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": "driver_career",
+        "content": null,
+        "data_group": "f1_career_progressive",
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "team.logo": {
+          "game/williams": {
+            "status": "ok",
+            "value": {
+              "images": {
+                "driver_select": "logos/williams_2017_driver_select.png",
+                "team_select": "logos/williams_2017_team_select.png",
+                "hud": "logos/progressive_williams_hud.png",
+                "broadcast": "badges/williams_broadcast.png",
+                "hub": {
+                  "stock": "ui/team_logos/williams_hub.png"
+                }
+              }
+            },
+            "origins": {
+              "/images/driver_select": "swofty.classic-seasons-2017",
+              "/images/team_select": "swofty.classic-seasons-2017",
+              "/images/hud": "swofty.progressive",
+              "/images/broadcast": "mod.badges"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "field",
+          "registry": "team.logo",
+          "id": "game/williams",
+          "pointer": "/images/hud",
+          "addons": [
+            "mod.badges",
+            "swofty.progressive"
+          ],
+          "winner": "swofty.progressive"
+        }
+      ],
+      "refusals": []
+    }
+  ]
+}

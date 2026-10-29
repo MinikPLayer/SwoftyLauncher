@@ -1,0 +1,10 @@
+{
+  "wearable.season_set": {
+    "mercedes_2016": {
+      "team": "swofty.classic-seasons-2016/mercedes",
+      "season": 2016,
+      "suit": "swofty.classic-seasons-2016/mercedes_2016",
+      "gloves": "swofty.classic-seasons-2016/mercedes_2016"
+    }
+  }
+}

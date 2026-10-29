@@ -108,6 +108,36 @@ int main()
            "a base just at the game port leaves it outside the range");
     expect(!drive::parse(R"({"seq":20,"op":"configure","args":{"self":2.5,"base":40000}})").error.empty(), "a fraction is refused");
     expect(!drive::parse(R"({"seq":20,"op":"configure","args":{"self":2}})").error.empty(), "configure needs a base");
+    auto named = drive::parse(R"({"seq":22,"op":"configure","args":{"self":3,"base":40000,"name":"  Swofty\u0007\u200b  One "}})");
+    expect(named.error.empty() && named.name == "Swofty One", "configure carries the signed-in name, trimmed and cleaned");
+    expect(drive::parse(R"({"seq":22,"op":"configure","args":{"self":3,"base":40000}})").name.empty(),
+           "configure without a name keeps the game's own");
+    expect(drive::parse(R"({"seq":22,"op":"configure","args":{"self":3,"base":40000,"name":null}})").error.empty(),
+           "a null name is no name");
+    expect(drive::parse(R"({"seq":22,"op":"configure","args":{"self":3,"base":40000,"name":7}})").error.find("args.name") == 0,
+           "a name that is not a string is refused");
+    expect(drive::parse(R"({"seq":22,"op":"configure","args":{"self":3,"base":40000,"name":" \u00a0\u200d "}})").name.empty(),
+           "a name of only spaces and invisible characters is empty");
+
+    expect(drive::driver_name("xSoul") == "xSoul", "a plain name is kept");
+    expect(drive::driver_name("\tSloths\r\n") == "Sloths", "control characters go");
+    expect(drive::driver_name("A\xe2\x80\xae" "B\xef\xbb\xbf" "C\xc2\xad" "D") == "ABCD", "bidi, BOM and soft hyphen go");
+    expect(drive::driver_name("Bad\xff\xc3(Name\xed\xa0\x80") == "Bad(Name", "invalid UTF-8 and surrogates go");
+    expect(drive::driver_name("\xc0\xafx") == "x", "an overlong sequence goes");
+    expect(drive::driver_name("Jos\xc3\xa9 \xe3\x80\x80 \xf0\x9f\x8f\x8e") == "Jos\xc3\xa9 \xf0\x9f\x8f\x8e",
+           "accents and emoji stay, wide spaces become one space");
+    std::string longest(drive::DRIVER_NAME_BYTES - 1, 'a');
+    expect(drive::driver_name(longest + "\xc3\xa9") == longest, "a character that would pass 127 bytes is cut whole");
+    expect(drive::driver_name(longest + "b\xc3\xa9") == longest + "b", "the cut keeps 127 bytes");
+    expect(drive::driver_name(std::string(126, 'a') + " b") == std::string(126, 'a'), "no trailing space after the cut");
+    expect(drive::driver_name(std::string(300, 'z')).size() == drive::DRIVER_NAME_BYTES, "a long name is capped");
+    expect(drive::driver_name("").empty() && drive::driver_name("\x01\x02").empty(), "nothing left is empty");
+
+    std::string decoded;
+    expect(drive::percent_decode("Sw%C3%B6fty%20%3b1", decoded) && decoded == "Sw\xc3\xb6" "fty ;1", "percent escapes decode");
+    expect(!drive::percent_decode("50%", decoded) && !drive::percent_decode("%zz", decoded) && !drive::percent_decode("%4", decoded),
+           "a malformed escape is refused");
+
     auto clear = drive::parse(R"({"seq":21,"op":"clear"})");
     expect(clear.op == drive::Op::clear && clear.error.empty(), "clear parses");
     expect(drive::refuse(conf, main_menu(true, false)).empty(), "configure runs on the main menu");

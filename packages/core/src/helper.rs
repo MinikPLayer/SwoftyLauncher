@@ -526,6 +526,7 @@ fn host_call(cx: &Cx, call: HostCall) -> std::result::Result<Value, String> {
             Some(g) => g.addon_dir(cx.addon).map(path_value),
             None => Ok(Value::Null),
         },
+        HostCall::RegistryDir => Ok(path_value(Some(crate::stdlib::reports::dir(cx.data_dir)))),
         HostCall::GameStatus => {
             let status = cx
                 .game

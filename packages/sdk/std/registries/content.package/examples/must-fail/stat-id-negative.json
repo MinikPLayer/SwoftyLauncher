@@ -1,0 +1,10 @@
+{
+  "content.package": {
+    "stat_id_negative": {
+      "$comment": "stat_id is an integer >= 0 or \"auto\"",
+      "entrant_list": "cs_f1_2017",
+      "season": 2017,
+      "stat_id": -1
+    }
+  }
+}

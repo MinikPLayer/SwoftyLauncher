@@ -9,6 +9,7 @@
 #include <math.h>
 #include "swofty_api.h"
 #include "pattern_scan.h"
+#include "pe_exports.h"
 #include "data_folder.h"
 #include "alog.h"
 
@@ -240,6 +241,7 @@ static SwoftyApi api_v1 = {1, slog, module_base, scan, NULL, NULL, NULL, NULL, N
 static SwoftyCoreInitFn core_init;
 static SwoftyCoreCommitFn core_commit;
 static SwoftyCoreStageFn core_stage;
+static HMODULE core_module;
 static struct {
     wchar_t name[MAX_PATH];
     const char *symbol;
@@ -288,6 +290,7 @@ static void load_addon(const wchar_t *dir, const wchar_t *name, int core_dir)
         SwoftyCoreInitFn ci = (SwoftyCoreInitFn)(void *)GetProcAddress(m, "SwoftyCoreInit");
         SwoftyCoreCommitFn cc = (SwoftyCoreCommitFn)(void *)GetProcAddress(m, "SwoftyCoreCommit");
         if (ci && cc && attach(&api)) {
+            core_module = m;
             core_init = ci;
             core_commit = cc;
             /* v1 plugins scan through the core as well, so on a packed build they are refused encrypted code. */
@@ -410,6 +413,120 @@ static void load_dir(const wchar_t *sub, int core_dir, int pick)
     }
     for (int i = 0; i < n; i++)
         free(dlls[i].name);
+}
+
+/* Standard library 1.6: a DLL whose PE export table names SwoftyAddonRegister is loaded before any
+   SwoftyAddonInit runs and its SwoftyAddonRegister is called, in load order. The export table is read
+   from the file, so DLLs without the export are not loaded here and load exactly as before. */
+typedef int (*SwoftyCoreRegisterDoneFn)(void);
+
+static int dll_registers(const wchar_t *path)
+{
+    HANDLE f = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (f == INVALID_HANDLE_VALUE)
+        return 0;
+    LARGE_INTEGER size;
+    int found = 0;
+    if (GetFileSizeEx(f, &size) && size.QuadPart > 0 && size.QuadPart < (1ll << 31)) {
+        HANDLE map = CreateFileMappingW(f, NULL, PAGE_READONLY, 0, 0, NULL);
+        if (map) {
+            const uint8_t *view = (const uint8_t *)MapViewOfFile(map, FILE_MAP_READ, 0, 0, 0);
+            if (view) {
+                found = pe_exports_name(view, (size_t)size.QuadPart, "SwoftyAddonRegister");
+                UnmapViewOfFile(view);
+            }
+            CloseHandle(map);
+        }
+    }
+    CloseHandle(f);
+    return found;
+}
+
+static int registered_count;
+
+/* The early stage runs before the game loads its database, which is when SWOFTY_REGISTER must run, so a
+   DLL that exports SwoftyAddonRegister turns the early stage on. Profiles without one are unaffected. */
+static int registering_dlls(void)
+{
+    int n = 0;
+    for (int i = 0; i < plugin_count; i++) {
+        wchar_t path[MAX_PATH * 2];
+        swprintf(path, MAX_PATH * 2, L"%ls\\swofty\\%ls", game_dir, plugins[i]);
+        n += dll_registers(path);
+    }
+    for (int r = 0; r < (int)(sizeof ROOTS / sizeof *ROOTS); r++) {
+        wchar_t query[MAX_PATH * 2];
+        swprintf(query, MAX_PATH * 2, L"%ls\\swofty\\%ls\\*.dll", game_dir, ROOTS[r]);
+        WIN32_FIND_DATAW fd;
+        HANDLE f = FindFirstFileW(query, &fd);
+        if (f == INVALID_HANDLE_VALUE)
+            continue;
+        do {
+            if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                continue;
+            wchar_t path[MAX_PATH * 2];
+            swprintf(path, MAX_PATH * 2, L"%ls\\swofty\\%ls\\%ls", game_dir, ROOTS[r], fd.cFileName);
+            n += dll_registers(path);
+        } while (FindNextFileW(f, &fd));
+        FindClose(f);
+    }
+    return n;
+}
+
+static void register_addon(const wchar_t *dir, const wchar_t *name)
+{
+    wchar_t path[MAX_PATH * 2];
+    swprintf(path, MAX_PATH * 2, L"%ls\\%ls", dir, name);
+    if (!dll_registers(path))
+        return;
+    HMODULE m = LoadLibraryW(path);
+    if (!m) {
+        slog("addon %ls: exports SwoftyAddonRegister, but LoadLibrary failed, error %lu", name, GetLastError());
+        return;
+    }
+    SwoftyAddonRegisterFn reg = (SwoftyAddonRegisterFn)(void *)GetProcAddress(m, "SwoftyAddonRegister");
+    if (!reg) {
+        slog("addon %ls: the file lists SwoftyAddonRegister, but the loaded module does not export it", name);
+        return;
+    }
+    DWORD t0 = GetTickCount();
+    slog("addon %ls: calling SwoftyAddonRegister (API v%u) at the %s stage", name, api.version,
+         loaded_early ? "early" : "window");
+    int r = reg(&api);
+    registered_count++;
+    slog("addon %ls: SwoftyAddonRegister returned %d (%lu ms)", name, r, GetTickCount() - t0);
+}
+
+static void register_pass(HMODULE core)
+{
+    if (!core_init || api.version < 9 || !api.registry)
+        return;
+    registered_count = 0;
+    for (int i = 0; i < plugin_count; i++) {
+        const wchar_t *name = base_of(plugins[i]);
+        wchar_t dir[MAX_PATH * 2];
+        swprintf(dir, MAX_PATH * 2, L"%ls\\swofty\\%ls", game_dir, plugins[i]);
+        dir[wcslen(dir) - wcslen(name) - 1] = 0;
+        if (!listed(name, i))
+            register_addon(dir, name);
+    }
+    Dll dlls[256];
+    int n = 0;
+    for (int r = 0; r < (int)(sizeof ROOTS / sizeof *ROOTS); r++)
+        n = list_dlls(r, L"", dlls, n);
+    qsort(dlls, n, sizeof *dlls, dll_cmp);
+    for (int i = 0; i < n; i++) {
+        wchar_t dir[MAX_PATH * 2];
+        swprintf(dir, MAX_PATH * 2, L"%ls\\swofty\\%ls", game_dir, ROOTS[dlls[i].root]);
+        if (!(i && !_wcsicmp(dlls[i].name, dlls[i - 1].name)) && !listed(dlls[i].name, plugin_count))
+            register_addon(dir, dlls[i].name);
+    }
+    for (int i = 0; i < n; i++)
+        free(dlls[i].name);
+    SwoftyCoreRegisterDoneFn done = core ? (SwoftyCoreRegisterDoneFn)(void *)GetProcAddress(core, "SwoftyCoreRegisterDone") : NULL;
+    if (done)
+        done();
+    slog("addons: register pass done, %d addon(s) called SwoftyAddonRegister", registered_count);
 }
 
 typedef struct {
@@ -1059,6 +1176,7 @@ static void load_addons_once(const char *why, LPCWSTR detail, int stage)
     if (loaded_early)
         arm_filled_iat();
     load_dir(L"core", 1, PICK_ALL);
+    register_pass(core_module);
     load_plugins(loaded_early ? PICK_EARLY : PICK_ALL);
     load_dir(L"", 0, loaded_early ? PICK_EARLY : PICK_ALL);
     finish_batch(0);
@@ -1631,6 +1749,14 @@ BOOL WINAPI DllMain(HINSTANCE self, DWORD reason, LPVOID reserved)
     if (early_count && !early_enabled && !early_env) {
         early_enabled = 1;
         slog("early stage: on for %d early plugin(s); SwoftyMod loads with them", early_count);
+    }
+    if (!early_enabled && !early_env) {
+        int registering = registering_dlls();
+        if (registering) {
+            early_enabled = 1;
+            slog("early stage: on for %d addon dll(s) that export SwoftyAddonRegister; SWOFTY_REGISTER runs before the "
+                 "game loads its database", registering);
+        }
     }
     if (ea_diag && !early_enabled) {
         early_enabled = 1;

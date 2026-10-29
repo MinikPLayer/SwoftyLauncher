@@ -1,0 +1,104 @@
+{
+  "name": "a layer on a record nobody provides waits for it",
+  "rule": "a layer's target is checked when the registry resolves, not when the layer is written: with the target missing the layer is kept, not refused, and applies once the target's addon is on; the layer may come earlier in load order than the provider (reading.md#effective-values)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.a",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "mod.b/x",
+          "patch": {
+            "n": 5
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.b",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "test.thing",
+          "key": "x",
+          "value": {
+            "name": "x",
+            "n": 1,
+            "kind": "f1",
+            "items": []
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": [
+          "mod.b"
+        ]
+      },
+      "expect": {
+        "test.thing": {
+          "mod.b/x": {
+            "status": "no_record"
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "mod.b/x": {
+            "status": "ok",
+            "value": {
+              "name": "x",
+              "n": 5,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.a"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "engine_sound": {
+    "v10_screamer": {
+      "bundle": "sounds/v10_screamer.bdl",
+      "settings_from": "game/ferrari_2025"
+    }
+  }
+}

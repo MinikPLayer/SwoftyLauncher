@@ -1,0 +1,11 @@
+{
+ "log": {"max_mb": 16, "on_full": "stop", "summary_every_s": 60},
+ "limits": {"max_events_total": 4000, "max_read": 64},
+ "hooks": [
+  {"id": "t119.car_built", "test": "T119", "sig": "car.live_car_built", "regs": ["rdi", "r12"],
+   "fields": ["id=u8:[rdi+0xe8]", "n=u32:[rdi+0x398]", "hv=i32:[rdi+0x9f40]", "eqp=u32:[rdi+0x12c]", "engine=u64:[rdi+0x530]", "susp=u64:[rdi+0x580]", "dyn=u64:[rdi+0x900]"],
+   "bt": 4, "max_per_sec": 64, "max_events": 1000},
+  {"id": "t119.car_removed", "test": "T119", "sig": "car.vehicle_table_remove", "regs": ["rax"],
+   "max_per_sec": 64, "max_events": 1000}
+ ]
+}

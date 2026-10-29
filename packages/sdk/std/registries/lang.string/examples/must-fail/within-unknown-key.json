@@ -1,0 +1,13 @@
+{
+  "lang.string": {
+    "within_track": {
+      "$comment": "within names a mode, setup_mode, data_group or content",
+      "text": {
+        "*": "F1 2017"
+      },
+      "within": {
+        "track": "monza"
+      }
+    }
+  }
+}

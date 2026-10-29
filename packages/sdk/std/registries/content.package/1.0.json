@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "content.package 1.0",
+  "x-registry": "content.package",
+  "x-version": "1.0",
+  "x-applies": "content",
+  "x-snapshot": false,
+  "description": "content::Package: a Grand Prix and Time Trial season build: an entrant list, its teams, cars and drivers, and the box's rules.",
+  "type": "object",
+  "properties": {
+    "title": {
+      "$ref": "#/$defs/text"
+    },
+    "entrant_list": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "season": {
+      "type": "integer",
+      "minimum": 1950,
+      "maximum": 2100
+    },
+    "calendar": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "career.calendar"
+    },
+    "teams": {
+      "type": "array",
+      "x-key": [
+        "key"
+      ],
+      "items": {
+        "$ref": "#/$defs/team"
+      }
+    },
+    "rules": {
+      "$ref": "#/$defs/rules"
+    },
+    "setup_mode": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "default": "swofty_f1"
+    },
+    "stat_id": {
+      "$ref": "#/$defs/stat_id"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "content.package",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "entrant_list",
+    "season"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "text": {
+      "description": "A Text: a lang key as a string, or a literal.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literal": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "stat_id": {
+      "description": "A StatId: an explicit id, or \"auto\" (absent: \"auto\") for the core to allocate one.",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "auto"
+        }
+      ]
+    },
+    "team": {
+      "description": "content::Team: one team of the package, matched by key.",
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "team": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "team.identity"
+        },
+        "vehicle": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "vehicle"
+        },
+        "engine_sound": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "engine_sound"
+        },
+        "livery": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "livery"
+        },
+        "drivers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/seat"
+          }
+        }
+      },
+      "required": [
+        "key"
+      ],
+      "additionalProperties": false
+    },
+    "seat": {
+      "description": "content::Seat: a driver of the team this season.",
+      "type": "object",
+      "properties": {
+        "driver": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "driver.identity"
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 999
+        },
+        "look": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "driver.look"
+        }
+      },
+      "additionalProperties": false
+    },
+    "rules": {
+      "description": "sessions::Rules: the box's points, DRS, tyre classes and rules, applied at session load.",
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "session.mode",
+          "description": "null: swofty_f1, shared by every GP/TT box"
+        },
+        "points": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "session.points"
+        },
+        "drs": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "rules.drs"
+        },
+        "tyre_class": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "tyre.class"
+        },
+        "rules_profile": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "session.rules_profile"
+        },
+        "refuelling": {
+          "type": "boolean",
+          "default": false
+        },
+        "race_fuel_kg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

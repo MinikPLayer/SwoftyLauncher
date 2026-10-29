@@ -1,0 +1,8 @@
+{
+  "team.constructor": {
+    "hrt": {
+      "$comment": "name is required",
+      "country": "spain"
+    }
+  }
+}

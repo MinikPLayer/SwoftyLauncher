@@ -1,0 +1,18 @@
+{
+  "helmet": {
+    "any_driver": {
+      "archive": {
+        "erp": "helmets/pack.erp",
+        "resources": [
+          "eaid://helmets/any_driver"
+        ]
+      },
+      "from": "game/helmet_tier01_livery03",
+      "name": "lng_hx_any_driver",
+      "driver": null,
+      "colours": null,
+      "official_team_item": false,
+      "stat_id": "auto"
+    }
+  }
+}

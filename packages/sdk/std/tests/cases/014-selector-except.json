@@ -1,0 +1,148 @@
+{
+  "name": "except leaves the named ids out of a selector",
+  "rule": "\"ids\": \"*\" matches every record; \"except\" removes full ids from the match; ids, where and tag in one selector must all match (layers.md#selectors)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "safety_car",
+      "value": {
+        "name": "sc",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.z",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "test.thing",
+          "key": "b",
+          "value": {
+            "name": "b",
+            "n": 0,
+            "kind": "f2",
+            "items": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.s",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "select": {
+            "ids": "*",
+            "except": [
+              "game/safety_car"
+            ]
+          },
+          "patch": {
+            "n": 1
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "select": {
+            "ids": "game/*",
+            "where": {
+              "kind": "f1"
+            },
+            "except": [
+              "game/a"
+            ]
+          },
+          "patch": {
+            "name": "both"
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 1,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.s"
+            }
+          },
+          "game/safety_car": {
+            "status": "ok",
+            "value": {
+              "name": "both",
+              "n": 0,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/name": "mod.s"
+            }
+          },
+          "mod.z/b": {
+            "status": "ok",
+            "value": {
+              "name": "b",
+              "n": 1,
+              "kind": "f2",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.s"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "addon.option": {
+    "follow_mode": {
+      "type": "choice",
+      "states": [
+        {
+          "text": "Your driver",
+          "value": "driver"
+        },
+        {
+          "text": "Your team",
+          "value": "team"
+        }
+      ],
+      "value": "driver"
+    }
+  }
+}

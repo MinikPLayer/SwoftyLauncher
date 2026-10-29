@@ -1,0 +1,13 @@
+{
+  "driver.stats": {
+    "odd": {
+      "$comment": "a curve holds start and peak only",
+      "driver": "game/a",
+      "focus": {
+        "start": 70,
+        "peak": 80,
+        "end": 60
+      }
+    }
+  }
+}

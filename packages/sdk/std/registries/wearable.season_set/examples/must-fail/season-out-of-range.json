@@ -1,0 +1,9 @@
+{
+  "wearable.season_set": {
+    "far": {
+      "$comment": "season is 1950-2100",
+      "team": "game/mercedes",
+      "season": 1900
+    }
+  }
+}

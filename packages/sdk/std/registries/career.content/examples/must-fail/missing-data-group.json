@@ -1,0 +1,9 @@
+{
+  "career.content": {
+    "no_group": {
+      "$comment": "data_group is required",
+      "title": "lng_f1_1990_title",
+      "suffix": "90"
+    }
+  }
+}

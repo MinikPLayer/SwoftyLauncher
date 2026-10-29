@@ -1,0 +1,8 @@
+{
+  "content.package": {
+    "swofty.classic-seasons-2017/f1_2017": {
+      "$comment": "null removes a field, and entrant_list is required",
+      "entrant_list": null
+    }
+  }
+}

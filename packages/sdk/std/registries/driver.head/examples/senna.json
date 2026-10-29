@@ -1,0 +1,11 @@
+{
+  "driver.head": {
+    "senna": {
+      "archive": "heads/senna/",
+      "morph": "heads/morph_poses/senna.erp",
+      "rig_from": "game/male_ls222",
+      "body": "male",
+      "customisable": false
+    }
+  }
+}

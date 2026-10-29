@@ -515,6 +515,7 @@ impl Shell {
         let shell = cx.entity().downgrade();
         let vr = self.launch_mode().is_vr();
         let start_store = self.start_store;
+        let dev_mode = self.store.config().developer;
         let start_label = match self.install.as_ref().map(|i| i.source) {
             Some(Source::EaApp) => "Start the EA app automatically",
             _ => "Start Steam automatically",
@@ -541,7 +542,7 @@ impl Shell {
                                 .ok();
                         })
                 };
-                let (console, steam) = (shell.clone(), shell.clone());
+                let (console, steam, developer) = (shell.clone(), shell.clone(), shell.clone());
                 menu.min_w(px(220.))
                     .check_side(Side::Right)
                     .item(mode("Play", IconName::Play, LaunchMode::Normal))
@@ -567,6 +568,21 @@ impl Shell {
                             .on_click(move |_, window, cx| {
                                 steam
                                     .update(cx, |s, cx| s.set_start_store(!start_store, window, cx))
+                                    .ok();
+                            }),
+                    )
+                    .item(
+                        PopupMenuItem::new("Developer mode")
+                            .icon(IconName::SquareTerminal)
+                            .checked(dev_mode)
+                            .on_click(move |_, window, cx| {
+                                developer
+                                    .update(cx, |s, cx| {
+                                        s.set_developer(!dev_mode, window, cx);
+                                        if !dev_mode {
+                                            s.go(Page::Tools, cx);
+                                        }
+                                    })
                                     .ok();
                             }),
                     )

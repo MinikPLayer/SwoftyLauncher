@@ -1,0 +1,9 @@
+{
+  "vehicle": {
+    "wear_scale_string": {
+      "$comment": "tyre_wear_scale is a number",
+      "label": "cs17_ferrari",
+      "tyre_wear_scale": "1.04"
+    }
+  }
+}

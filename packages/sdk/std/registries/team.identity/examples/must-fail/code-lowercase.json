@@ -1,0 +1,12 @@
+{
+  "team.identity": {
+    "lowercase_code": {
+      "$comment": "names/code is upper-case letters and digits",
+      "names": {
+        "title": "lng_x",
+        "code": "mer"
+      },
+      "livery_name": "x"
+    }
+  }
+}

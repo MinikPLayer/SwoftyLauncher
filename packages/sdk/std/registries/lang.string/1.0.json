@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "lang.string 1.0",
+  "x-registry": "lang.string",
+  "x-version": "1.0",
+  "x-applies": "read",
+  "x-snapshot": false,
+  "description": "ui::String: one text key in every language. The id is game/<lng key>; a 1.5 swofty::lang::set call writes the calling addon's global layer of it.",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "language code (lower case) or \"*\" for every language -> text"
+    },
+    "within": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "where the text applies: a mode, setup mode, data group or content; null: everywhere",
+      "properties": {
+        "mode": {
+          "type": "string"
+        },
+        "setup_mode": {
+          "type": "string"
+        },
+        "data_group": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "lang.string",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [],
+  "additionalProperties": true
+}

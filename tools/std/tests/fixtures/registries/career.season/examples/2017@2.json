@@ -1,0 +1,7 @@
+{
+  "data_group": "f1_career_progressive",
+  "year": 2017,
+  "teams": [
+    { "slot": 1, "team": "game/mercedes", "seats": [ { "driver": "game/lewis_hamilton", "number": 44 }, { "driver": "game/valtteri_bottas" } ] }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "livery": {
+    "alphatauri_2026": {
+      "vehicle": "game/toro_rosso_2026",
+      "archive": "archives/toro_rosso_alphatauri.erp",
+      "special": true,
+      "suffix": "auto",
+      "picker_name": "lng_rm_livery_alphatauri",
+      "unlock": "owned",
+      "stat_id": "auto"
+    }
+  }
+}

@@ -1,0 +1,271 @@
+{
+  "name": "each year pack adds its team's kit for its own year, and a selector on one year's sets leaves the others alone",
+  "rule": "a season set is one team's suit and gloves for one year, under its pack's own key; its refs to the team, suit and gloves must resolve; a where selector on season matches the provider values of that year's sets only, and a disabled pack's set is gone (std/systems/wearables.md#team-kit-per-season, layers.md#selectors)",
+  "registries": {
+    "team.identity": {
+      "applies": "boot"
+    },
+    "suit": {
+      "applies": "boot"
+    },
+    "gloves": {
+      "applies": "boot"
+    },
+    "wearable.season_set": {
+      "applies": "boot",
+      "refs": {
+        "/team": "team.identity",
+        "/suit": "suit",
+        "/gloves": "gloves"
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "team.identity",
+      "key": "mercedes",
+      "value": {
+        "livery_name": "mercedes"
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "suit",
+      "key": "mercedes",
+      "value": {
+        "archive": {
+          "stock": "kit/mercedes_suit.erp"
+        },
+        "team": "game/mercedes"
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "gloves",
+      "key": "mercedes",
+      "value": {
+        "archive": {
+          "stock": "kit/mercedes_gloves.erp"
+        },
+        "team": "game/mercedes"
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "wearable.season_set",
+      "key": "mercedes_2026",
+      "value": {
+        "team": "game/mercedes",
+        "season": 2026,
+        "suit": "game/mercedes",
+        "gloves": "game/mercedes"
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.classic-seasons-2016",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "suit",
+          "key": "mercedes_2016",
+          "value": {
+            "archive": "kit/mercedes_2016_suit.erp",
+            "from": "game/mercedes",
+            "team": "game/mercedes"
+          }
+        },
+        {
+          "op": "add",
+          "registry": "gloves",
+          "key": "mercedes_2016",
+          "value": {
+            "archive": "kit/mercedes_2016_gloves.erp",
+            "from": "game/mercedes",
+            "team": "game/mercedes"
+          }
+        },
+        {
+          "op": "add",
+          "registry": "wearable.season_set",
+          "key": "mercedes_2016",
+          "value": {
+            "team": "game/mercedes",
+            "season": 2016,
+            "suit": "swofty.classic-seasons-2016/mercedes_2016",
+            "gloves": "swofty.classic-seasons-2016/mercedes_2016"
+          }
+        }
+      ]
+    },
+    {
+      "id": "swofty.classic-seasons-2017",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "suit",
+          "key": "mercedes_2017",
+          "value": {
+            "archive": "kit/mercedes_2017_suit.erp",
+            "from": "game/mercedes",
+            "team": "game/mercedes"
+          }
+        },
+        {
+          "op": "add",
+          "registry": "gloves",
+          "key": "mercedes_2017",
+          "value": {
+            "archive": "kit/mercedes_2017_gloves.erp",
+            "from": "game/mercedes",
+            "team": "game/mercedes"
+          }
+        },
+        {
+          "op": "add",
+          "registry": "wearable.season_set",
+          "key": "mercedes_2017",
+          "value": {
+            "team": "game/mercedes",
+            "season": 2017,
+            "suit": "swofty.classic-seasons-2017/mercedes_2017",
+            "gloves": "swofty.classic-seasons-2017/mercedes_2017"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.retro-gloves",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "gloves",
+          "key": "retro",
+          "value": {
+            "archive": "kit/retro_gloves.erp",
+            "from": "game/mercedes",
+            "team": null
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "wearable.season_set",
+          "select": {
+            "where": {
+              "season": 2016
+            }
+          },
+          "patch": {
+            "gloves": "mod.retro-gloves/retro"
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "wearable.season_set": {
+          "game/mercedes_2026": {
+            "status": "ok",
+            "value": {
+              "team": "game/mercedes",
+              "season": 2026,
+              "suit": "game/mercedes",
+              "gloves": "game/mercedes"
+            },
+            "origins": {}
+          },
+          "swofty.classic-seasons-2016/mercedes_2016": {
+            "status": "ok",
+            "value": {
+              "team": "game/mercedes",
+              "season": 2016,
+              "suit": "swofty.classic-seasons-2016/mercedes_2016",
+              "gloves": "mod.retro-gloves/retro"
+            },
+            "origins": {
+              "/gloves": "mod.retro-gloves"
+            }
+          },
+          "swofty.classic-seasons-2017/mercedes_2017": {
+            "status": "ok",
+            "value": {
+              "team": "game/mercedes",
+              "season": 2017,
+              "suit": "swofty.classic-seasons-2017/mercedes_2017",
+              "gloves": "swofty.classic-seasons-2017/mercedes_2017"
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [],
+      "lists": [
+        {
+          "registry": "wearable.season_set",
+          "prefix": "swofty.classic-seasons-2016/",
+          "ids": [
+            "swofty.classic-seasons-2016/mercedes_2016"
+          ]
+        }
+      ]
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": [
+          "swofty.classic-seasons-2016"
+        ]
+      },
+      "expect": {
+        "wearable.season_set": {
+          "swofty.classic-seasons-2016/mercedes_2016": {
+            "status": "no_record"
+          },
+          "swofty.classic-seasons-2017/mercedes_2017": {
+            "status": "ok",
+            "value": {
+              "team": "game/mercedes",
+              "season": 2017,
+              "suit": "swofty.classic-seasons-2017/mercedes_2017",
+              "gloves": "swofty.classic-seasons-2017/mercedes_2017"
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [],
+      "lists": [
+        {
+          "registry": "wearable.season_set",
+          "prefix": "swofty.classic-seasons-2016/",
+          "ids": []
+        }
+      ]
+    }
+  ]
+}

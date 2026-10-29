@@ -40,7 +40,7 @@ run() {
     rm -f "$LOG" "$TRACE" "$STATUS"
     (cd "$OUT/game" && timeout 120 "${PIN[@]}" xvfb-run -a wine "$OUT/game/F1_25.exe") || status=1
 }
-for mode in off armed invalid host traced; do
+for mode in off armed invalid host named traced; do
     unset SWOFTY_NETPLAY SWOFTY_NET_TRACE
     export FAKE_NETPLAY_SELF=1 FAKE_NETPLAY_BASE=$BASE FAKE_NETPLAY_HOOKS=1 FAKE_NETPLAY_ROOM=0
     case $mode in
@@ -48,6 +48,7 @@ for mode in off armed invalid host traced; do
     armed) export SWOFTY_NETPLAY=armed ;;
     invalid) export SWOFTY_NETPLAY="self=1;base=$BASE;port=21414" ;;
     host) export SWOFTY_NETPLAY="self=1;base=$BASE" FAKE_NETPLAY_ROOM=1 ;;
+    named) export SWOFTY_NETPLAY="self=1;base=$BASE;name=%20Sw%C3%B6fty%E2%80%8B%20%3B%201%20%20" FAKE_NETPLAY_ROOM=1 ;;
     traced) export SWOFTY_NETPLAY="base=$BASE;self=7" FAKE_NETPLAY_SELF=7 FAKE_NETPLAY_ROOM=1 SWOFTY_NET_TRACE=1 ;;
     esac
     echo "==== $mode${SWOFTY_NETPLAY:+ SWOFTY_NETPLAY=$SWOFTY_NETPLAY}${SWOFTY_NET_TRACE:+ SWOFTY_NET_TRACE=1}"
@@ -60,7 +61,7 @@ for mode in off armed invalid host traced; do
         ;;
     armed | invalid)
         if [[ $mode == invalid ]]; then
-            check "the invalid value is logged" "\[netplay\] SWOFTY_NETPLAY=\"self=1;base=$BASE;port=21414\" is not self=<1-254>;base=<port>; armed without a room"
+            check "the invalid value is logged" "\[netplay\] SWOFTY_NETPLAY=\"self=1;base=$BASE;port=21414\" is not self=<1-254>;base=<port>\[;name=<name>\]; armed without a room"
         else
             none "no invalid-value line for a plain value" '\[netplay\] SWOFTY_NETPLAY='
         fi
@@ -68,10 +69,12 @@ for mode in off armed invalid host traced; do
         check "the game socket's bind writes the status without a room" "\[netplay\] bridge on, self=0 base=0 game_port=21414[[:cntrl:]]?$"
         none "nothing is rewritten" '\[netplay\] (own address|first datagram)'
         ;;
-    host | traced)
+    host | named | traced)
         n=$FAKE_NETPLAY_SELF
+        named=
+        [[ $mode == named ]] && named=", driver name Swöfty ; 1"
         check "armed on both sendto slots, recvfrom, both bind slots and GetAdaptersAddresses, in the given room" \
-            "\[netplay\] bridge armed: $slots; room self=$n base=$BASE from SWOFTY_NETPLAY[[:cntrl:]]?$"
+            "\[netplay\] bridge armed: $slots; room self=$n base=$BASE from SWOFTY_NETPLAY$named[[:cntrl:]]?$"
         none "nothing is missing" '\[netplay\] bridge incomplete'
         check "the game socket's bind turns the bridge on" "\[netplay\] bridge on, self=$n base=$BASE game_port=21414[[:cntrl:]]?$"
         check "the first datagram to member 2 is logged" "\[netplay\] first datagram to member 2: 10\.77\.0\.2:21414 sent to 127\.0\.0\.1:$((BASE + 2))[[:cntrl:]]?$"

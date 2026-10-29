@@ -1,0 +1,10 @@
+{
+  "livery": {
+    "x": {
+      "$comment": "a suffix starts with _ or is auto",
+      "vehicle": "game/redbull_2025",
+      "special": true,
+      "suffix": "lx01"
+    }
+  }
+}

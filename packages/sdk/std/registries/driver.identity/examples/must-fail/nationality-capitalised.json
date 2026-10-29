@@ -1,0 +1,12 @@
+{
+  "driver.identity": {
+    "bad_nationality": {
+      "$comment": "nationality is a lower-case entrants.nationality key",
+      "names": {
+        "first": "lng_a"
+      },
+      "look": "game/a",
+      "nationality": "Finland"
+    }
+  }
+}

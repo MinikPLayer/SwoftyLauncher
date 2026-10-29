@@ -1,0 +1,118 @@
+{
+  "name": "a second layer on the same record and scope replaces the first; clear_layer drops it",
+  "rule": "layer on a record and scope the addon already layers replaces its edit (it doesn't stack); clear_layer removes the addon's layer at that scope (layers.md#writing-a-layer, scopes.md#global)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "b",
+      "value": {
+        "name": "b",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.a",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "n": 1
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "name": "x"
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/b",
+          "patch": {
+            "n": 5
+          }
+        },
+        {
+          "op": "clear_layer",
+          "registry": "test.thing",
+          "target": "game/b"
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "x",
+              "n": 0,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/name": "mod.a"
+            }
+          },
+          "game/b": {
+            "status": "ok",
+            "value": {
+              "name": "b",
+              "n": 0,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

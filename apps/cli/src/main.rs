@@ -1,5 +1,6 @@
 mod build;
 mod db;
+mod dev;
 mod doctor;
 mod ea;
 mod offline;
@@ -7,10 +8,12 @@ mod overlay;
 mod overlay_exec;
 mod postfx;
 mod recover;
+mod registry;
 mod run;
 mod saves;
 mod send_logs;
 mod setup;
+mod testing;
 mod time;
 mod update;
 
@@ -161,6 +164,23 @@ enum Command {
         about = "List the profile save backups taken before sessions without an addon that affects saves, and restore one"
     )]
     Saves(saves::SavesCommand),
+    #[command(
+        subcommand,
+        about = "Test addons in the game: plan the game starts, run the tests and write the report"
+    )]
+    Test(testing::TestCommand),
+    #[command(
+        subcommand,
+        about = "Developer mode: make, link, run, check, test and pack an addon"
+    )]
+    Dev(dev::DevCommand),
+    #[command(
+        subcommand,
+        about = "The addon registry: check dependencies, and show the core's conflicts and status from your last session"
+    )]
+    Registry(registry::RegistryCommand),
+    #[command(about = "List every career in the career index, the profile that started it and what it needs")]
+    Careers,
     #[command(about = "Check for a new release and install it into this copy")]
     Update {
         #[arg(long, help = "Only report whether a new release is available")]
@@ -269,7 +289,13 @@ fn main() -> ExitCode {
         Ok(code) => code,
         Err(e) => {
             eprintln!("swofty: {}", causes(&e));
-            ExitCode::FAILURE
+            let stopped = e
+                .chain()
+                .any(|c| matches!(c.downcast_ref(), Some(swofty_core::Error::Dependencies(_))));
+            match stopped {
+                true => ExitCode::from(swofty_core::stdlib::deps::STOP_EXIT),
+                false => ExitCode::FAILURE,
+            }
         }
     }
 }
@@ -303,6 +329,29 @@ fn data_dir_arg(args: &[OsString]) -> Option<PathBuf> {
 struct AddonCommands {
     registry: Registry,
     specs: Vec<(String, CommandSpec)>,
+    namespaced: Vec<Namespaced>,
+    developer: bool,
+}
+
+/// An addon command as `swofty <addon id>:<name>`. Every addon command has one, so a command whose
+/// name a built-in command (or another addon) took stays reachable; only those are listed in help.
+struct Namespaced {
+    id: String,
+    name: String,
+    spec: CommandSpec,
+    listed: bool,
+}
+
+fn namespaced(all: &[(String, Vec<CommandSpec>)], accepted: &[(String, CommandSpec)]) -> Vec<Namespaced> {
+    all.iter()
+        .flat_map(|(id, specs)| specs.iter().map(move |spec| (id, spec)))
+        .map(|(id, spec)| Namespaced {
+            id: id.clone(),
+            name: format!("{id}:{}", spec.name),
+            spec: spec.clone(),
+            listed: !accepted.iter().any(|(a, s)| a == id && s.name == spec.name),
+        })
+        .collect()
 }
 
 impl AddonCommands {
@@ -317,9 +366,38 @@ impl AddonCommands {
             .chain(["help".to_owned()])
             .collect();
         let reserved: Vec<&str> = reserved.iter().map(String::as_str).collect();
-        let (specs, refused) = registry.commands(&reserved);
-        refused.iter().for_each(|r| eprintln!("swofty: {r}"));
-        Self { registry, specs }
+        let (specs, _) = registry.commands(&reserved);
+        let all: Vec<(String, Vec<CommandSpec>)> = registry
+            .iter()
+            .map(|e| (e.id().to_owned(), e.addon.commands()))
+            .collect();
+        let namespaced = namespaced(&all, &specs);
+        for n in namespaced.iter().filter(|n| n.listed) {
+            eprintln!(
+                "swofty: {}: its command {} has the name of a built-in command or another addon's; run it as swofty {}",
+                n.id, n.spec.name, n.name
+            );
+        }
+        Self {
+            registry,
+            specs,
+            namespaced,
+            developer: dev::enabled(store),
+        }
+    }
+
+    /// The addon command `name` names, with the name the addon knows it by.
+    fn find(&self, name: &str) -> Option<(&str, &CommandSpec)> {
+        self.specs
+            .iter()
+            .find(|(_, s)| s.name == name)
+            .map(|(id, s)| (id.as_str(), s))
+            .or_else(|| {
+                self.namespaced
+                    .iter()
+                    .find(|n| n.name == name)
+                    .map(|n| (n.id.as_str(), &n.spec))
+            })
     }
 
     fn provides(&self, name: &str) -> bool {
@@ -331,9 +409,27 @@ impl AddonCommands {
         if self.provides("mods") {
             cmd = cmd.mut_subcommand("addons", |c| c.alias(None));
         }
-        self.specs
+        let developer = self.developer;
+        cmd = cmd.mut_subcommand("dev", |c| c.hide(!developer));
+        let cmd = self
+            .specs
             .iter()
-            .fold(cmd, |cmd, (_, spec)| cmd.subcommand(clap_command(spec)))
+            .fold(cmd, |cmd, (_, spec)| cmd.subcommand(clap_command(spec)));
+        self.namespaced.iter().fold(cmd, |cmd, n| {
+            let about = match n.listed {
+                true => format!(
+                    "{} ({}'s {} command: swofty {} is a built-in command or another addon's)",
+                    n.spec.about, n.id, n.spec.name, n.spec.name
+                ),
+                false => n.spec.about.clone(),
+            };
+            cmd.subcommand(
+                clap_command(&n.spec)
+                    .name(n.name.clone())
+                    .about(about)
+                    .hide(!n.listed),
+            )
+        })
     }
 }
 
@@ -441,13 +537,13 @@ fn run_cli(store: &Store, mut args: Vec<OsString>) -> Result<ExitCode> {
     let matches = addons.command().get_matches_from(args);
     migrate(store);
     if let Some((name, sub)) = matches.subcommand()
-        && let Some((id, spec)) = addons.specs.iter().find(|(_, s)| s.name == name)
+        && let Some((id, spec)) = addons.find(name)
     {
         let profile = matches
             .get_one::<String>("profile")
             .cloned()
             .unwrap_or_else(|| store.active_profile());
-        let (mut path, mut input) = (vec![name.to_owned()], Vec::new());
+        let (mut path, mut input) = (vec![spec.name.clone()], Vec::new());
         command_input(sub, spec, &mut path, &mut input);
         if let Ok(cwd) = std::env::current_dir() {
             absolute_paths(&mut input, &cwd);
@@ -492,7 +588,11 @@ fn dispatch(store: &Store, cli: Cli) -> Result<ExitCode> {
         Command::Saves(cmd) => saves::command(&store, cmd),
         Command::Steam { start } => run::steam_check(&store, start),
         Command::Postfx(cmd) => postfx::command(cmd),
+        Command::Test(cmd) => testing::command(&store, cmd),
+        Command::Dev(cmd) => dev::command(&store, &profile, cmd),
         Command::Update { check } => update::update(check),
+        Command::Registry(cmd) => registry::command(&store, &profile, cmd),
+        Command::Careers => registry::careers(&store, &profile).map(|_| ExitCode::SUCCESS),
     }
 }
 
@@ -556,6 +656,7 @@ fn game(store: &Store, cmd: GameCommand) -> Result<()> {
 fn addons(store: &Store, profile: &str, cmd: AddonsCommand) -> Result<()> {
     match cmd {
         AddonsCommand::List => {
+            let status = registry::status(store);
             let p = store.profile(profile)?;
             let enabled: Vec<&str> = p.enabled().collect();
             for (id, m) in store.addons()? {
@@ -567,6 +668,9 @@ fn addons(store: &Store, profile: &str, cmd: AddonsCommand) -> Result<()> {
                     "disabled"
                 };
                 println!("{id:32} {:10} {state:9} {}", m.version.to_string(), m.name);
+                for line in status.get(&id).into_iter().flatten() {
+                    println!("{:32} {:10} {:9}   last session: {line}", "", "", "");
+                }
             }
             for u in store.unreadable_addons() {
                 let version = u.version.as_deref().unwrap_or("?");
@@ -582,6 +686,14 @@ fn addons(store: &Store, profile: &str, cmd: AddonsCommand) -> Result<()> {
                 println!("installed {} {}", m.id, m.version);
                 for line in swofty_core::tracks::left_out_lines(store, &m) {
                     println!("warning: {line}");
+                }
+                for f in installed_check(store, &m) {
+                    let tag = if f.level == swofty_core::stdlib::deps::Level::Hint {
+                        "hint"
+                    } else {
+                        "warning"
+                    };
+                    println!("{tag}: {}", f.block());
                 }
             }
         }
@@ -609,6 +721,9 @@ fn addons(store: &Store, profile: &str, cmd: AddonsCommand) -> Result<()> {
             if let Some(w) = store.registry()?.turn_off_warning(&p, &id) {
                 confirm_saves(&w, "turn off", yes)?;
             }
+            if p.enabled().any(|on| on == id) {
+                confirm_careers(store, &id, yes)?;
+            }
             toggle(store, profile, &id, false)?
         }
         AddonsCommand::Remove { id, yes } => {
@@ -618,6 +733,66 @@ fn addons(store: &Store, profile: &str, cmd: AddonsCommand) -> Result<()> {
             store.remove_addon(&id)?;
             println!("removed {id}");
         }
+    }
+    Ok(())
+}
+
+fn installed_check(
+    store: &Store,
+    m: &swofty_core::manifest::AddonManifest,
+) -> Vec<swofty_core::stdlib::deps::Finding> {
+    use swofty_core::stdlib::deps;
+    let Ok(installed) = store.addons() else {
+        return Vec::new();
+    };
+    let all = deps::read_all(store, &installed);
+    let Some(new) = all.get(&m.id) else {
+        return Vec::new();
+    };
+    let others: Vec<deps::Std> = all.values().cloned().collect();
+    deps::at_install(new, &installed, &others).findings
+}
+
+fn confirm_careers(store: &Store, id: &str, yes: bool) -> Result<()> {
+    let careers = registry::careers_needing(store, id);
+    if careers.is_empty() || yes {
+        return Ok(());
+    }
+    let name = store
+        .addons()?
+        .get(id)
+        .map_or_else(|| id.to_owned(), |m| m.name.clone());
+    let n = careers.len();
+    let mut text = format!("{name} is in {n} career{}\n", if n == 1 { "" } else { "s" });
+    for c in &careers {
+        let label = if c.label.is_empty() {
+            c.career.as_str()
+        } else {
+            c.label.as_str()
+        };
+        let why = c
+            .addons
+            .iter()
+            .find(|a| a.id == id)
+            .and_then(|a| a.why.as_deref())
+            .map(|w| format!(" ({w})"))
+            .unwrap_or_default();
+        text.push_str(&format!("  {label}{why}\n"));
+    }
+    text.push_str(&format!(
+        "  {} won't load until {name} is back on. Your other careers aren't affected.",
+        if n == 1 { "That career" } else { "Those careers" }
+    ));
+    if !std::io::stdin().is_terminal() {
+        bail!("{text}\nstdin is not a terminal: pass --yes to turn off {id} anyway");
+    }
+    println!("{text}");
+    print!("Turn off {id} anyway? [y/N] ");
+    std::io::stdout().flush().ok();
+    let mut line = String::new();
+    std::io::stdin().read_line(&mut line)?;
+    if !matches!(line.trim(), "y" | "Y" | "yes") {
+        bail!("{id} is unchanged");
     }
     Ok(())
 }
@@ -1107,6 +1282,55 @@ mod tests {
         .filter(|n| text.contains(*n))
         .map(|n| (*n).to_owned())
         .collect()
+    }
+
+    #[test]
+    fn an_addon_command_a_built_in_took_stays_reachable_under_its_addon_id() {
+        let spec = |name: &str| CommandSpec {
+            name: name.into(),
+            about: format!("does {name}"),
+            args: Vec::new(),
+            subcommands: Vec::new(),
+        };
+        let all = vec![("someone.tool".to_owned(), vec![spec("registry"), spec("tidy")])];
+        let accepted = vec![("someone.tool".to_owned(), spec("tidy"))];
+        let addons = AddonCommands {
+            registry: Registry::default(),
+            namespaced: namespaced(&all, &accepted),
+            specs: accepted,
+            developer: false,
+        };
+        let listed: Vec<(&str, bool)> = addons
+            .namespaced
+            .iter()
+            .map(|n| (n.name.as_str(), n.listed))
+            .collect();
+        assert_eq!(
+            listed,
+            [("someone.tool:registry", true), ("someone.tool:tidy", false)]
+        );
+        let cmd = addons.command();
+        for (typed, known_as) in [
+            ("someone.tool:registry", "registry"),
+            ("someone.tool:tidy", "tidy"),
+            ("tidy", "tidy"),
+        ] {
+            let m = cmd.clone().try_get_matches_from(["swofty", typed]).unwrap();
+            let (name, _) = m.subcommand().unwrap();
+            let (id, spec) = addons.find(name).unwrap();
+            assert_eq!((id, spec.name.as_str()), ("someone.tool", known_as));
+        }
+        let m = cmd
+            .clone()
+            .try_get_matches_from(["swofty", "registry", "check"])
+            .unwrap();
+        assert!(addons.find(m.subcommand().unwrap().0).is_none());
+        let help = cmd.clone().render_help().to_string();
+        assert!(help.contains("someone.tool:registry"), "{help}");
+        assert!(!help.contains("someone.tool:tidy"), "{help}");
+        for name in ["dev", "test", "registry", "careers"] {
+            assert!(cmd.find_subcommand(name).is_some(), "{name}");
+        }
     }
 
     #[test]

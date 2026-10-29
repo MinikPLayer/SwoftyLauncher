@@ -1,0 +1,4 @@
+build/
+native/*.dll
+native/*.lib
+sounds/*.bdl

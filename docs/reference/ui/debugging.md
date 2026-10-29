@@ -5,7 +5,49 @@ description: Attach gdb to F1 25 under Proton or Wine on Linux, log breakpoint h
 
 # Debugging live
 
-Reading the executable shows what code can do. A live trace shows what it does: which function builds a screen, how often, with which values, and who writes a field. On Linux, gdb attaches to F1 25 running under Proton or Wine. For the methods these traces support, see [Techniques for menu edits](./techniques).
+On Linux, gdb attaches to F1 25 running under Proton or Wine and shows what the code does: which function builds a screen, how often, with which values, and who writes a field.
+
+## A trace in full
+
+The script logs every hit of one function and every write to one byte, and lets the game run on:
+
+```text [trace.gdb]
+set pagination off
+set confirm off
+handle all nostop noprint pass
+handle SIGTRAP stop noprint nopass
+
+set $hits = 0
+break *0x14xxxxxxx
+commands
+silent
+set $hits = $hits + 1
+printf "[t] hit %d rcx=%#lx rdx=%#lx caller=%#lx\n", $hits, $rcx, $rdx, *(long *)$rsp
+continue
+end
+
+watch -l *(unsigned char *)0x14xxxxxxx
+commands
+silent
+printf "[t] write -> %d at %#lx\n", *(unsigned char *)0x14xxxxxxx, $pc
+continue
+end
+
+continue
+```
+
+Attach it at a quiet screen, do the action you trace, and read the lines back:
+
+```sh
+pid=$(for p in $(pgrep -f F1_25.exe); do grep -q F1_25.exe /proc/$p/maps 2>/dev/null && echo $p && break; done)
+prior=$(cat /proc/sys/kernel/yama/ptrace_scope)
+sudo sysctl -w kernel.yama.ptrace_scope=0
+timeout -s INT 900 gdb -p "$pid" --batch -x trace.gdb 2>&1 | tee trace.log
+sudo sysctl -w kernel.yama.ptrace_scope="$prior"
+grep '\[t\]' trace.log
+```
+
+For the methods these traces support, see [Techniques for menu edits](./techniques). For UI templates, `re/tools/ui_trace/ui_template_trace.sh` is a ready-made trace ([Live trace](./engine#live-trace)).
 
 ## Before you attach
 
@@ -26,7 +68,12 @@ sudo sysctl -w kernel.yama.ptrace_scope="$prior"
 - Proton starts several processes whose command line names `F1_25.exe`. The game is the one that maps the executable.
 - With `ptrace_scope` at 1, the default on most distributions, gdb can't attach to a process it didn't start unless it runs as root. Set it to 0 for the session and put the old value back afterwards.
 - `--batch` runs the script, then detaches when the script ends, when gdb gets `SIGINT` from `timeout`, or when the game exits. The game keeps running after a detach.
-- If gdb dies while the game is stopped, the game stays frozen. Its state in `/proc/<pid>/stat` is `T`; resume it with `kill -CONT <pid>`.
+- If gdb dies while the game is stopped, the game stays frozen. Its state in `/proc/<pid>/stat` is `T`; resume it:
+
+  ```sh
+  awk '{print $3}' /proc/$pid/stat    # T: stopped
+  kill -CONT "$pid"
+  ```
 
 ## The script header
 
@@ -56,8 +103,19 @@ continue
 ```
 
 - At a function's first instruction, `*(long *)$rsp` is the return address: an address just after the call, inside the caller.
-- Add a condition to log only the case you want: `break *0x14xxxxxxx if $r13 == 4`.
-- Read memory in the commands: `x/4gx $rbx` dumps four qwords, `printf "%s\n", *(char **)($rsp+0x20)` prints a string argument passed on the stack.
+- Add a condition to log only the case you want:
+
+  ```text
+  break *0x14xxxxxxx if $r13 == 4
+  ```
+
+- Read memory in the commands:
+
+  ```text
+  x/4gx $rbx                                  # four qwords
+  printf "%s\n", *(char **)($rsp+0x20)        # a string argument passed on the stack
+  ```
+
 - Keep the commands short. The game is stopped while they run.
 - Put a fixed prefix such as `[t]` on every line, so `grep '\[t\]' trace.log` separates your lines from gdb's.
 
@@ -82,12 +140,16 @@ A watchpoint that never fires is a result too: it shows that the value doesn't c
 
 With `ptrace_scope` at 0, `/proc/<pid>/mem` reads the game's memory while it runs:
 
-```python
+```python [peek.py]
 import sys
 pid, addr, size = int(sys.argv[1]), int(sys.argv[2], 16), int(sys.argv[3])
 with open(f'/proc/{pid}/mem', 'rb') as mem:
     mem.seek(addr)
     print(mem.read(size).hex())
+```
+
+```sh
+python3 peek.py "$pid" 0x14xxxxxxx 16
 ```
 
 The game keeps changing that memory as you read it, so compare a few reads before trusting a value.

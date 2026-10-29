@@ -104,6 +104,10 @@ pub fn same_folder(a: &Path, b: &Path) -> bool {
     folder_key(a) == folder_key(b) || crate::copies::same_dir(a, b)
 }
 
+pub fn same_path(a: &Path, b: &Path) -> bool {
+    folder_key(a) == folder_key(b)
+}
+
 fn folder_key(p: &Path) -> String {
     let s = p.to_string_lossy();
     let s = s.strip_prefix(r"\\?\").unwrap_or(&s);

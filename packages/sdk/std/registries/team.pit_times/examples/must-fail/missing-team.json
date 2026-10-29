@@ -1,0 +1,8 @@
+{
+  "team.pit_times": {
+    "orphan": {
+      "$comment": "team is required",
+      "from": "game/tororosso"
+    }
+  }
+}

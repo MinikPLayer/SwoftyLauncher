@@ -1,0 +1,8 @@
+{
+  "vehicle.package": {
+    "halo_string": {
+      "$comment": "halo is a boolean",
+      "halo": "yes"
+    }
+  }
+}

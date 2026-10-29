@@ -45,13 +45,15 @@ using LoadLng_t = int32_t(void *module, uint32_t lang, void *path);
 using AddTable_t = int32_t(void *set, void *stream, uint32_t priority, uint8_t flag);
 using Find_t = const char *(void *set, const char *key, int mode);
 
-std::vector<std::unique_ptr<Redirect>> redirects;
-std::vector<std::pair<uint64_t, Redirect *>> by_hash;
+std::vector<std::unique_ptr<Redirect>> redirects, route_store;
+std::vector<std::pair<uint64_t, Redirect *>> by_hash, routes;
 std::map<std::string, Redirect *> lang_replace;
 std::vector<Table> tables;
 safetyhook::InlineHook h_resolve, h_lang;
 SRWLOCK redirect_lock = SRWLOCK_INIT;
 std::unordered_set<uint64_t> seen;
+std::mutex hook_lock;
+bool hook_tried, legacy_hooked;
 std::mutex lang_lock;
 bool lang_loaded;
 AddTable_t *add_fn;
@@ -289,6 +291,10 @@ Redirect *match(const char *rel)
     low[n] = 0;
     uint64_t h = runtime::fnv64(low, n);
     seen.insert(h);
+    for (auto r = std::lower_bound(routes.begin(), routes.end(), std::make_pair(h, static_cast<Redirect *>(nullptr)));
+         r != routes.end() && r->first == h; ++r)
+        if (r->second->rel.size() == n && !memcmp(r->second->rel.data(), low, n))
+            return r->second;
     auto it = std::lower_bound(by_hash.begin(), by_hash.end(), std::make_pair(h, static_cast<Redirect *>(nullptr)));
     for (; it != by_hash.end() && it->first == h; ++it)
         if (it->second->rel.size() == n && !memcmp(it->second->rel.data(), low, n))
@@ -497,6 +503,33 @@ template <class F> bool hook(safetyhook::InlineHook &h, uintptr_t at, F *fn, con
     return true;
 }
 
+bool hook_resolve()
+{
+    std::lock_guard<std::mutex> g(hook_lock);
+    if (h_resolve)
+        return true;
+    if (hook_tried)
+        return false;
+    hook_tried = true;
+    if (!base)
+        base = swofty::api->module_base();
+    if (uintptr_t at = runtime::find(S_RESOLVE, "overlay"))
+        return hook(h_resolve, at, &resolve_hook, "overlay: Fs_Resolve_Mount");
+    return false;
+}
+
+bool swofty_prefix(std::string &out, std::string &why)
+{
+    std::string root = runtime::lower(runtime::narrow(runtime::game_root())), sw = runtime::lower(runtime::narrow(runtime::swofty_root()));
+    if (sw.rfind(root, 0) != 0) {
+        why = "the swofty folder " + sw + " is not under the game root " + root + ", so the game's file system cannot reach it";
+        return false;
+    }
+    out = sw.substr(root.size());
+    std::replace(out.begin(), out.end(), '\\', '/');
+    return true;
+}
+
 }
 
 int runtime::lang_add(const json::Value &entry)
@@ -513,11 +546,66 @@ int runtime::lang_add(const json::Value &entry)
 int runtime::file_add(const json::Value &entry)
 {
     AcquireSRWLockExclusive(&redirect_lock);
-    bool late = !h_resolve || seen.count(runtime::fnv64(runtime::lower(entry["path"].str())));
+    bool late = !legacy_hooked || seen.count(runtime::fnv64(runtime::lower(entry["path"].str())));
     if (!late)
         add_file(entry);
     ReleaseSRWLockExclusive(&redirect_lock);
     return late ? SWOFTY_ASSET_LATE : SWOFTY_ASSET_OK;
+}
+
+std::string runtime::file_route_prefix()
+{
+    std::string p, why;
+    return swofty_prefix(p, why) ? p : std::string();
+}
+
+bool runtime::file_route_target(const std::string &game_path, std::string &target)
+{
+    std::string rel = runtime::lower(game_path);
+    uint64_t h = runtime::fnv64(rel);
+    bool found = false;
+    AcquireSRWLockShared(&redirect_lock);
+    for (auto &e : routes)
+        if (e.first == h && e.second->rel == rel) {
+            target = e.second->target;
+            found = true;
+        }
+    ReleaseSRWLockShared(&redirect_lock);
+    return found;
+}
+
+bool runtime::file_route(const std::string &game_path, const std::string *target, const std::string &source, std::string &why)
+{
+    std::string rel = runtime::lower(game_path);
+    uint64_t h = runtime::fnv64(rel);
+    Redirect *r = nullptr;
+    if (target) {
+        std::string prefix;
+        if (!swofty_prefix(prefix, why))
+            return false;
+        if (!hook_resolve()) {
+            why = "the core's file route is not available on this build (the Fs_Resolve_Mount signature did not resolve "
+                  "or its hook failed)";
+            return false;
+        }
+        auto made = std::make_unique<Redirect>();
+        made->rel = rel;
+        made->target = prefix + *target;
+        made->source = source;
+        r = made.get();
+        AcquireSRWLockExclusive(&redirect_lock);
+        route_store.push_back(std::move(made));
+    } else
+        AcquireSRWLockExclusive(&redirect_lock);
+    bool opened = seen.count(h) != 0;
+    routes.erase(std::remove_if(routes.begin(), routes.end(), [&](auto &e) { return e.first == h && e.second->rel == rel; }),
+                 routes.end());
+    if (r)
+        routes.insert(std::upper_bound(routes.begin(), routes.end(), std::make_pair(h, r)), {h, r});
+    ReleaseSRWLockExclusive(&redirect_lock);
+    swofty::log("[assets] overlay: route %s %s%s%s", rel.c_str(), r ? "-> /game/" : "removed", r ? r->target.c_str() : "",
+                opened ? " (the game opened this path before; its next open takes the change)" : "");
+    return true;
 }
 
 namespace {
@@ -568,10 +656,8 @@ void setup()
             swofty::log("[assets] lang: this exe carries Team Simplified's localisatioa patch; language paths match either "
                         "folder");
     }
-    if (!by_hash.empty() || !lang_replace.empty()) {
-        if (uintptr_t at = runtime::find(S_RESOLVE, "overlay"))
-            hook(h_resolve, at, &resolve_hook, "overlay: Fs_Resolve_Mount");
-    }
+    if (!by_hash.empty() || !lang_replace.empty())
+        legacy_hooked = hook_resolve();
     if (want_lang) {
         add_fn = reinterpret_cast<AddTable_t *>(runtime::find(S_ADD_TABLE, "lang"));
         memstream_vt = reinterpret_cast<void *>(runtime::find(S_MEMSTREAM, "lang"));

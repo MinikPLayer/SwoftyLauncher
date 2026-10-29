@@ -1,0 +1,153 @@
+{
+  "name": "a dynamic provider answers ids under its own prefix and beats an added record",
+  "rule": "provide answers ids \"<addon>/<key>\"; when add and provide answer one id the provided value wins, a provider answer of null (std::nullopt) leaves the added record; listed ids come from add and the provider's list; layers apply on provided records (providers.md#both-together)",
+  "registries": {
+    "career.driver_ratings": {
+      "applies": "read"
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.progressive",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "career.driver_ratings",
+          "key": "2017/a",
+          "value": {
+            "season": "swofty.progressive/2017",
+            "driver": "game/a",
+            "experience": 50,
+            "racecraft": 50,
+            "awareness": 50,
+            "pace": 50
+          }
+        },
+        {
+          "op": "add",
+          "registry": "career.driver_ratings",
+          "key": "2017/b",
+          "value": {
+            "season": "swofty.progressive/2017",
+            "driver": "game/b",
+            "experience": 60,
+            "racecraft": 60,
+            "awareness": 60,
+            "pace": 60
+          }
+        },
+        {
+          "op": "provide",
+          "registry": "career.driver_ratings",
+          "records": {
+            "2017/a": {
+              "season": "swofty.progressive/2017",
+              "driver": "game/a",
+              "experience": 70,
+              "racecraft": 70,
+              "awareness": 70,
+              "pace": 70
+            },
+            "2017/b": null,
+            "2017/c": {
+              "season": "swofty.progressive/2017",
+              "driver": "game/c",
+              "experience": 80,
+              "racecraft": 80,
+              "awareness": 80,
+              "pace": 80
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.l",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.driver_ratings",
+          "target": "swofty.progressive/2017/c",
+          "patch": {
+            "pace": 81
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.driver_ratings": {
+          "swofty.progressive/2017/a": {
+            "status": "ok",
+            "value": {
+              "season": "swofty.progressive/2017",
+              "driver": "game/a",
+              "experience": 70,
+              "racecraft": 70,
+              "awareness": 70,
+              "pace": 70
+            },
+            "origins": {}
+          },
+          "swofty.progressive/2017/b": {
+            "status": "ok",
+            "value": {
+              "season": "swofty.progressive/2017",
+              "driver": "game/b",
+              "experience": 60,
+              "racecraft": 60,
+              "awareness": 60,
+              "pace": 60
+            },
+            "origins": {}
+          },
+          "swofty.progressive/2017/c": {
+            "status": "ok",
+            "value": {
+              "season": "swofty.progressive/2017",
+              "driver": "game/c",
+              "experience": 80,
+              "racecraft": 80,
+              "awareness": 80,
+              "pace": 81
+            },
+            "origins": {
+              "/pace": "mod.l"
+            }
+          },
+          "swofty.progressive/2017/d": {
+            "status": "no_record"
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [],
+      "lists": [
+        {
+          "registry": "career.driver_ratings",
+          "prefix": "swofty.progressive/",
+          "ids": [
+            "swofty.progressive/2017/a",
+            "swofty.progressive/2017/b",
+            "swofty.progressive/2017/c"
+          ]
+        }
+      ]
+    }
+  ]
+}

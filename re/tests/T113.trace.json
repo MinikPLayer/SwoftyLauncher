@@ -1,0 +1,26 @@
+{
+ "log": {"max_mb": 32, "on_full": "stop", "summary_every_s": 60},
+ "limits": {"max_events_total": 20000, "max_read": 256},
+ "hooks": [
+  {
+   "id": "t113.apply_tuning",
+   "test": "T113",
+   "sig": "car.setup_apply_tuning",
+   "args": 3,
+   "fields": ["veh=u8:[[rcx+0x28]+0xe8]", "mask=u64:[rdx]", "sel=u8:[r8+0x158]", "blk_a=hex[168]:r8+0x8", "blk_b=hex[168]:r8+0xb0"],
+   "ret": true,
+   "bt": 4,
+   "max_per_sec": 100,
+   "max_events": 2000
+  },
+  {
+   "id": "t113.tuning_applied",
+   "test": "T113",
+   "sig": "car.setup_tuning_applied",
+   "regs": ["rdi", "rsi"],
+   "fields": ["veh=u8:[[rdi+8]+0xe8]", "diff_on=f32:[[[rdi+8]+0x578]+0xf0]", "diff_off=f32:[[[rdi+8]+0x578]+0xec]", "eng_brk=f32:[[[rdi+8]+0x530]+0x252c]", "bias=f32:[[[rdi+8]+0x550]+0x21d8]", "pressure=f32:[[[rdi+8]+0x550]+0x21dc]", "fuel=f32:[[[rdi+8]+0x540]+0x100]", "comz=f32:[[[rdi+8]+0x558]+0x158]"],
+   "max_per_sec": 100,
+   "max_events": 2000
+  }
+ ]
+}

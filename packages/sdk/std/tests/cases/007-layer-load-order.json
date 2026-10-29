@@ -1,0 +1,109 @@
+{
+  "name": "layers run in load order",
+  "rule": "each edit runs on the value the earlier ones left, in load order; two addons that change one field are a field contest won by the later (layers.md#precedence)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 10,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.a",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "edit": [
+            {
+              "op": "add",
+              "path": "/n",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod.b",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "edit": [
+            {
+              "op": "mul",
+              "path": "/n",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 22,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.b"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "field",
+          "registry": "test.thing",
+          "id": "game/a",
+          "pointer": "/n",
+          "addons": [
+            "mod.a",
+            "mod.b"
+          ],
+          "winner": "mod.b"
+        }
+      ],
+      "refusals": []
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "driver.stats": {
+    "fast": {
+      "$comment": "a rating is 0-100",
+      "driver": "game/a",
+      "pace": {
+        "start": 80,
+        "peak": 101
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "livery": {
+    "ferrari_2017": {
+      "vehicle": "swofty.classic-seasons-2017/ferrari?",
+      "textures": "liveries/ferrari_2017/"
+    },
+    "redbull_2017": {
+      "vehicle": "swofty.classic-seasons-2017/redbull?",
+      "textures": "liveries/redbull_2017/"
+    }
+  }
+}

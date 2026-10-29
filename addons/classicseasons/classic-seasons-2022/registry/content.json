@@ -1,0 +1,488 @@
+{
+ "engine_sound": {
+  "ferrari": {
+   "bundle": "sounds/cs22_ferrari.bdl",
+   "settings_from": "game/ferrari_2025"
+  },
+  "honda": {
+   "bundle": "sounds/cs22_honda.bdl",
+   "settings_from": "game/honda_2025"
+  },
+  "mercedes": {
+   "bundle": "sounds/cs22_mercedes.bdl",
+   "settings_from": "game/mercedes_2025"
+  },
+  "renault": {
+   "bundle": "sounds/cs22_renault.bdl",
+   "settings_from": "game/renault_2025"
+  }
+ },
+ "vehicle.package": {
+  "cs_2022": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2022_vehicle_package/teams/[FILENAME]/wep/[FILENAME]",
+   "driver_animation_set": "f1_2025",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 121
+  },
+  "cs_2022_redbull": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2022_vehicle_package/teams/redbull/wep/redbull",
+   "driver_animation_set": "f1_2025",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 122
+  },
+  "cs_2022_ferrari": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2022_vehicle_package/teams/ferrari/wep/ferrari",
+   "driver_animation_set": "f1_2025",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 123
+  },
+  "cs_2022_mercedes": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2022_vehicle_package/teams/mercedes/wep/mercedes",
+   "driver_animation_set": "f1_2025",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 124
+  },
+  "cs_2022_lotus": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2022_vehicle_package/teams/lotus/wep/lotus",
+   "driver_animation_set": "f1_2025",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 125
+  },
+  "cs_2022_mclaren": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2022_vehicle_package/teams/mclaren/wep/mclaren",
+   "driver_animation_set": "f1_2025",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 126
+  },
+  "cs_2022_sauber": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2022_vehicle_package/teams/sauber/wep/sauber",
+   "driver_animation_set": "f1_2025",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 127
+  },
+  "cs_2022_force_india": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2022_vehicle_package/teams/force_india/wep/force_india",
+   "driver_animation_set": "f1_2025",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 128
+  },
+  "cs_2022_haas": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2022_vehicle_package/teams/haas/wep/haas",
+   "driver_animation_set": "f1_2025",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 129
+  },
+  "cs_2022_toro_rosso": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2022_vehicle_package/teams/toro_rosso/wep/toro_rosso",
+   "driver_animation_set": "f1_2025",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 130
+  },
+  "cs_2022_williams": {
+   "donor": "game/f1_2025",
+   "resource_path": "cs_2022_vehicle_package/teams/williams/wep/williams",
+   "driver_animation_set": "f1_2025",
+   "halo": true,
+   "setups_from": "game/f1_2025",
+   "blob_shadow_decal": "eaid://f1_2025_vehicle_package/shared/ao/materials/blobshadowdecal.material",
+   "stat_id": 131
+  }
+ },
+ "vehicle": {
+  "redbull": {
+   "label": "cs22_redbull",
+   "donor": "game/redbull_2025",
+   "performance_tier": 0,
+   "tyre_wear_scale": 1.03,
+   "stat_id": 570,
+   "package": "swofty.classic-seasons-2022/cs_2022_redbull",
+   "ai": {
+    "asset_filename": "mclaren"
+   },
+   "engine_sound": "swofty.classic-seasons-2022/honda",
+   "audio_switch": "F1_M_Red_bull",
+   "audio_from": "f1_m_red_bull"
+  },
+  "ferrari": {
+   "label": "cs22_ferrari",
+   "donor": "game/ferrari_2025",
+   "performance_tier": 0,
+   "tyre_wear_scale": 1.04,
+   "stat_id": 571,
+   "package": "swofty.classic-seasons-2022/cs_2022_ferrari",
+   "ai": {
+    "asset_filename": "redbull"
+   },
+   "engine_sound": "swofty.classic-seasons-2022/ferrari",
+   "audio_switch": "F1_M_Ferrari",
+   "audio_from": "f1_m_ferrari"
+  },
+  "mercedes": {
+   "label": "cs22_mercedes",
+   "donor": "game/mercedes_2025",
+   "performance_tier": 0,
+   "tyre_wear_scale": 1.02,
+   "stat_id": 572,
+   "package": "swofty.classic-seasons-2022/cs_2022_mercedes",
+   "ai": {
+    "asset_filename": "ferrari"
+   },
+   "engine_sound": "swofty.classic-seasons-2022/mercedes",
+   "audio_switch": "F1_M_Mercedes",
+   "audio_from": "f1_m_mercedes"
+  },
+  "lotus": {
+   "label": "cs22_lotus",
+   "donor": "game/lotus_2025",
+   "performance_tier": 0,
+   "tyre_wear_scale": 1.01,
+   "stat_id": 573,
+   "package": "swofty.classic-seasons-2022/cs_2022_lotus",
+   "ai": {
+    "asset_filename": "mercedes"
+   },
+   "engine_sound": "swofty.classic-seasons-2022/renault",
+   "audio_switch": "F1_M_Alpine",
+   "audio_from": "f1_m_alpine"
+  },
+  "mclaren": {
+   "label": "cs22_mclaren",
+   "donor": "game/mclaren_2025",
+   "performance_tier": 1,
+   "tyre_wear_scale": 1.0,
+   "stat_id": 574,
+   "package": "swofty.classic-seasons-2022/cs_2022_mclaren",
+   "ai": {
+    "asset_filename": "haas"
+   },
+   "engine_sound": "swofty.classic-seasons-2022/mercedes",
+   "audio_switch": "F1_M_Mclaren",
+   "audio_from": "f1_m_mclaren"
+  },
+  "sauber": {
+   "label": "cs22_sauber",
+   "donor": "game/sauber_2025",
+   "performance_tier": 1,
+   "tyre_wear_scale": 0.98,
+   "stat_id": 575,
+   "package": "swofty.classic-seasons-2022/cs_2022_sauber",
+   "ai": {
+    "asset_filename": "force_india"
+   },
+   "engine_sound": "swofty.classic-seasons-2022/ferrari",
+   "audio_switch": "F1_M_Sauber",
+   "audio_from": "f1_m_sauber"
+  },
+  "force_india": {
+   "label": "cs22_force_india",
+   "donor": "game/force_india_2025",
+   "performance_tier": 2,
+   "tyre_wear_scale": 0.96,
+   "stat_id": 576,
+   "package": "swofty.classic-seasons-2022/cs_2022_force_india",
+   "ai": {
+    "asset_filename": "lotus"
+   },
+   "engine_sound": "swofty.classic-seasons-2022/mercedes",
+   "audio_switch": "F1_M_Aston_martin",
+   "audio_from": "f1_m_aston_martin"
+  },
+  "haas": {
+   "label": "cs22_haas",
+   "donor": "game/haas_2025",
+   "performance_tier": 2,
+   "tyre_wear_scale": 0.97,
+   "stat_id": 577,
+   "package": "swofty.classic-seasons-2022/cs_2022_haas",
+   "ai": {
+    "asset_filename": "sauber"
+   },
+   "engine_sound": "swofty.classic-seasons-2022/ferrari",
+   "audio_switch": "F1_M_Haas",
+   "audio_from": "f1_m_haas"
+  },
+  "toro_rosso": {
+   "label": "cs22_toro_rosso",
+   "donor": "game/toro_rosso_2025",
+   "performance_tier": 1,
+   "tyre_wear_scale": 0.99,
+   "stat_id": 578,
+   "package": "swofty.classic-seasons-2022/cs_2022_toro_rosso",
+   "ai": {
+    "asset_filename": "williams"
+   },
+   "engine_sound": "swofty.classic-seasons-2022/honda",
+   "audio_switch": "F1_M_Rb",
+   "audio_from": "f1_m_rb"
+  },
+  "williams": {
+   "label": "cs22_williams",
+   "donor": "game/williams_2025",
+   "performance_tier": 2,
+   "tyre_wear_scale": 0.95,
+   "stat_id": 579,
+   "package": "swofty.classic-seasons-2022/cs_2022_williams",
+   "ai": {
+    "asset_filename": "toro_rosso"
+   },
+   "engine_sound": "swofty.classic-seasons-2022/mercedes",
+   "audio_switch": "F1_M_Williams",
+   "audio_from": "f1_m_williams"
+  }
+ },
+ "content.package": {
+  "f1_2022": {
+   "title": "lng_cs_f1_2022",
+   "entrant_list": "cs_f1_2022",
+   "season": 2022,
+   "teams": [
+    {
+     "key": "redbull",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2022/redbull",
+     "drivers": [
+      {
+       "driver": "game/max_verstappen",
+       "number": 1,
+       "look": null
+      },
+      {
+       "driver": "game/sergio_perez",
+       "number": 11,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "ferrari",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2022/ferrari",
+     "drivers": [
+      {
+       "driver": "game/charles_leclerc",
+       "number": 16,
+       "look": null
+      },
+      {
+       "driver": "game/carlos_sainz-jr",
+       "number": 55,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "mercedes",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2022/mercedes",
+     "drivers": [
+      {
+       "driver": "game/lewis_hamilton",
+       "number": 44,
+       "look": null
+      },
+      {
+       "driver": "game/george_russell",
+       "number": 63,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "lotus",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2022/lotus",
+     "drivers": [
+      {
+       "driver": "game/fernando_alonso",
+       "number": 14,
+       "look": null
+      },
+      {
+       "driver": "game/esteban_ocon",
+       "number": 31,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "mclaren",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2022/mclaren",
+     "drivers": [
+      {
+       "driver": "game/lando_norris",
+       "number": 4,
+       "look": null
+      },
+      {
+       "driver": "game/daniel_ricciardo",
+       "number": 3,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "sauber",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2022/sauber",
+     "drivers": [
+      {
+       "driver": "game/valtteri_bottas",
+       "number": 77,
+       "look": null
+      },
+      {
+       "driver": "game/guanyu_zhou",
+       "number": 24,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "force_india",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2022/force_india",
+     "drivers": [
+      {
+       "driver": "game/sebastian_vettel",
+       "number": 5,
+       "look": null
+      },
+      {
+       "driver": "game/lance_stroll",
+       "number": 18,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "haas",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2022/haas",
+     "drivers": [
+      {
+       "driver": "game/kevin_magnussen",
+       "number": 20,
+       "look": null
+      },
+      {
+       "driver": "game/mick_schumacher",
+       "number": 47,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "toro_rosso",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2022/toro_rosso",
+     "drivers": [
+      {
+       "driver": "game/pierre_gasly",
+       "number": 10,
+       "look": null
+      },
+      {
+       "driver": "game/yuki_tsunoda",
+       "number": 22,
+       "look": null
+      }
+     ]
+    },
+    {
+     "key": "williams",
+     "team": null,
+     "vehicle": "swofty.classic-seasons-2022/williams",
+     "drivers": [
+      {
+       "driver": "game/alex_albon",
+       "number": 23,
+       "look": null
+      },
+      {
+       "driver": "game/nicholas_latifi",
+       "number": 6,
+       "look": null
+      }
+     ]
+    }
+   ],
+   "stat_id": 111,
+   "database": {
+    "entrant_list": "cs_f1_2022",
+    "scenario_stat_id": 21,
+    "entrant_list_from": "f1_2025",
+    "entrant_list_set": {
+     "leaderboard": "classic",
+     "previous_season_driver_standings": ""
+    },
+    "standings": "cs_f1_teams_2022",
+    "standings_from": "f1_teams_2024",
+    "entrant_prefix": "cs2022-",
+    "looks": {
+     "redbull/max_verstappen": "2022-cs_redbull_max_verstappen",
+     "redbull/sergio_perez": "2022-cs_redbull_sergio_perez",
+     "ferrari/charles_leclerc": "2022-cs_ferrari_charles_leclerc",
+     "ferrari/carlos_sainz-jr": "2022-cs_ferrari_carlos_sainz-jr",
+     "mercedes/lewis_hamilton": "2022-cs_mercedes_lewis_hamilton",
+     "mercedes/george_russell": "2022-cs_mercedes_george_russell",
+     "lotus/fernando_alonso": "2022-cs_lotus_fernando_alonso",
+     "lotus/esteban_ocon": "2022-cs_lotus_esteban_ocon",
+     "mclaren/lando_norris": "2022-cs_mclaren_lando_norris",
+     "mclaren/daniel_ricciardo": "2022-cs_mclaren_daniel_ricciardo",
+     "sauber/valtteri_bottas": "2022-cs_sauber_valtteri_bottas",
+     "sauber/guanyu_zhou": "2022-cs_sauber_guanyu_zhou",
+     "force_india/sebastian_vettel": "2022-cs_force_india_sebastian_vettel",
+     "force_india/lance_stroll": "2022-cs_force_india_lance_stroll",
+     "haas/kevin_magnussen": "2022-cs_haas_kevin_magnussen",
+     "haas/mick_schumacher": "2022-cs_haas_mick_schumacher",
+     "toro_rosso/pierre_gasly": "2022-cs_toro_rosso_pierre_gasly",
+     "toro_rosso/yuki_tsunoda": "2022-cs_toro_rosso_yuki_tsunoda",
+     "williams/alex_albon": "2022-cs_williams_alex_albon",
+     "williams/nicholas_latifi": "2022-cs_williams_nicholas_latifi"
+    },
+    "content_sets": [
+     "2025",
+     "2026"
+    ]
+   }
+  }
+ },
+ "era.box": {
+  "f1_2022": {
+   "package": "swofty.classic-seasons-2022/f1_2022",
+   "image": "#overrides.home_screen.tiles_solo_6x6[cs_f1_2022]",
+   "order": 2022
+  }
+ }
+}

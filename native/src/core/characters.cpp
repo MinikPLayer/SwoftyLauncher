@@ -1,4 +1,5 @@
 #include "career_ui.hpp"
+#include "registry/older.hpp"
 
 #include <atomic>
 #include <mutex>
@@ -54,16 +55,19 @@ using SetRtpc = void(void *emitter, const char *name, float value, int a, float 
 struct Swap {
     std::string group, character, replacement;
     HMODULE owner;
+    std::string addon;
 };
 
 struct Mute {
     std::string group, speaker;
     HMODULE owner;
+    std::string addon;
 };
 
 struct Text {
     std::string group, language, key, text;
     HMODULE owner;
+    std::string addon;
 };
 
 BuildRef *orig_build;
@@ -71,13 +75,59 @@ ListLoaded *orig_loaded;
 PostLine *orig_post;
 
 std::mutex lock;
-std::vector<Swap> swaps;
-std::vector<Mute> mutes;
-std::vector<Text> texts;
+std::vector<Swap> swaps, eswaps;
+std::vector<Mute> mutes, emutes;
+std::vector<Text> texts, etexts;
 std::string active;
 std::vector<std::pair<std::string, std::string>> applied;
 std::set<void *> muted_emitters;
 std::atomic<const void *> vector_seen{nullptr};
+
+namespace older = swofty_core::registry::older;
+
+void rebuild_effective()
+{
+    auto &st = runtime::older_store();
+    std::vector<Swap> sw;
+    std::vector<Mute> mu;
+    std::vector<Text> tx;
+    for (auto &id : older::in_load_order(st, older::CHARACTER)) {
+        older::CharacterState c = older::character_from(older::effective(st, older::CHARACTER, id));
+        if (c.group.empty())
+            continue;
+        std::string addon = older::addon_of(id);
+        for (auto &[character, with] : c.swaps)
+            sw.push_back({c.group, character, with, nullptr, addon});
+        for (auto &m : c.mutes)
+            mu.push_back({c.group, m, nullptr, addon});
+        for (auto &[language, kt] : c.strings)
+            tx.push_back({c.group, language, kt.first, kt.second, nullptr, addon});
+    }
+    eswaps = std::move(sw);
+    emutes = std::move(mu);
+    etexts = std::move(tx);
+}
+
+void store_record(const std::string &addon, const std::string &group)
+{
+    older::CharacterState c;
+    c.group = group;
+    for (auto &w : swaps)
+        if (w.addon == addon && w.group == group)
+            c.swaps.push_back({w.character, w.replacement});
+    for (auto &m : mutes)
+        if (m.addon == addon && m.group == group)
+            c.mutes.push_back(m.speaker);
+    for (auto &t : texts)
+        if (t.addon == addon && t.group == group)
+            c.strings.push_back({t.language, {t.key, t.text}});
+    auto &st = runtime::older_store();
+    if (c.swaps.empty() && c.mutes.empty() && c.strings.empty())
+        older::drop(st, addon, older::CHARACTER, group);
+    else
+        older::put(st, addon, older::CHARACTER, group, older::character_record(c), "characters");
+    rebuild_effective();
+}
 std::atomic<bool> any_swap{false}, any_mute{false};
 std::atomic<uint32_t> builds_logged, stand_ins, missing_logged, muted_lines, shared_logged;
 struct Part {
@@ -125,7 +175,7 @@ std::string replacement_for(const std::string &character)
     std::lock_guard<std::mutex> g(lock);
     if (active.empty())
         return {};
-    for (auto it = swaps.rbegin(); it != swaps.rend(); ++it)
+    for (auto it = eswaps.rbegin(); it != eswaps.rend(); ++it)
         if (it->group == active && it->character == character)
             return it->replacement;
     return {};
@@ -136,7 +186,7 @@ bool speaker_muted(const char *speaker)
     std::lock_guard<std::mutex> g(lock);
     if (active.empty() || !speaker)
         return false;
-    for (auto &m : mutes)
+    for (auto &m : emutes)
         if (m.group == active && m.speaker == speaker)
             return true;
     return false;
@@ -232,7 +282,7 @@ void apply_strings(const std::string &group)
     {
         std::lock_guard<std::mutex> g(lock);
         drop.swap(applied);
-        for (auto &t : texts)
+        for (auto &t : etexts)
             if (t.group == group)
                 set.push_back(t);
         if (lg && lg->available())
@@ -277,7 +327,7 @@ bool rebuild(const char *why)
 
 bool group_used(const std::string &group)
 {
-    for (auto &s : swaps)
+    for (auto &s : eswaps)
         if (s.group == group)
             return true;
     return false;
@@ -290,7 +340,9 @@ void set_active(std::string now, const char *why)
         std::lock_guard<std::mutex> g(lock);
         if (now == active)
             return;
-        refs = group_used(active) || group_used(now);
+        bool before = group_used(active);
+        rebuild_effective();
+        refs = before || group_used(now);
         active = now;
         muted_emitters.clear();
     }
@@ -360,6 +412,7 @@ int api_swap(const char *group, const char *character, const char *replacement)
     if (!cu::valid_name(group) || !cu::valid_name(character) || (replacement && !cu::valid_name(replacement)))
         return SWOFTY_ASSET_INVALID;
     HMODULE owner = cu::caller(__builtin_return_address(0));
+    std::string addon = runtime::older_addon(__builtin_return_address(0));
     bool now;
     {
         std::lock_guard<std::mutex> g(lock);
@@ -369,7 +422,8 @@ int api_swap(const char *group, const char *character, const char *replacement)
                 swofty::log("[characters] '%s' in '%s' is also swapped to '%s' by another addon; the last one wins",
                             character, group, s.replacement.c_str());
         if (replacement)
-            swaps.push_back({group, character, replacement, owner});
+            swaps.push_back({group, character, replacement, owner, addon});
+        store_record(addon, group);
         now = active == group;
     }
     changed();
@@ -385,11 +439,13 @@ int api_mute(const char *group, const char *speaker, int on)
     if (!cu::valid_name(group) || !cu::valid_name(speaker))
         return SWOFTY_ASSET_INVALID;
     HMODULE owner = cu::caller(__builtin_return_address(0));
+    std::string addon = runtime::older_addon(__builtin_return_address(0));
     {
         std::lock_guard<std::mutex> g(lock);
         std::erase_if(mutes, [&](const Mute &m) { return m.group == group && m.speaker == speaker && m.owner == owner; });
         if (on)
-            mutes.push_back({group, speaker, owner});
+            mutes.push_back({group, speaker, owner, addon});
+        store_record(addon, group);
     }
     changed();
     subscribe();
@@ -398,13 +454,13 @@ int api_mute(const char *group, const char *speaker, int on)
 }
 
 bool add_text(const std::string &group, const std::string &language, const std::string &key, const char *text,
-              HMODULE owner)
+              HMODULE owner, const std::string &addon)
 {
     std::erase_if(texts, [&](const Text &t) {
         return t.group == group && t.language == language && t.key == key && t.owner == owner;
     });
     if (text)
-        texts.push_back({group, language, key, text, owner});
+        texts.push_back({group, language, key, text, owner, addon});
     return active == group;
 }
 
@@ -418,10 +474,12 @@ int api_string_set(const char *group, const char *language, const char *key, con
     if (!cu::valid_name(group) || !cu::valid_name(key))
         return SWOFTY_ASSET_INVALID;
     HMODULE owner = cu::caller(__builtin_return_address(0));
+    std::string addon = runtime::older_addon(__builtin_return_address(0));
     bool now;
     {
         std::lock_guard<std::mutex> g(lock);
-        now = add_text(group, language_of(language), key, text, owner);
+        now = add_text(group, language_of(language), key, text, owner, addon);
+        store_record(addon, group);
     }
     subscribe();
     if (now)
@@ -440,6 +498,7 @@ int api_strings_json(const char *group, const char *text, size_t len)
         if (keys.type != json::Value::Obj)
             return SWOFTY_ASSET_INVALID;
     HMODULE owner = cu::caller(__builtin_return_address(0));
+    std::string addon = runtime::older_addon(__builtin_return_address(0));
     size_t n = 0;
     bool now = false;
     {
@@ -447,9 +506,10 @@ int api_strings_json(const char *group, const char *text, size_t len)
         for (auto &[language, keys] : doc.o)
             for (auto &[key, value] : keys.o)
                 if (value.type == json::Value::Str && cu::valid_name(key.c_str())) {
-                    now = add_text(group, language_of(language.c_str()), key, value.s.c_str(), owner);
+                    now = add_text(group, language_of(language.c_str()), key, value.s.c_str(), owner, addon);
                     n++;
                 }
+        store_record(addon, group);
     }
     subscribe();
     swofty::log("[characters] %zu string(s) in %zu language(s) for careers of '%s'", n, doc.o.size(), group);
@@ -463,12 +523,14 @@ int api_clear(const char *group)
     if (!cu::valid_name(group))
         return SWOFTY_ASSET_INVALID;
     HMODULE owner = cu::caller(__builtin_return_address(0));
+    std::string addon = runtime::older_addon(__builtin_return_address(0));
     bool now;
     {
         std::lock_guard<std::mutex> g(lock);
         std::erase_if(swaps, [&](const Swap &s) { return s.group == group && s.owner == owner; });
         std::erase_if(mutes, [&](const Mute &m) { return m.group == group && m.owner == owner; });
         std::erase_if(texts, [&](const Text &t) { return t.group == group && t.owner == owner; });
+        store_record(addon, group);
         now = active == group;
     }
     changed();

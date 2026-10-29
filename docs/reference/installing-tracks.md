@@ -5,9 +5,36 @@ description: What activating a community track changes in the archives, the game
 
 # How tracks are installed
 
-If you're contributing track support, here's what happens when a track is activated. For playing with tracks, see [Mods and tracks](/using/mods#tracks).
+A track is installed by a `track.add` operation: at each build, activation clones a base track's database rows, installs the track's archive and adds its menu entries.
 
-Tracks live as [mods](/reference/mods/tracks) in the Team Simplified library. Its build hook works through enabled track packages in profile order, emitting a `track.add` [operation](/reference/data/operations) for each, with the source `library/<id>/track` in Team Simplified's `addon-data` folder. A data addon can list `track.add` in an `assets` file too ([A track with its own name](/reference/data/track-names)). Both `swofty build` and `swofty apply` activate every `track.add` before the other database ops, and those ops can't remove the records activation adds; see [Removing stock records](/reference/ops/database#removing-stock-records). You'll find the code in `packages/core/src/activation/`.
+## A track activation in full
+
+```json [ops/track.json]
+{
+  "schema_version": 1,
+  "ops": [
+    { "op": "track.add", "source": "track" }
+  ]
+}
+```
+
+`source` is a folder in the addon that holds an unpacked [track package](/reference/mods/tracks): `manifest.json`, the track's `.erp`, `mipmaps/` and `ui/`. The Simplified Importer writes this file into every track addon it makes, `mod.<code>`. A data addon can list `track.add` in an `assets` file too ([A track with its own name](/reference/data/track-names)).
+
+```sh
+swofty build
+```
+
+```text
+okayama: track data: okayama cloned from melbourne in 19 dataset(s): f1, f2, classic, f1_2023, sprint_f1_2023, f1_2024, sprint_f1_2024, f2_2023, f1_2025, sprint_f1_2025, f2_2024, multiclass, sprint_multiclass, f2_2025_sprint, f2_2025, f1_2026, sprint_f1_2026, f2_2026_sprint, f2_2026
+runtime: swofty/assets.json with 77 asset group(s), 0 resource(s), 0 database edit(s), 0 language table(s), 0 overlay file(s)
+```
+
+- Both `swofty build` and `swofty apply` activate every `track.add`, in load order, before the other database ops. Those ops can't remove the records activation adds; see [Removing stock records](/reference/ops/database#removing-stock-records).
+- Two `track.add` ops with one track code fail the build with `track okayama is added twice`.
+- Mods in the importer's library that haven't converted yet get a `track.add` from the importer's build hook instead, with the source `library/<id>/track` in Team Simplified's `addon-data` folder.
+- The code is in `packages/core/src/activation/`.
+
+For playing with tracks, see [Simplified Importer](/using/mods#tracks).
 
 ## The track archive
 
@@ -23,7 +50,7 @@ How the build handles this depends on the in-game core. When its `features.json`
 
 You can enable any number of tracks this way.
 
-Otherwise, the build puts the package's whole `<code>.erp` into an existing invitational event slot, `2025_asset_groups/ui_package/texture_arrays/invitational_events/event_images/invitational_image_<n>.erp`, alongside the slot's own pictures. Your profile's tracks take `invitational_image_4`, `_10`, `_13` to `_18` in order. That leaves room for at most eight enabled tracks.
+Otherwise, the build puts the package's whole `<code>.erp` into an existing invitational event slot, `2025_asset_groups/ui_package/texture_arrays/invitational_events/event_images/invitational_image_<n>.erp`, alongside the slot's own pictures. Your profile's tracks take `invitational_image_4`, `_10`, `_13` to `_18` in order. That leaves room for at most eight enabled tracks; a ninth fails the build with `at most 8 tracks can be enabled at once`.
 
 The build also fills gaps in the archive:
 
@@ -34,14 +61,12 @@ The build also fills gaps in the archive:
 
 ## The database
 
-| Table | Change |
-|---|---|
-| `tracks.Track_<n>` | For a new code, `copy_slot` clones the slot track's row with a new `statId`. If the code already has a row (`bahrain24`), it keeps it. Your `track_overrides` apply here. |
-| `tracks.track_resource.TrackResource_<n>` | The track's resource row is cloned as `swofty_<code>`. On the natural route, its group fields use the 2019 template values with `[FILENAME]` = `<code>`: `iblAssetGroupsRoot` is `asset_groups/environment_package/tracks/<code>/probes/` and `iblKey` is `key_2019.assetgroup`. `trackMapAssetGroup` names the main group. On the slot route, every asset group points to the track's slot. The track row's `track_resource` names the cloned row. |
-| Per-track tables: per-race DNFs, pit lane splines and slide settings, practice programmes (2025 and 2026), tyre wear and tyre wear scales, specialist objectives, track trivia, replay hero shots | If your code has no row, it gets a clone of the slot track's row, or the base track's when the slot has none. A new code always needs the per-race DNF row: the game reads it without checking that it exists. |
-| `<datasets>.TrackDataSet_<i>.TrackData_<j>` | `copy_from_track`, or `copy_slot` when the package has no `copy_from_track`, clones the base track's row and its sub-tables in every dataset that has it; for a new code, the copy is the dataset's last row. The copy's `_metadata_`, `track` and `TrackNameData_0.file_name` become the code. `track_data.game_setup.TrackDataSet[_metadata_=f1_2026].TrackData[_metadata_=<code>]` selects the copy in the `f1_2026` dataset. Your `overrides` apply here, limited to their `datasets`. |
-| Content sets' `available_tracks` | The code is added wherever the base track is listed, putting your track in the Grand Prix track list. |
-| `track_data.sorted_track_order` | Gets a `TrackRef` row for the code. |
+- **`tracks.Track_<n>`**: for a new code, `copy_slot` clones the slot track's row with a new `statId`. If the code already has a row (`bahrain24`), it keeps it. Your `track_overrides` apply here.
+- **`tracks.track_resource.TrackResource_<n>`**: the track's resource row is cloned as `swofty_<code>`. On the natural route, its group fields use the 2019 template values with `[FILENAME]` = `<code>`: `iblAssetGroupsRoot` is `asset_groups/environment_package/tracks/<code>/probes/` and `iblKey` is `key_2019.assetgroup`. `trackMapAssetGroup` names the main group. On the slot route, every asset group points to the track's slot. The track row's `track_resource` names the cloned row.
+- **Per-track tables** (per-race DNFs, pit lane splines and slide settings, practice programmes for 2025 and 2026, tyre wear and tyre wear scales, specialist objectives, track trivia, replay hero shots): if your code has no row, it gets a clone of the slot track's row, or the base track's when the slot has none. A new code always needs the per-race DNF row: the game reads it without checking that it exists.
+- **`<datasets>.TrackDataSet_<i>.TrackData_<j>`**: `copy_from_track`, or `copy_slot` when the package has no `copy_from_track`, clones the base track's row and its sub-tables in every dataset that has it; for a new code, the copy is the dataset's last row. The copy's `_metadata_`, `track` and `TrackNameData_0.file_name` become the code. `track_data.game_setup.TrackDataSet[_metadata_=f1_2026].TrackData[_metadata_=<code>]` selects the copy in the `f1_2026` dataset. Your `overrides` apply here, limited to their `datasets`.
+- **Content sets' `available_tracks`**: the code is added wherever the base track is listed, putting your track in the Grand Prix track list.
+- **`track_data.sorted_track_order`**: gets a `TrackRef` row for the code.
 
 Each clone copies all source-row keys listed in `track_tables.json`, plus any keys named by your manifest's overrides. The table's `_<row>_instancecount_` grows by one.
 
@@ -65,7 +90,7 @@ An addon that changes a 2026 handling file gets the same entry in its copy, and 
 
 ```sh
 swofty build
-python3 tools/map_check.py <overlay folder> --game <game folder>
+python3 tools/map_check.py <overlay folder> --game <game folder> --maps "$DATA/addons"
 ```
 
 To check for missing keys too, put `F1_25.exe` in the game folder (or use `--exe`) and install `numpy`, `pefile` and `capstone`. Then `map_check.py` also checks that your track's row has every key the game reads on the source row: the slot track's Track row, its track resource, per-track rows and TrackData rows.

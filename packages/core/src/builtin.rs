@@ -22,7 +22,36 @@ pub fn core_db_ops() -> OpFile {
     OpFile::from_value(doc, FileKind::Database).expect("the built-in database ops are valid")
 }
 
+thread_local! {
+    static PINNED: std::cell::RefCell<Option<Option<PathBuf>>> = const { std::cell::RefCell::new(None) };
+}
+
+pub struct LoaderPin(Option<Option<PathBuf>>);
+
+impl LoaderPin {
+    pub fn none() -> Self {
+        Self::set(None)
+    }
+
+    pub fn to(dir: PathBuf) -> Self {
+        Self::set(Some(dir))
+    }
+
+    fn set(dir: Option<PathBuf>) -> Self {
+        Self(PINNED.with(|p| p.replace(Some(dir))))
+    }
+}
+
+impl Drop for LoaderPin {
+    fn drop(&mut self) {
+        PINNED.with(|p| *p.borrow_mut() = self.0.take());
+    }
+}
+
 pub fn loader_dir() -> Option<PathBuf> {
+    if let Some(pinned) = PINNED.with(|p| p.borrow().clone()) {
+        return pinned;
+    }
     let bin = std::env::current_exe()
         .ok()
         .and_then(|e| Some(e.parent()?.to_path_buf()));

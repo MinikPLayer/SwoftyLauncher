@@ -12,6 +12,7 @@ flate2.workspace = true
 md-5.workspace = true
 png.workspace = true
 rars.workspace = true
+regex.workspace = true
 ring.workspace = true
 rustls.workspace = true
 semver.workspace = true

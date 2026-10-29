@@ -1,0 +1,9 @@
+{
+  "hub.tab": {
+    "upper": {
+      "$comment": "a tab name is lower case letters, digits and _",
+      "name": "Progressive",
+      "data_group": "f1_career_progressive"
+    }
+  }
+}

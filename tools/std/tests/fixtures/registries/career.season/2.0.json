@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "career.season 2.0",
+  "x-registry": "career.season",
+  "x-version": "2.0",
+  "x-applies": "read",
+  "x-snapshot": true,
+  "x-snapshot-budget": 65536,
+  "type": "object",
+  "required": [
+    "data_group",
+    "year",
+    "teams"
+  ],
+  "properties": {
+    "data_group": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "year": {
+      "type": "integer",
+      "minimum": 1950,
+      "maximum": 2100
+    },
+    "teams": {
+      "type": "array",
+      "x-key": "slot",
+      "items": {
+        "$ref": "#/$defs/SeasonTeam"
+      }
+    },
+    "changes": {
+      "type": "array",
+      "x-key": [
+        "round",
+        "slot",
+        "seat"
+      ],
+      "items": {
+        "$ref": "#/$defs/SeasonChange"
+      }
+    }
+  },
+  "$defs": {
+    "SeasonTeam": {
+      "type": "object",
+      "required": [
+        "slot",
+        "seats"
+      ],
+      "properties": {
+        "slot": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 11
+        },
+        "team": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "team.identity",
+          "x-missing": {
+            "default": "required",
+            "allow": [
+              "required",
+              "optional"
+            ]
+          }
+        },
+        "seats": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/Seat"
+          }
+        },
+        "reserve": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "driver.identity",
+          "description": "since 1.1"
+        }
+      }
+    },
+    "SeasonChange": {
+      "type": "object",
+      "required": [
+        "round",
+        "slot",
+        "seat",
+        "kind"
+      ],
+      "properties": {
+        "round": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "slot": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 11
+        },
+        "seat": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "out": {
+          "type": "string",
+          "x-ref": "driver.identity"
+        },
+        "in": {
+          "type": "string",
+          "x-ref": "driver.identity",
+          "x-missing": {
+            "default": "required",
+            "allow": [
+              "required",
+              "fallback"
+            ]
+          }
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "swap",
+            "stand_in",
+            "promote"
+          ]
+        }
+      }
+    },
+    "Seat": {
+      "type": "object",
+      "required": [
+        "driver"
+      ],
+      "properties": {
+        "driver": {
+          "type": "string",
+          "x-ref": "driver.identity"
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 99
+        }
+      }
+    }
+  },
+  "x-adapter": "career.season@1"
+}

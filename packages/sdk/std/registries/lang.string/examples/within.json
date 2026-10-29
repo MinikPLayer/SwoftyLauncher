@@ -1,0 +1,13 @@
+{
+  "lang.string": {
+    "lng_progressive_hub": {
+      "text": {
+        "*": "History",
+        "fra": "Historique"
+      },
+      "within": {
+        "data_group": "f1_career_progressive"
+      }
+    }
+  }
+}

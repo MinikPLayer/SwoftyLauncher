@@ -1,0 +1,6 @@
+{
+  "data_group": "f1_career_progressive",
+  "year": 2017,
+  "teams": [ { "slot": 4, "team": "game/mclaren", "seats": [], "reserve": "game/jenson_button" } ],
+  "changes": [ { "round": 3, "slot": 4, "seat": 1, "in": "game/jenson_button", "kind": "promote" } ]
+}

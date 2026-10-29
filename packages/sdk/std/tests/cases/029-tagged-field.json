@@ -1,0 +1,167 @@
+{
+  "name": "a field-tag selector matches records whose reference is in the tag",
+  "rule": "tagged(&T::field, tag) matches every record whose Ref field (read from its base value) names a member of the tag of the referenced registry, variants of members included (layers.md#selectors)",
+  "registries": {
+    "vehicle": {
+      "applies": "boot"
+    },
+    "ai.vehicle_config": {
+      "applies": "session",
+      "refs": {
+        "/vehicle": "vehicle"
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "vehicle",
+      "key": "ferrari_2025",
+      "value": {
+        "label": "ferrari_2025",
+        "performance_tier": 0,
+        "tyre_wear_scale": 1.0
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "vehicle",
+      "key": "safety_car",
+      "value": {
+        "label": "safety_car",
+        "performance_tier": 0,
+        "tyre_wear_scale": 1.0
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "ai.vehicle_config",
+      "key": "ferrari_2025",
+      "value": {
+        "vehicle": "game/ferrari_2025",
+        "racecraft": {
+          "overtake_aggression": 0.5
+        }
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "ai.vehicle_config",
+      "key": "safety_car",
+      "value": {
+        "vehicle": "game/safety_car",
+        "racecraft": {
+          "overtake_aggression": 0.5
+        }
+      }
+    }
+  ],
+  "tags": {
+    "vehicle": {
+      "c/f1_cars": [
+        "game/ferrari_2025"
+      ]
+    }
+  },
+  "addons": [
+    {
+      "id": "swofty.classic-seasons-2017",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "vehicle",
+          "key": "ferrari",
+          "base": "game/ferrari_2025",
+          "patch": {
+            "label": "cs17_ferrari"
+          }
+        },
+        {
+          "op": "add",
+          "registry": "ai.vehicle_config",
+          "key": "ferrari",
+          "value": {
+            "vehicle": "swofty.classic-seasons-2017/ferrari",
+            "racecraft": {
+              "overtake_aggression": 0.6
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "kizi.ai-tweaks",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "ai.vehicle_config",
+          "select": {
+            "tag": {
+              "vehicle": "c/f1_cars"
+            }
+          },
+          "patch": {
+            "racecraft": {
+              "overtake_aggression": 0.85
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "ai.vehicle_config": {
+          "game/ferrari_2025": {
+            "status": "ok",
+            "value": {
+              "vehicle": "game/ferrari_2025",
+              "racecraft": {
+                "overtake_aggression": 0.85
+              }
+            },
+            "origins": {
+              "/racecraft/overtake_aggression": "kizi.ai-tweaks"
+            }
+          },
+          "game/safety_car": {
+            "status": "ok",
+            "value": {
+              "vehicle": "game/safety_car",
+              "racecraft": {
+                "overtake_aggression": 0.5
+              }
+            },
+            "origins": {}
+          },
+          "swofty.classic-seasons-2017/ferrari": {
+            "status": "ok",
+            "value": {
+              "vehicle": "swofty.classic-seasons-2017/ferrari",
+              "racecraft": {
+                "overtake_aggression": 0.85
+              }
+            },
+            "origins": {
+              "/racecraft/overtake_aggression": "kizi.ai-tweaks"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

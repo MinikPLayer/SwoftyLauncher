@@ -1,0 +1,10 @@
+{
+  "career.driver_ratings": {
+    "pace_over_100": {
+      "$comment": "ratings are 0-100",
+      "season": "swofty.progressive/2017",
+      "driver": "game/lewis_hamilton",
+      "pace": 101
+    }
+  }
+}

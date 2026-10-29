@@ -4,11 +4,16 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <functional>
 #include <string>
 #include <vector>
 
 #include "json.hpp"
 #include "swofty_api.h"
+
+namespace swofty_core::registry {
+class Store;
+}
 
 namespace runtime {
 
@@ -37,6 +42,7 @@ const json::Value &config();
 const std::string &config_source();
 const std::wstring &game_root();
 const std::wstring &swofty_root();
+const std::wstring &state_root();
 bool enabled(const char *feature, const char *what);
 std::string load_stage();
 bool same_build();
@@ -128,16 +134,55 @@ void career_content_commit();
 void career_content_tick();
 void hub_tick();
 const SwoftyEra *era_table();
+const SwoftyRegistry *registry_table();
+int registry_write_reports();
+swofty_core::registry::Store &older_store();
+std::string older_addon(const void *from);
 std::vector<CoreMixins> era_mixins();
 void era_commit();
 std::vector<CoreMixins> car_category_mixins();
 void car_category_commit();
 std::vector<CoreMixins> save_splice_mixins();
 void save_splice_commit();
+// Test save sandbox (save_sandbox.cpp): only under `swofty test` with a run token.
+std::vector<CoreMixins> save_sandbox_mixins();
+void save_sandbox_commit();
+bool save_sandbox_test_mode();
+bool save_sandbox_armed();
+// FileWrite calls the sandbox has served: a save that reached the save device.
+uint32_t save_sandbox_writes();
+// The test run `swofty test` started the game for (SWOFTY_TEST_RUN, SWOFTY_TEST_TOKEN and run.json, read
+// once by save_sandbox.cpp, which ends the game when they disagree); null outside a test run.
+struct TestRun {
+    std::wstring dir;
+    std::string id, token;
+    bool sandbox = false;
+    int agent_v = 0;
+    std::vector<std::string> dlls;
+};
+const TestRun *test_run();
+// run.json still holds the token: false once `swofty test` has retired the run.
+bool test_run_live();
+// W4 career snapshots (native/src/core/snapshots/runtime.cpp): started once the save splice settles.
+void snapshots_start(bool splice_live);
+// career::report_season from caller (an addon id): SWOFTY_ASSET_OK, _LATE, _INVALID or SWOFTY_REFUSED.
+int snapshots_report_season(const std::string &caller, int year, int season_index);
+// The addon that registered the career content of data_group (and its save container name), or empty.
+std::string career_content_owner(const std::string &data_group, std::string *save_name = nullptr);
+// The save slot a career load selects (site_Game_SaveSlot_Selected), the career id committed when the
+// career tracker sees the career loaded (<mode>:<slot guid>, else the tracker's key), and that id for a
+// tracker key.
+void snapshots_slot_selected(uintptr_t manager, uint64_t slot_id, uint64_t slot_guid);
+std::string snapshots_career_loaded(const char *key, unsigned mode);
+std::string snapshots_career_id(const char *key);
 std::vector<CoreMixins> ers_newlap_mixins();
 void ers_newlap_commit();
 std::vector<CoreMixins> track_acclim_mixins();
 void track_acclim_commit();
+std::vector<CoreMixins> team_slots_mixins();
+void team_slots_commit();
+uint8_t *team_record_of(uint16_t stat);
+void team_record_inserted(std::function<void(uint16_t, uint8_t *)> fn);
 void hud_setup();
 void focus_setup();
 void hud_fatal();
@@ -155,10 +200,24 @@ bool netplay_popup(const char *id, void *fn, void *ctx);
 void netplay_home_vm(void *vm);
 void netplay_tick();
 void net_trace_setup();
+// The test agent (native/src/core/testagent/agent.cpp): armed only by `swofty test`'s run token.
+void testagent_setup();
+void testagent_tick();
+void testagent_fired(const std::string &id, bool hot);
+void testagent_screen(const char *name);
+void testagent_flow(const std::string &name, uint32_t to);
+void testagent_home_vm(void *vm);
+bool frame_capture_request(const std::wstring &path);
+int frame_capture_poll(std::string *why);
 int group_add(const json::Value &entry);
+void own_item(uint32_t key, const std::string &addon, const std::string &what);
 int db_add(const json::Value &entry);
+void db_older_edits(const std::function<void(uint64_t key, int tag, const std::string &text)> &fn);
 int lang_add(const json::Value &entry);
 int file_add(const json::Value &entry);
+std::string file_route_prefix();
+bool file_route(const std::string &game_path, const std::string *target, const std::string &source, std::string &why);
+bool file_route_target(const std::string &game_path, std::string &target);
 
 struct Robin {
     uint8_t *s;

@@ -5,7 +5,26 @@ description: Build an addon without touching the game, test it in game, read the
 
 # Packaging and publishing
 
-Once your addon has its operations, code and settings, build it, test it in game, then package it as a `.swoftyaddon` file to share. These steps are the same for data addons and code addons.
+A finished addon is built and tested in a profile, then zipped as a `.swoftyaddon` file and attached to a release. The steps are the same for data addons and code addons:
+
+```sh
+# 1. build: checks every operation, the game folder is untouched
+swofty addons install ./my-addon
+swofty addons enable yourname.my-addon
+swofty build
+
+# 2. test in game
+swofty run --apply
+
+# 3. read the logs
+swofty logs
+
+# 4. package: swofty.json at the zip root
+cd my-addon
+zip -r ../yourname.my-addon.swoftyaddon .
+
+# 5. publish: attach yourname.my-addon.swoftyaddon to a release
+```
 
 ## 1. Build {#build}
 
@@ -15,6 +34,13 @@ Install the addon folder, enable it in a modded profile, then build the profile.
 swofty addons install ./my-addon
 swofty addons enable yourname.my-addon
 swofty build
+```
+
+```text
+profile default: swofty.core -> … -> yourname.my-addon
+warning: …
+overlay 2ce84ff2c20476d4: $DATA/cache/overlay/default/2ce84ff2c20476d4
+  replace game_package/gamedatabases/gamedatabases.2025.bin
 ```
 
 `swofty build` applies the profile's operations and writes the result to `$DATA/cache/overlay/<profile>/<buildhash>/`. That folder holds `plan.json`, listing the game files the build replaces and adds with their sources, and the session's `swofty/settings.json`.
@@ -37,20 +63,28 @@ swofty run --apply
 
 ## 3. Read the logs {#logs}
 
-| Log | Contents |
-|---|---|
-| `<game>/swofty/loader.log` | The in-game loader, your engine plugin's `swofty::log` lines, the runtime asset steps (`[assets]`) and the game's own warnings |
-| `$DATA/sessions/<id>/` | One folder per session; `swofty logs` prints the latest summary |
-| `$DATA/cache/addons/<id>/helper.log` | Your launcher plugin's stderr |
+- **`<game>/swofty/loader.log`**: the in-game loader, your engine plugin's `swofty::log` lines, the runtime asset steps (`[assets]`) and the game's own warnings.
+- **`$DATA/sessions/<id>/`**: one folder per session. `swofty logs` prints the latest summary.
+- **`$DATA/cache/addons/<id>/helper.log`**: your launcher plugin's stderr.
+
+An engine plugin that loads and initialises writes these lines to `loader.log`:
+
+```text
+addon my_plugin.dll: loading …\swofty\addons\yourname.my-addon\native\my_plugin.dll
+addon my_plugin.dll: loaded at 00006fffea3e0000, calling SwoftyAddonInit (API v8)
+addon my_plugin.dll: SwoftyAddonInit returned 1 (ok)
+```
 
 ## 4. Package it {#package-it}
 
-A `.swoftyaddon` is a zip of your addon folder's contents. `swofty.json` has to sit at the zip root, not inside a subfolder, so change into the folder before zipping it:
+A `.swoftyaddon` is a zip of your addon folder's contents. Change into the folder before zipping it, so `swofty.json` sits at the zip root:
 
 ```sh
 cd my-addon
 zip -r ../yourname.my-addon.swoftyaddon .
 ```
+
+A `.swoftyaddon` whose only entry is one folder holding `swofty.json` installs too.
 
 Players drop the file on the launcher, or install and enable it from the command line:
 
@@ -59,7 +93,11 @@ swofty addons install yourname.my-addon.swoftyaddon
 swofty addons enable yourname.my-addon
 ```
 
-`swofty addons install` also takes a plain `.zip` with the same layout, or the folder itself. A `.swoftymod` file from an earlier version installs too.
+`swofty addons install` also takes a plain `.zip`, or the folder itself. A `.swoftymod` file from an earlier version installs too. A `.zip` that holds more than one addon installs from the launcher only:
+
+```text
+swofty: my-addons.zip holds 3 addons; drop it on the launcher to install them all
+```
 
 Before you zip:
 
@@ -75,6 +113,8 @@ Before you zip:
 2. Tell players which game build and season you tested on, and check that `compat.game_builds` and `compat.seasons` match.
 3. Credit every author whose files you include.
 4. Attach the `.swoftyaddon` to your release.
+
+To list the addon in the [Addon Browser](/using/addon-browser), publish the addons it [requires](./manifest#requires-conflicts-load-after) there first.
 
 ## Reference
 

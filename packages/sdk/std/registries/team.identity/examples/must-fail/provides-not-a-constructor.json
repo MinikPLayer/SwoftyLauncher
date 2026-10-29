@@ -1,0 +1,15 @@
+{
+  "team.identity": {
+    "provides_a_venue": {
+      "$comment": "provides lists constructor/ ids",
+      "provides": [
+        "venue/sochi"
+      ],
+      "names": {
+        "title": "lng_x",
+        "code": "MER"
+      },
+      "livery_name": "x"
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "hub.tab 1.0",
+  "x-registry": "hub.tab",
+  "x-version": "1.0",
+  "x-applies": "read",
+  "x-snapshot": false,
+  "description": "career::HubTab: a Team HQ laptop tab after STANDINGS with one page of the owning addon's options. The swofty.json hub_tab field provides one, under the addon's id and the tab's name.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "maxLength": 63,
+      "description": "the page template is swofty_hub_<name>"
+    },
+    "title": {
+      "type": "string",
+      "description": "the tab's title, shown in capitals"
+    },
+    "data_group": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$",
+      "maxLength": 63,
+      "description": "careers of this data group show the tab"
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z0-9_.-]+$"
+      },
+      "description": "option ids of the owning addon, one row each"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "hub.tab",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "name",
+    "data_group"
+  ],
+  "additionalProperties": true
+}

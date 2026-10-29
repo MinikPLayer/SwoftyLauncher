@@ -1,0 +1,9 @@
+{
+ "log": {"max_mb": 8, "on_full": "stop", "summary_every_s": 60},
+ "limits": {"max_events_total": 1000, "max_read": 64},
+ "hooks": [
+  {"id": "t121.register", "test": "T121", "sig": "car.register_vehicle_id", "regs": ["rax", "rdi"],
+   "fields": ["id=u8:rax", "res=u64:[rdi+0x9f48]", "asset=u64:[rdi+0x4a8]"],
+   "bt": 3, "max_per_sec": 64, "max_events": 500}
+ ]
+}

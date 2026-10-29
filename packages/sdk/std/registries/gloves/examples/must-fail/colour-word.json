@@ -1,0 +1,14 @@
+{
+  "gloves": {
+    "bad_colour": {
+      "$comment": "a colour is #RRGGBB or #AARRGGBB",
+      "archive": "kit/a_gloves.erp",
+      "colours": [
+        "white",
+        "#000000",
+        "#FF0000",
+        "#00FF00"
+      ]
+    }
+  }
+}

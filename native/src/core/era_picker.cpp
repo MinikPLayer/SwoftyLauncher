@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "apply/moments.hpp"
 #include "era_logic.hpp"
 
 std::string settings_addon(const void *from, std::string &dll);
@@ -387,6 +388,7 @@ void select_entry(void *container, const char *entrant_list)
     if (ours && !mode && logged_narrow++ < LOG_FIRST)
         swofty::log("[era] %s pressed but the container has no mode; %s is not narrowed", entrant_list, logic::HOST);
     last_pick = ours ? entrant_list : "";
+    swofty_core::apply::moments::box_picked(entrant_list, mode);
     if (auto *modes = setup_owner(mode))
         ref<void *>(modes, SELECTED_LIST) = nullptr;
     select_orig(container, entrant_list);

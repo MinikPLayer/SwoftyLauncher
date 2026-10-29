@@ -31,11 +31,13 @@
  ],
  "operations": {
   "database": [
-   "db/season.json"
+   "db/season.json",
+   "db/records.json"
   ],
   "assets": [
    "lang/season.json",
    "assets/cars.json",
+   "assets/liveries.json",
    "assets/suits.json",
    "assets/sounds.json"
   ]

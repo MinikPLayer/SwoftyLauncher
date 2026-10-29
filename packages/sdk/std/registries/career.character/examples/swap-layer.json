@@ -1,0 +1,17 @@
+{
+  "career.character": {
+    "swofty.f1-1990/f1_career_1990": {
+      "swaps": [
+        {
+          "character": "agent",
+          "with": "team_principal"
+        }
+      ],
+      "strings": {
+        "eng": {
+          "lng_agent_name": "Ronald"
+        }
+      }
+    }
+  }
+}

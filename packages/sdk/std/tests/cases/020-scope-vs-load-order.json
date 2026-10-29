@@ -1,0 +1,113 @@
+{
+  "name": "load order beats scope between addons",
+  "rule": "a later addon's global layer beats an earlier addon's profile and career layers (layers.md#precedence)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.a",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "n": 2
+          },
+          "scope": "profile",
+          "profile": "p1"
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "n": 3
+          },
+          "scope": "career",
+          "career": "c1"
+        }
+      ]
+    },
+    {
+      "id": "mod.b",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "n": 9
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "p1",
+        "career": "c1",
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 9,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.b"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "field",
+          "registry": "test.thing",
+          "id": "game/a",
+          "pointer": "/n",
+          "addons": [
+            "mod.a",
+            "mod.b"
+          ],
+          "winner": "mod.b"
+        }
+      ],
+      "refusals": []
+    }
+  ]
+}

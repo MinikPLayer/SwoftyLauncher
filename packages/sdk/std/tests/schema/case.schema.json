@@ -1,0 +1,323 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://swofty.net/sdk/std/tests/case.schema.json",
+  "title": "A registry corpus case",
+  "type": "object",
+  "required": ["name", "rule", "registries", "bases", "addons", "evaluations"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "rule": { "type": "string", "minLength": 1 },
+    "registries": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/registry" }
+    },
+    "bases": { "type": "array", "items": { "$ref": "#/$defs/base" } },
+    "tags": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "propertyNames": { "pattern": "^c/" },
+        "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/id" } }
+      }
+    },
+    "addons": { "type": "array", "items": { "$ref": "#/$defs/addon" } },
+    "evaluations": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/evaluation" } }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]*(/[A-Za-z0-9_.-]+)+$" },
+    "addon_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_.-]*$" },
+    "pointer": { "type": "string", "pattern": "^(/[^/]+)*$" },
+    "registry_name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*$" },
+    "registry": {
+      "type": "object",
+      "required": ["applies"],
+      "additionalProperties": false,
+      "properties": {
+        "applies": { "enum": ["boot", "content", "session", "read"] },
+        "key_fields": {
+          "type": "object",
+          "additionalProperties": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+        },
+        "refs": { "type": "object", "additionalProperties": { "$ref": "#/$defs/registry_name" } },
+        "schema": { "type": "object" },
+        "shared": {
+          "type": "object",
+          "required": ["provider_registry", "provides", "resolved"],
+          "additionalProperties": false,
+          "properties": {
+            "provider_registry": { "$ref": "#/$defs/registry_name" },
+            "provides": { "$ref": "#/$defs/pointer" },
+            "resolved": { "$ref": "#/$defs/pointer" }
+          }
+        }
+      }
+    },
+    "base": {
+      "type": "object",
+      "required": ["addon", "registry", "key", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "addon": { "const": "game" },
+        "registry": { "$ref": "#/$defs/registry_name" },
+        "key": { "type": "string", "minLength": 1 },
+        "value": { "type": "object" }
+      }
+    },
+    "addon": {
+      "type": "object",
+      "required": ["id", "ops"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/addon_id" },
+        "enabled": { "type": "boolean" },
+        "ops": { "type": "array", "items": { "$ref": "#/$defs/op" } }
+      }
+    },
+    "edit": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["op", "path", "value"],
+        "additionalProperties": false,
+        "properties": {
+          "op": { "enum": ["set", "add", "mul"] },
+          "path": { "$ref": "#/$defs/pointer" },
+          "value": {}
+        }
+      }
+    },
+    "in": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 1,
+      "properties": {
+        "mode": { "type": "string" },
+        "content": { "$ref": "#/$defs/id" },
+        "content_exact": { "$ref": "#/$defs/id" },
+        "data_group": { "type": "string" },
+        "setup_mode": { "type": "string" },
+        "owner": { "$ref": "#/$defs/addon_id" },
+        "any": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/in" } },
+        "not": { "$ref": "#/$defs/in" }
+      },
+      "additionalProperties": false
+    },
+    "select": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "ids": { "type": "string", "pattern": "^(\\*|.+/\\*)$" },
+        "except": { "type": "array", "items": { "$ref": "#/$defs/id" } },
+        "where": { "type": "object", "minProperties": 1 },
+        "tag": {
+          "oneOf": [
+            { "type": "string", "pattern": "^c/|/" },
+            { "type": "object", "minProperties": 1, "maxProperties": 1, "additionalProperties": { "type": "string" } }
+          ]
+        }
+      }
+    },
+    "op": {
+      "type": "object",
+      "required": ["op", "registry"],
+      "properties": {
+        "op": { "enum": ["add", "variant", "provide", "layer", "clear_layer", "tag_add", "protect"] },
+        "registry": { "$ref": "#/$defs/registry_name" },
+        "stage": { "enum": ["register", "on_load"] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "op": { "const": "add" } } },
+          "then": { "required": ["key", "value"], "properties": { "key": { "type": "string" }, "value": { "type": "object" } } }
+        },
+        {
+          "if": { "properties": { "op": { "const": "variant" } } },
+          "then": {
+            "required": ["key", "base"],
+            "properties": { "key": { "type": "string" }, "base": { "$ref": "#/$defs/id" }, "patch": { "type": "object" }, "edit": { "$ref": "#/$defs/edit" } },
+            "oneOf": [{ "required": ["patch"] }, { "required": ["edit"] }]
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "provide" } } },
+          "then": {
+            "required": ["records"],
+            "properties": { "records": { "type": "object", "minProperties": 1, "additionalProperties": { "type": ["object", "null"] } } }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "layer" } } },
+          "then": {
+            "properties": {
+              "target": { "$ref": "#/$defs/id" },
+              "select": { "$ref": "#/$defs/select" },
+              "patch": { "type": "object" },
+              "edit": { "$ref": "#/$defs/edit" },
+              "scope": { "enum": ["global", "profile", "career"] },
+              "profile": { "type": "string" },
+              "career": { "type": "string" },
+              "in": { "type": "array", "items": { "$ref": "#/$defs/in" } },
+              "when": {
+                "type": "object",
+                "required": ["option"],
+                "minProperties": 2,
+                "maxProperties": 2,
+                "properties": {
+                  "option": { "type": "string" },
+                  "is": {},
+                  "in": { "type": "array" },
+                  "on": { "const": true },
+                  "off": { "const": true }
+                },
+                "additionalProperties": false
+              }
+            },
+            "allOf": [
+              { "oneOf": [{ "required": ["target"] }, { "required": ["select"] }] },
+              { "oneOf": [{ "required": ["patch"] }, { "required": ["edit"] }] }
+            ]
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "clear_layer" } } },
+          "then": {
+            "required": ["target"],
+            "properties": {
+              "target": { "$ref": "#/$defs/id" },
+              "scope": { "enum": ["global", "profile", "career"] },
+              "profile": { "type": "string" },
+              "career": { "type": "string" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "tag_add" } } },
+          "then": { "required": ["tag", "id"], "properties": { "tag": { "type": "string" }, "id": { "$ref": "#/$defs/id" } } }
+        },
+        {
+          "if": { "properties": { "op": { "const": "protect" } } },
+          "then": {
+            "required": ["id", "fields"],
+            "properties": { "id": { "$ref": "#/$defs/id" }, "fields": { "type": "array", "minItems": 1, "items": { "type": "string" } } }
+          }
+        }
+      ]
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile": { "type": "string" },
+        "career": { "type": ["string", "null"] },
+        "mode": { "type": ["string", "null"] },
+        "content": { "oneOf": [{ "type": "null" }, { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/id" } }] },
+        "data_group": { "type": ["string", "null"] },
+        "setup_mode": { "type": ["string", "null"] },
+        "options": { "type": "object", "additionalProperties": { "type": "object" } },
+        "settings": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": { "also_change_year_packs": { "type": "boolean" } },
+            "additionalProperties": false
+          }
+        },
+        "disabled": { "type": "array", "items": { "$ref": "#/$defs/addon_id" } }
+      }
+    },
+    "expected_record": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["status", "value", "origins"],
+          "additionalProperties": false,
+          "properties": {
+            "status": { "const": "ok" },
+            "value": { "type": "object" },
+            "origins": { "type": "object", "additionalProperties": { "$ref": "#/$defs/addon_id" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["status"],
+          "additionalProperties": false,
+          "properties": { "status": { "enum": ["no_record", "no_registry", "invalid", "late"] } }
+        }
+      ]
+    },
+    "evaluation": {
+      "type": "object",
+      "required": ["context", "expect", "conflicts", "refusals"],
+      "additionalProperties": false,
+      "properties": {
+        "context": { "$ref": "#/$defs/context" },
+        "expect": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "object", "additionalProperties": { "$ref": "#/$defs/expected_record" } }
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "registry", "id", "pointer", "addons", "winner"],
+            "additionalProperties": false,
+            "properties": {
+              "kind": { "enum": ["field", "protected", "provider"] },
+              "registry": { "$ref": "#/$defs/registry_name" },
+              "id": { "$ref": "#/$defs/id" },
+              "pointer": { "type": "string" },
+              "addons": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/addon_id" } },
+              "winner": { "$ref": "#/$defs/addon_id" }
+            }
+          }
+        },
+        "refusals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["addon", "registry", "id", "op", "reason"],
+            "additionalProperties": false,
+            "properties": {
+              "addon": { "$ref": "#/$defs/addon_id" },
+              "registry": { "$ref": "#/$defs/registry_name" },
+              "id": { "$ref": "#/$defs/id" },
+              "op": { "type": "integer", "minimum": 0 },
+              "reason": { "enum": ["invalid", "boot_filtered", "late", "cycle", "too_deep"] }
+            }
+          }
+        },
+        "lists": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["registry", "prefix", "ids"],
+            "additionalProperties": false,
+            "properties": {
+              "registry": { "$ref": "#/$defs/registry_name" },
+              "prefix": { "type": "string" },
+              "ids": { "type": "array", "items": { "$ref": "#/$defs/id" } }
+            }
+          }
+        },
+        "tag_members": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["registry", "tag", "ids"],
+            "additionalProperties": false,
+            "properties": {
+              "registry": { "$ref": "#/$defs/registry_name" },
+              "tag": { "type": "string" },
+              "ids": { "type": "array", "items": { "$ref": "#/$defs/id" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}

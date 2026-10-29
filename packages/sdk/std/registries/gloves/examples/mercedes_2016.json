@@ -1,0 +1,9 @@
+{
+  "gloves": {
+    "mercedes_2016": {
+      "archive": "kit/mercedes_2016_gloves.erp",
+      "from": "game/mercedes",
+      "team": "swofty.classic-seasons-2016/mercedes"
+    }
+  }
+}

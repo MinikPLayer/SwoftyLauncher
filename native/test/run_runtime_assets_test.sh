@@ -48,6 +48,27 @@ EOC
 for n in t_early t_window; do
     "${PIN[@]}" zig cc -target x86_64-windows-gnu -O2 -shared -o "$OUT/$n.dll" "$OUT/plain_mod.c"
 done
+cat > "$OUT/t_files.cpp" <<'EOC'
+#include <swofty/registry.hpp>
+#include <swofty/systems/sounds.hpp>
+
+using namespace swofty;
+
+SWOFTY_REGISTER
+{
+#ifdef SECOND
+    sounds::engine_sounds.add("t_v10", {.bundle = file("sounds/other/t_v10.bdl"), .settings_from = sounds::engine_sounds["game/ferrari_2025"]});
+#else
+    for (std::string k : {"t_v10", "t_kept", "t_missing"})
+        sounds::engine_sounds.add(k, {.bundle = file("sounds/" + k + ".bdl"), .settings_from = sounds::engine_sounds["game/ferrari_2025"]});
+#endif
+}
+
+SWOFTY_ADDON()
+EOC
+"${PIN[@]}" zig c++ -target x86_64-windows-gnu -std=c++23 -O2 -I../../packages/sdk/include -shared -s -o "$OUT/t_files.dll" "$OUT/t_files.cpp" &
+"${PIN[@]}" zig c++ -target x86_64-windows-gnu -std=c++23 -O2 -DSECOND -I../../packages/sdk/include -shared -s -o "$OUT/t_files2.dll" "$OUT/t_files.cpp" &
+wait
 cp -r "../$DIST/." "$OUT/game/"
 python3 - "$OUT/game/swofty/addons/core/bindings.json" <<'EOB'
 import json, sys
@@ -187,7 +208,38 @@ check() {
 absent() {
     if grep -qE "$2" "$LOG"; then echo "FAIL: $1"; status=1; else echo "ok  : $1"; fi
 }
-for mode in none replace gated late early earlywait secondcopy; do
+files_setup() {
+    cp "$OUT/t_files.dll" "$OUT/t_files2.dll" "$OUT/game/swofty/addons/"
+    python3 - "$OUT/game" <<'EOF'
+import json, os, sys
+sys.path.insert(0, '../../tools')
+import gamedb
+g = sys.argv[1]
+def put(rel, data):
+    p = os.path.join(g, rel)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    open(p, 'wb').write(data)
+put('swofty/addons/t.files/sounds/t_v10.bdl', b'T.FILES V10')
+put('swofty/addons/t.files2/sounds/other/t_v10.bdl', b'T.FILES2 V10')
+put('audio/2025/bundles/t_kept.bdl', b'GAME KEPT')
+put('audio/2025/bundles/ferrari_2025.bdl', b'STOCK FERRARI')
+row = 'audio.audio_bundle_settings.audio_bundle_settings_0.'
+recs = [('audio.audio_bundle_settings._audio_bundle_settings_instancecount_', 0, '1'), (row + '_metadata_', 2, 'ferrari_2025'),
+        (row + 'bundle_name', 2, 'ferrari_2025'), (row + 'era', 3, 'modern'), (row + 'engine', 5, 'True'),
+        (row + 'exhaust', 5, 'True'), (row + 'cabin', 5, 'True')]
+put('game_package/gamedatabases/gamedatabases.2025.bin',
+    gamedb.write([gamedb.Record(gamedb.fnv1a64(k), t, v.encode()) for k, t, v in recs]))
+json.dump({'schema': 1, 'profile': 't', 'addons': [{'id': 't.files', 'dlls': ['t_files.dll'], 'options': []},
+                                                   {'id': 't.files2', 'dlls': ['t_files2.dll'], 'options': []}]},
+          open(os.path.join(g, 'swofty', 'settings.json'), 'w'))
+os.makedirs(os.path.join(g, 'swofty', 'registry'), exist_ok=True)
+json.dump({'version': 1, 'profile': 't', 'order': ['t.files', 't.files2']}, open(os.path.join(g, 'swofty', 'registry', 'index.json'), 'w'))
+EOF
+}
+files_cleanup() {
+    rm -rf "$OUT/game/audio" "$OUT/game/game_package/gamedatabases" "$OUT/game/swofty/registry"
+}
+for mode in none replace gated late early earlywait secondcopy files; do
     echo "==== $mode"
     rm -rf "$OUT/game/swofty/assets.json" "$OUT/game/swofty/settings.json" "$OUT/game/swofty/addons/"t_*.dll "$OUT/game/swofty/addons/"t.*
     rm -rf "$OUT/game/swofty/cache" "$OUT/game/swofty/"crash-*
@@ -200,11 +252,25 @@ for mode in none replace gated late early earlywait secondcopy; do
         echo '{ "schema": 1, "profile": "t", "addons": [], "early_plugins": ["t_early.dll"],
   "plugins": ["addons/t.window/native/t_window.dll", "addons/t.early/native/t_early.dll"] }' >"$OUT/game/swofty/settings.json"
     fi
-    [[ $mode == none ]] || assets_json $mode
+    [[ $mode == none || $mode == files ]] || assets_json $mode
+    [[ $mode == files ]] && files_setup
     timeout 120 "${PIN[@]}" xvfb-run -a wine "$OUT/game/F1_25.exe" $mode || status=1
     echo "---- $LOG ($mode)"
     grep -v '  section ' "$LOG" | grep -vE '\] scan \.xtls|\[core\] bind ' || true
     case $mode in
+    files)
+        check "files: SwoftyAddonRegister turns the early stage on" 'early stage: on for 2 addon dll\(s\) that export SwoftyAddonRegister'
+        check "files: the earlier addon's bundle is redirected first" '\[registry\] file: redirect audio/2025/bundles/t_v10\.bdl -> t\.files/sounds/t_v10\.bdl \(engine_sound t\.files/t_v10\)'
+        check "files: the later addon's bundle takes the path" '\[registry\] file: redirect audio/2025/bundles/t_v10\.bdl -> t\.files2/sounds/other/t_v10\.bdl \(engine_sound t\.files2/t_v10\)'
+        check "files: two addons on one path log a conflict" '\[registry\] file conflict: audio/2025/bundles/t_v10\.bdl is redirected by t\.files, t\.files2; t\.files2 wins'
+        check "files: a bundle in the game folder is kept" "\[apply\] engine_sound boot: +t\.files: 1 bundle\(s\) not in swofty/addons/t\.files/; the game folder's copies are used"
+        check "files: a bundle in neither folder is refused" '\[registry\] file: engine_sound t\.files/t_missing: swofty/addons/t\.files/sounds/t_missing\.bdl is not installed; audio/2025/bundles/t_missing\.bdl is not redirected'
+        check "files: the route is installed without the experimental file feature" '\[assets\] overlay: route audio/2025/bundles/t_v10\.bdl -> /game/swofty/addons/t\.files2/sounds/other/t_v10\.bdl'
+        check "files: the boot line counts the redirect by the addon that wins" '\[registry\] applied at boot: engine_sound 4 \(1 bundle path redirected to t\.files2; [0-9]+ database records\)'
+        check "files: the game's open goes through the route" '\[assets\] overlay: audio/2025/bundles/t_v10\.bdl -> /game/swofty/addons/t\.files2/sounds/other/t_v10\.bdl \(engine_sound t\.files2/t_v10; resolve #1'
+        absent "files: no overlay feature gate message" 'overlay skipped: the runtime file feature is experimental'
+        files_cleanup
+        ;;
     early)
         check "loader: early stage on from assets.json" 'early stage: on \("early_stage": true in swofty.assets\.json\)'
         check "loader: CreateMutexW slot armed" 'trigger armed: game IAT slot KERNEL32!CreateMutexW at .*, early stage'

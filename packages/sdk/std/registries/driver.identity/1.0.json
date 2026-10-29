@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "driver.identity 1.0",
+  "x-registry": "driver.identity",
+  "x-version": "1.0",
+  "x-applies": "boot",
+  "x-snapshot": false,
+  "description": "drivers::Identity: one entrants.drivers row. A new driver copies every key of its donor's row; keys this schema doesn't list ride in the record as they are. The core refuses an identity without a look.",
+  "type": "object",
+  "properties": {
+    "donor": {
+      "description": "The stock row it copies (new drivers); a variant copies its base's.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "driver.identity"
+    },
+    "person": {
+      "description": "The real person it is; null: a fictional driver.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "driver.person"
+    },
+    "names": {
+      "$ref": "#/$defs/names"
+    },
+    "nationality": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "number": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 99
+    },
+    "head": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "driver.head"
+    },
+    "look": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "driver.look"
+    },
+    "audio_name": {
+      "type": "string"
+    },
+    "seasons_completed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "garage_slot": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pools": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9_]+$"
+      }
+    },
+    "stat_id": {
+      "$ref": "#/$defs/stat_id"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "driver.identity",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "names",
+    "look"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "names": {
+      "description": "drivers::Names: first_name, last_name, full_name and the initials.",
+      "type": "object",
+      "properties": {
+        "first": {
+          "$ref": "#/$defs/text"
+        },
+        "last": {
+          "$ref": "#/$defs/text"
+        },
+        "full": {
+          "$ref": "#/$defs/text"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z0-9]{1,4}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "text": {
+      "description": "A Text: a lang key as a string, or a literal.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literal": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "stat_id": {
+      "description": "A StatId: an explicit id, or \"auto\" (absent: \"auto\") for the core to allocate one.",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "auto"
+        }
+      ]
+    }
+  }
+}

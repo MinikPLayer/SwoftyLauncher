@@ -1,0 +1,9 @@
+{
+  "driver.head": {
+    "robot": {
+      "$comment": "body is male or female",
+      "archive": "heads/r/",
+      "body": "robot"
+    }
+  }
+}

@@ -407,6 +407,23 @@ impl Bridge {
         format!("self={};base={}", self.shared.self_member, self.shared.base)
     }
 
+    /// [`Self::env_value`] with `;name=<percent-encoded UTF-8>`, the signed-in name for the game's
+    /// driver, when `name` leaves anything through [`super::game::driver_name`].
+    pub fn env_value_named(&self, name: &str) -> String {
+        let mut value = self.env_value();
+        if let Some(name) = super::game::driver_name(name) {
+            value.push_str(";name=");
+            for b in name.bytes() {
+                if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
+                    value.push(char::from(b));
+                } else {
+                    value.push_str(&format!("%{b:02X}"));
+                }
+            }
+        }
+        value
+    }
+
     /// The port the game's socket is expected on; datagrams from any other are dropped.
     pub fn game_port(&self) -> u16 {
         self.shared.game_port.load(Ordering::Relaxed)
@@ -1140,6 +1157,11 @@ mod tests {
         let base = bridge.base();
         assert!((BASE_MIN..BASE_MAX).contains(&base));
         assert_eq!(bridge.env_value(), format!("self=3;base={base}"));
+        assert_eq!(
+            bridge.env_value_named(" Sw\u{f6}fty ;1\u{200b}"),
+            format!("self=3;base={base};name=Sw%C3%B6fty%20%3B1")
+        );
+        assert_eq!(bridge.env_value_named("\u{7}"), format!("self=3;base={base}"));
         assert_eq!(bridge.members(), vec![1, 2]);
         assert_eq!(bridge.port(1), Some(base + 1));
         assert!(UdpSocket::bind(loopback(base + 1)).is_err());

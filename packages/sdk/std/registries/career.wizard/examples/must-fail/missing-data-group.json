@@ -1,0 +1,8 @@
+{
+  "career.wizard": {
+    "no_group": {
+      "$comment": "data_group is required",
+      "starts_in_f1": true
+    }
+  }
+}

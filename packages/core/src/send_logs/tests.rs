@@ -1666,6 +1666,65 @@ fn an_overlay_sessions_netplay_files_come_from_its_upper_dir() {
 }
 
 #[test]
+fn bundles_the_cores_registry_reports_and_the_career_index() {
+    let root = tmp("registry-reports");
+    let (store, game) = fake_data(&root);
+    put(
+        &game.join("swofty/registry/effective.json"),
+        "{\"career.season\":{}}\n",
+    );
+    put(
+        &game.join("swofty/registry/conflicts.json"),
+        "{\"registry\":[]}\n",
+    );
+    put(
+        &game.join("swofty/registry/room.json"),
+        "{\"presize\":\"applied\"}\n",
+    );
+    put(&game.join("swofty/careers/index.json"), "{\"careers\":[]}\n");
+    let bundle = Bundle::collect_with(&store, &report(&game), Limits::default(), "20261028-120000");
+    let zip = bundle.zip().unwrap();
+    assert_eq!(
+        entry(&zip, "game/registry/effective.json"),
+        "{\"career.season\":{}}\n"
+    );
+    assert_eq!(entry(&zip, "game/registry/conflicts.json"), "{\"registry\":[]}\n");
+    assert_eq!(
+        entry(&zip, "game/registry/room.json"),
+        "{\"presize\":\"applied\"}\n"
+    );
+    assert_eq!(entry(&zip, "game/careers/index.json"), "{\"careers\":[]}\n");
+    assert!(
+        !bundle
+            .entries
+            .iter()
+            .any(|e| e.path == "game/registry/catalog.json")
+    );
+}
+
+#[test]
+fn the_cores_reports_in_the_data_folder_win_over_the_game_folders() {
+    let root = tmp("registry-reports-data");
+    let (store, game) = fake_data(&root);
+    put(&game.join("swofty/registry/effective.json"), "{\"old\":1}\n");
+    put(&game.join("swofty/registry/room.json"), "{\"old\":1}\n");
+    put(&store.root.join("registry/effective.json"), "{\"new\":1}\n");
+    put(
+        &store.root.join("careers/index.json"),
+        "{\"careers\":[{\"career\":\"a\"}]}\n",
+    );
+    put(&game.join("swofty/careers/index.json"), "{\"careers\":[]}\n");
+    let bundle = Bundle::collect_with(&store, &report(&game), Limits::default(), "20261028-120000");
+    let zip = bundle.zip().unwrap();
+    assert_eq!(entry(&zip, "game/registry/effective.json"), "{\"new\":1}\n");
+    assert_eq!(entry(&zip, "game/registry/room.json"), "{\"old\":1}\n");
+    assert_eq!(
+        entry(&zip, "game/careers/index.json"),
+        "{\"careers\":[{\"career\":\"a\"}]}\n"
+    );
+}
+
+#[test]
 fn carries_the_blocked_record_when_there_is_one() {
     let root = tmp("blocked");
     let (store, game) = fake_data(&root);

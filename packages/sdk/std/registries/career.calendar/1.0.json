@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "career.calendar 1.0",
+  "x-registry": "career.calendar",
+  "x-version": "1.0",
+  "x-applies": "boot",
+  "x-snapshot": false,
+  "description": "career::Calendar: the rounds of a season, the seasons a career runs and its transfer windows. The 1.6.0 core stores calendar records and applies nothing from them.",
+  "type": "object",
+  "properties": {
+    "rounds": {
+      "type": "array",
+      "x-key": [
+        "round"
+      ],
+      "items": {
+        "$ref": "#/$defs/round"
+      }
+    },
+    "seasons": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 10
+    },
+    "transfer_windows": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "career.calendar",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [],
+  "additionalProperties": true,
+  "$defs": {
+    "round": {
+      "description": "career::Round: one race of the calendar.",
+      "type": "object",
+      "properties": {
+        "round": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "race": {
+          "$ref": "#/$defs/text"
+        },
+        "venue": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "track.venue"
+        },
+        "date": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        }
+      },
+      "required": [
+        "round"
+      ],
+      "additionalProperties": false
+    },
+    "text": {
+      "description": "A Text: a lang key as a string, or a literal.",
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "literal": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "literal"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

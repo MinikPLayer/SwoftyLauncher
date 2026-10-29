@@ -1,0 +1,8 @@
+{
+  "vehicle.package": {
+    "donor_not_an_id": {
+      "$comment": "a reference is a full id <owner>/<key>",
+      "donor": "f1_2025"
+    }
+  }
+}

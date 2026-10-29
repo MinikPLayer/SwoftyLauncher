@@ -1,0 +1,12 @@
+{
+  "driver.identity": {
+    "big_number": {
+      "$comment": "number is 0-99",
+      "names": {
+        "first": "lng_a"
+      },
+      "look": "game/a",
+      "number": 100
+    }
+  }
+}

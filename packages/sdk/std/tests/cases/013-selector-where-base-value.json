@@ -1,0 +1,200 @@
+{
+  "name": "where matches on the base value, not the effective one",
+  "rule": "\"where\" tests each record's base value before any layer: a field equals a value, is one of a list, or is in a numeric {min,max} range (inclusive); the edit then runs on the effective value (layers.md#selectors)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "b",
+      "value": {
+        "name": "b",
+        "n": 0,
+        "kind": "f2",
+        "items": []
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "c",
+      "value": {
+        "name": "c",
+        "n": 5,
+        "kind": "f1_26",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.x",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "kind": "f2"
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/b",
+          "patch": {
+            "kind": "f1"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.s",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "select": {
+            "where": {
+              "kind": "f1"
+            }
+          },
+          "patch": {
+            "n": 9
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.t",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "select": {
+            "where": {
+              "kind": [
+                "f2",
+                "f1_26"
+              ]
+            }
+          },
+          "patch": {
+            "name": "t"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.u",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "select": {
+            "where": {
+              "n": {
+                "min": 1,
+                "max": 10
+              }
+            }
+          },
+          "patch": {
+            "items": [
+              {
+                "key": "r",
+                "v": 1
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 9,
+              "kind": "f2",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.x",
+              "/n": "mod.s"
+            }
+          },
+          "game/b": {
+            "status": "ok",
+            "value": {
+              "name": "t",
+              "n": 0,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.x",
+              "/name": "mod.t"
+            }
+          },
+          "game/c": {
+            "status": "ok",
+            "value": {
+              "name": "t",
+              "n": 5,
+              "kind": "f1_26",
+              "items": [
+                {
+                  "key": "r",
+                  "v": 1
+                }
+              ]
+            },
+            "origins": {
+              "/name": "mod.t",
+              "/items/key=r": "mod.u"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

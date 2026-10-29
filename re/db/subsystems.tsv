@@ -10,12 +10,14 @@ fe_home	FeHome	-	open	front-end home screen: FEHomeViewModel, home tile adders, 
 fe_input	FeInput	ui-re	open	input-to-UI: player input providers, input-device tooltips, UI toggle input modes, device connection status
 fe_popup	FePopup	ui-re	open	transient front-end overlays: full-screen busy spinner, notifications, popup messages, full-screen video, tutorial mask elements
 fe_tiles	FeTile	-	open	generic tile-menu builder, Tile/Item base classes, item vector
-game	Game	-	open	game:: functions named in bulk from pretty-function strings, not yet sorted into a feature lane
+game	Game	re-career-teams	open	game:: functions named in bulk from pretty-function strings, not yet sorted into a feature lane
 gamedb	Gdb	-	open	GVDB game value database: load, key lookup, table cursors, row counts
 hud	Hud	ui-re	open	in-race HUD: HUD screen VM, dynamic HUD component view-models (tyre/timing/MFD/minimap/...), HUD element base; logic/VM side (render lane owns the draw path)
 loc	Loc	-	open	localisation: NeLocaleModule, per-language table sets, .lng path build, load, parse and key lookup
 protection	Prot	-	open	Denuvo stubs and .data1 bodies, signature/cert checks, VirtualProtect callers
 render	Render	overlay	open	D3D12/DXGI present path, swapchain overlay hooks, in-game immediate-mode HUD rendering
 session	Sess	-	open	entrants, setup modes, participant selection, weekend/session start, garages (grid size work)
+teams	Team	-	open	team identity for new teams: entrants.teams rows and the side data found by team label, the loaded team record, team colours, team logos and badges per context (uidb logo arrays, texarrays, the registry-path format sites), team-count limits
 ui	Ui	ui-idf	open	authored UI formats (!pkg .ui/UIDF node grammar, .uidb/.uir/scene .idf) + ERP UI packaging + the view-model binding runtime + how to edit/add menus and widgets
 vm	Vm	ui-re	open	UI view-model registry: node properties, setters, routes
+wearables	Wear	re-wear	open	driver wear: helmet/suit/glove item rows, driver customisations (looks), team customisations per season (team kit), the customisation catalogue and the driver actor spawner's kit pick

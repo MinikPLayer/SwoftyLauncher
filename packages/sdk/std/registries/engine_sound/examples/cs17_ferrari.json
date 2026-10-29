@@ -1,0 +1,9 @@
+{
+  "engine_sound": {
+    "cs17_ferrari": {
+      "bundle": "sounds/cs17_ferrari.bdl",
+      "settings_from": "game/ferrari_2025",
+      "tuning_from": "game/ferrari_2025"
+    }
+  }
+}

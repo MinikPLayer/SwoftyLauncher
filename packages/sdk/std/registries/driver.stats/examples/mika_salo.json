@@ -1,0 +1,15 @@
+{
+  "driver.stats": {
+    "mika_salo": {
+      "driver": "swofty.driver-manager/mika_salo",
+      "pace": {
+        "start": 78,
+        "peak": 84
+      },
+      "racecraft": {
+        "start": 75,
+        "peak": 82
+      }
+    }
+  }
+}

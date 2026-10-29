@@ -5,7 +5,9 @@ description: Change art, models, worlds and menus from a data addon — list an 
 
 # Textures and models
 
-F1 25's art, models, worlds and menus live in `.erp` archives under `2025_asset_groups/`. Inside each archive are named resources, each with one or more fragments. To change them, add [ERP operations](/reference/ops/erp) to your [data addon](./) and list the file in `operations.erp`:
+F1 25's art, models, worlds and menus live in `.erp` archives under `2025_asset_groups/`, which a data addon changes with [ERP operations](/reference/ops/erp).
+
+## In full
 
 ```json [swofty.json]
 "operations": {
@@ -13,7 +15,31 @@ F1 25's art, models, worlds and menus live in `.erp` archives under `2025_asset_
 }
 ```
 
-With the in-game loader, the build delivers changed and added resources as overlay archives under `swofty/assets/resources/`, and the stock archives stay in the game folder. Without it, the build writes a new copy of each archive your operations touch. See [Build route and runtime route](./operations#build-route-and-runtime-route).
+```jsonc [erp/texture.json]
+{
+  "schema_version": 1,
+  "ops": [
+    // swap fragment 0 of a texture for a raw file: the bytes after decompression
+    { "op": "replace-resource", "erp": "2025_asset_groups/f1_safetycar_package/safety_car_2/wep/safety_car_2.erp",
+      "resource": "eaid://f1_safetycar_package/safety_car_2/textures/safety_car_2_decal_da.tif.image",
+      "fragment": 0, "source": "erp/decal.bin" },
+    // its loose mip chain
+    { "op": "add-mipmaps", "source": "mipmaps/", "target": "f1_safetycar_package/safety_car_2/textures/" },
+    // copy a whole car from an archive in the addon under a new name
+    { "op": "copy-resource", "source": "erp/car.erp",
+      "erp": "2025_asset_groups/f1_2026_vehicle_package/teams/toro_rosso/wep/toro_rosso_barcelona_26.erp",
+      "resource": "eaid://f1_2026_vehicle_package/teams/toro_rosso/wep/toro_rosso.wep",
+      "as": "eaid://f1_2026_vehicle_package/teams/toro_rosso/wep/toro_rosso_barcelona_26.wep" },
+    { "op": "warn", "message": "safety car decal and the Barcelona Racing Bulls car" }
+  ]
+}
+```
+
+```text
+runtime: swofty/assets.json with 0 asset group(s), 2 resource(s), 0 database edit(s), 0 language table(s), 0 overlay file(s)
+```
+
+Inside each archive are named resources, each with one or more fragments. With the in-game loader, the build delivers changed and added resources as overlay archives under `swofty/assets/resources/`, and the stock archives stay in the game folder. Without it, the build writes a new copy of each archive your operations touch. See [Build route and runtime route](./operations#build-route-and-runtime-route). A [data addon](./) lists the file in `operations.erp`.
 
 ## Look inside an archive
 

@@ -1,0 +1,23 @@
+{
+  "career.calendar": {
+    "2017": {
+      "rounds": [
+        {
+          "round": 1,
+          "race": "lng_race_australia",
+          "venue": "venue/albert_park",
+          "date": "2017-03-26"
+        },
+        {
+          "round": 2,
+          "venue": "venue/shanghai?",
+          "date": "2017-04-09"
+        }
+      ],
+      "seasons": 3,
+      "transfer_windows": [
+        10
+      ]
+    }
+  }
+}

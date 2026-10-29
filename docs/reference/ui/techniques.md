@@ -5,25 +5,54 @@ description: General methods for changing F1 25 menus — trace what draws an el
 
 # Techniques for menu edits
 
-These methods apply to any menu change. The formats are on [UI scenes (.idf)](./idf), the addon workflow on [Editing menus with an addon](./editing-menus), and the editor on [Swofty UI](./swofty-ui). Native changes go through the [mixin system](/reference/addons/hooking). To trace native code while the game runs, see [Debugging live](./debugging).
+These methods apply to any menu change: trace an element through its three layers before changing any of them, prove which layer limits a change, and patch native code only behind exact checks.
 
-## Find what draws an element
+## A trace in full
 
 A menu has three layers:
 
-| Layer | Holds | Read it with |
-|---|---|---|
-| `.ui` screen (`UIDF`) | Widgets, their data bindings and events, and where each attaches | `tools/uitree.py`, `tools/pkg.py` |
-| Scene (`.idf`) | The rectangles widgets attach to, and the art they draw | Swofty UI, `tools/idf.py` |
-| View model | The data the bindings read, published by native code | The game's log, the [Game API](/reference/game/) |
+```text
+.ui screen (UIDF)   widgets, their data bindings and events, and where each attaches    tools/uitree.py, tools/pkg.py
+scene (.idf)        the rectangles widgets attach to, and the art they draw              Swofty UI, tools/idf.py
+view model          the data the bindings read, published by native code                the game's log, the Game API
+```
 
-Trace an element through all three before changing any of them.
+From an open menu to the data behind one element:
+
+```sh
+# 1. which screen opened: the game's UI and FLOW channels at info level
+#    (swofty/session.json: "game_log": { "channels": "default,verbose" })
+grep -E "OPEN SCREEN" swofty/loader.log
+
+# 2. the screens an archive holds (type UIDF), and one screen's node tree from Swofty UI
+python3 tools/erp.py 2025_asset_groups/ui_package/flow_frontend.erp '*' | grep UIDF
+base=http://127.0.0.1:7341
+curl -s "$base/api/resource?erp=flow_frontend.erp&name=eaid://ui_package/screens/fe_home.ui&frag=0" -o fe_home.ui
+python3 tools/uitree.py -f fe_home.ui     # node tree: class, properties, bindings, events
+python3 tools/pkg.py json fe_home.ui      # everything, including each node's layout attach
+
+# 3. the element a node attaches to, in the scene the root attaches to
+python3 tools/idf.py find rnd_overview.idf tile_4   # one element: transform, size, params, xref, geoms
+python3 tools/idf.py refs rnd_overview.idf          # each reference: fileRef, xref id, OK or MISMATCH
+
+# 4. the data: the binding's view-model path, published by native code (the Game API, a read-only hook)
+```
+
+The formats are on [UI scenes (.idf)](./idf), the addon workflow on [Editing menus with an addon](./editing-menus), and the editor on [Swofty UI](./swofty-ui). Native changes go through the [mixin system](/reference/addons/hooking). To trace native code while the game runs, see [Debugging live](./debugging).
+
+## Find what draws an element
+
+Trace an element through all three layers before changing any of them.
 
 ### 1. Find the screen
 
-The game's log names the screens and flows that open. `swofty/loader.log` already carries the game's `UI`, `VM` and `FLOW` messages at info level; add channels in `swofty/session.json` when you need more ([The game's own log](/reference/std/logging#the-game-s-own-log)). Open the menu, then read which screen opened.
+The game's log names the screens and flows that open. `swofty/loader.log` carries the game's `UI`, `VM` and `FLOW` messages at warn level and above by default; add `verbose` to the channels in `swofty/session.json` to copy their info messages too ([The game's own log](/reference/std/logging#the-game-s-own-log)):
 
-List the screens an archive holds; their type is `UIDF`:
+```json [swofty/session.json]
+{ "game_log": { "level": "info", "channels": "default,verbose" } }
+```
+
+Open the menu, then read which screen opened. List the screens an archive holds; their type is `UIDF`:
 
 ```sh
 python3 tools/erp.py 2025_asset_groups/ui_package/flow_frontend.erp '*' | grep UIDF
@@ -45,8 +74,11 @@ python3 tools/pkg.py json fe_home.ui      # everything, including each node's la
 
 In the tree, `name [CLASS]` is a node and its FourCC class. A property shown as `value@path` is bound to view-model data, and `~ on <event> -> <node>.<pin>` is an event. In the JSON, a node's layout attach is one of:
 
-- `{ componentId, isComponentId: true, debugName: "<path>.idf" }`, on the screen's root: the scene the screen draws in.
-- `{ nodeId, debugName: "<leaf>" }`: the scene element the node attaches to, by its leaf name. A list of several walks through references, outermost first.
+```text
+{ componentId, isComponentId: true, debugName: "<path>.idf" }   on the screen's root: the scene the screen draws in
+{ nodeId, debugName: "<leaf>" }                                  the scene element the node attaches to, by its leaf name;
+                                                                 a list of several walks through references, outermost first
+```
 
 See [How a screen attaches](./idf#how-a-screen-attaches).
 
@@ -82,18 +114,19 @@ A category, such as a team, a department or a mode, usually reaches the screen t
 
 These shapes mean a count is fixed in code. The values are examples.
 
-| Shape | Looks like | Means |
-|---|---|---|
-| Unrolled construction | The same constructor called N times, each with literal arguments such as a name string and an enum | N widgets; there is no loop to extend |
-| Exact-size buffer | `mov edx, 0x4a0` where `0x4a0 = 0x20 + 4 × 0x120` | Room for 4 slots; growing the allocation constructs nothing |
-| Inlined construction loop | `add rax, 0x120 ; cmp rax, 0x4a0 ; jne` | Exactly 4 slots are constructed |
-| Vector sized exactly | `end - begin` compared with or set to `N × 8` | N pointers, then truncated |
-| Range guard | `cmp r14d, 3 ; ja <skip>` | Values above 3 are skipped |
-| Clamp | `xor ecx, ecx ; cmp al, 4 ; cmovae eax, ecx` | An index of 4 or more becomes 0 |
-| Early return | `cmp byte [rcx+<field>], 3 ; ja <ret>` at a function's start | The function does nothing for values above 3 |
-| Sentinel branch | `cmp byte [rcx+<field>], 4 ; jne <normal>` | Value 4 gets special handling, such as a disabled placeholder |
-| Jump table | `cmp r14d, 3 ; ja <default>` before an indirect `jmp` through a table | 4 cases; the default often produces an `error_*` name and white |
-| Lookup table | `lea rcx, [table] ; mov rdx, [rcx+rax*8]` | Index N reads whatever follows the table |
+```text
+unrolled construction   the same constructor called N times, each with literal          N widgets; there is no loop to extend
+                        arguments such as a name string and an enum
+exact-size buffer       mov edx, 0x4a0   where 0x4a0 = 0x20 + 4 × 0x120                 room for 4 slots; growing the allocation constructs nothing
+inlined loop            add rax, 0x120 ; cmp rax, 0x4a0 ; jne                         exactly 4 slots are constructed
+vector sized exactly    end - begin compared with or set to N × 8                       N pointers, then truncated
+range guard             cmp r14d, 3 ; ja <skip>                                         values above 3 are skipped
+clamp                   xor ecx, ecx ; cmp al, 4 ; cmovae eax, ecx                      an index of 4 or more becomes 0
+early return            cmp byte [rcx+<field>], 3 ; ja <ret>   at a function's start    the function does nothing for values above 3
+sentinel branch         cmp byte [rcx+<field>], 4 ; jne <normal>                        value 4 gets special handling, such as a disabled placeholder
+jump table              cmp r14d, 3 ; ja <default>   before an indirect jmp             4 cases; the default often produces an error_* name and white
+lookup table            lea rcx, [table] ; mov rdx, [rcx+rax*8]                         index N reads whatever follows the table
+```
 
 For a lookup table, check what follows it in the executable. When another table follows, index N reads that table's first entry: a colour read as a `char *` crashes on first use. When a string follows, index N reads that string: no crash, wrong text. A table needs a real entry N before any guard in front of it is relaxed.
 
@@ -127,7 +160,20 @@ These rules come on top of the [engine plugin rules](/reference/addons/native-pl
 - **Change the chain the screen uses.** Different screens can draw the same component through different scenes. Follow the chain from the root attach of the screen you're changing.
 - **Wire the new element.** A new element stays empty until a `.ui` node attaches to its leaf name. When the screen refreshes its widgets through a list of named targets, such as an event sent to each tile, add the new node to that list.
 
+```sh
+python3 tools/idf.py clone-slot rnd_overview.idf tile_4 tile_5 0 -2.52 0 out.idf
+python3 tools/idf.py refs out.idf && python3 tools/idf.py roundtrip out.idf
+```
+
 ## Test loop
+
+```sh
+swofty build                 # 2. read its warnings
+swofty run --apply           # 3. installs the profile, follows the logs, rolls the game files back when the game exits
+swofty logs                  # 4. afterwards: each hook installed, each refusal, your diagnostics
+swofty verify                # 5. the game files match the backed-up originals?
+swofty restore               #    when they don't
+```
 
 1. Test in a duplicate of your profile; each profile keeps its own saves. Copy its saves before a run that changes native state.
 2. `swofty build`, and read its warnings.
@@ -145,6 +191,13 @@ Work through files and HTTP, not the browser:
 - **Replays.** An export's `.edits.json` holds its `ops`. After a game update, send them to `/api/export` on the new stock scene instead of editing the old file.
 - **Validators.** Check every scene you write with `python3 tools/idf.py roundtrip <file>`, `python3 tools/idf.py refs <file>` (exit status 1 on a mismatch) and the export checks, and run `swofty-ui --check-refs` on a built game.
 - **Screens.** Read `.ui` screens with `GET /api/resource` and `tools/uitree.py -f` or `tools/pkg.py json`, as in [Find what draws an element](#find-what-draws-an-element).
+
+```sh
+python3 tools/swofty-ui/serve.py --no-browser &
+doc=$(curl -s "$base/api/open?eaid=art/screens/career/rnd_overview.idf" | jq -r .doc)
+curl -s "$base/api/apply" -H 'Content-Type: application/json' \
+  -d '{"doc":"'"$doc"'","ops":[{"op":"clone","key":"0.0.2.5.0","name":"tile_5"}]}' | jq '.results'
+```
 
 Guardrails:
 

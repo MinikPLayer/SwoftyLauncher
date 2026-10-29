@@ -1,0 +1,53 @@
+{
+  "career.season": {
+    "2017": {
+      "data_group": "f1_career_progressive",
+      "year": 2017,
+      "box": "swofty.classic-seasons-2017/f1_2017|game/f1_2025",
+      "calendar": "swofty.progressive/2017",
+      "teams": [
+        {
+          "slot": 1,
+          "team": "game/mercedes",
+          "seats": [
+            "game/lewis_hamilton",
+            "game/valtteri_bottas"
+          ]
+        },
+        {
+          "slot": 2,
+          "team": "game/ferrari",
+          "seats": [
+            "game/sebastian_vettel",
+            "game/kimi_raikkonen"
+          ]
+        },
+        {
+          "slot": 3,
+          "team": "game/red_bull",
+          "seats": [
+            "game/daniel_ricciardo",
+            "game/max_verstappen"
+          ]
+        },
+        {
+          "slot": 7,
+          "team": "constructor/toro_rosso",
+          "seats": [
+            "game/carlos_sainz",
+            "game/daniil_kvyat"
+          ]
+        }
+      ],
+      "changes": [
+        {
+          "round": 15,
+          "slot": 7,
+          "seat": 1,
+          "out": "game/daniil_kvyat",
+          "in": "game/pierre_gasly"
+        }
+      ]
+    }
+  }
+}

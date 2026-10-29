@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "driver.look 1.0",
+  "x-registry": "driver.look",
+  "x-version": "1.0",
+  "x-applies": "boot",
+  "x-snapshot": false,
+  "description": "drivers::Look: a driver_customisations row: the helmet, suit, gloves, pose and podium emote a driver wears.",
+  "type": "object",
+  "properties": {
+    "helmet": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "helmet"
+    },
+    "suit": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "suit"
+    },
+    "gloves": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "gloves"
+    },
+    "pose": {
+      "type": "string"
+    },
+    "podium_emote": {
+      "type": "string"
+    },
+    "stat_id": {
+      "$ref": "#/$defs/stat_id"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "driver.look",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "helmet",
+    "suit",
+    "gloves"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "stat_id": {
+      "description": "A StatId: an explicit id, or \"auto\" (absent: \"auto\") for the core to allocate one.",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "auto"
+        }
+      ]
+    }
+  }
+}

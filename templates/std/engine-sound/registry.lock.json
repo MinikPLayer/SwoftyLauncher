@@ -1,0 +1,48 @@
+{
+  "generated_by": "swofty dev pack 1.5.24",
+  "provides": {
+    "content.package": [
+      {
+        "id": "mod.esp/f1_2017_v10",
+        "label": "F1 2017 (V10)"
+      }
+    ],
+    "engine_sound": [
+      "mod.esp/v10_screamer"
+    ],
+    "era.box": [
+      {
+        "id": "mod.esp/f1_2017_v10",
+        "label": "F1 2017 (V10)"
+      }
+    ],
+    "vehicle": [
+      {
+        "id": "mod.esp/mercedes_v10",
+        "label": "esp_cs17_mercedes"
+      },
+      {
+        "id": "mod.esp/redbull_v10",
+        "label": "esp_cs17_redbull"
+      }
+    ]
+  },
+  "needs": [
+    {
+      "record": "content.package:swofty.classic-seasons-2017/f1_2017",
+      "policy": "required"
+    },
+    {
+      "record": "vehicle:swofty.classic-seasons-2017/ferrari",
+      "policy": "optional"
+    },
+    {
+      "record": "vehicle:swofty.classic-seasons-2017/mercedes",
+      "policy": "required"
+    },
+    {
+      "record": "vehicle:swofty.classic-seasons-2017/redbull",
+      "policy": "required"
+    }
+  ]
+}

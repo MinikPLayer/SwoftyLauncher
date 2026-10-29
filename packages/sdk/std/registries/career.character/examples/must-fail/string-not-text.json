@@ -1,0 +1,13 @@
+{
+  "career.character": {
+    "string_number": {
+      "$comment": "a career string's text is a string",
+      "data_group": "f1_career_1990",
+      "strings": {
+        "*": {
+          "lng_agent_name": 7
+        }
+      }
+    }
+  }
+}

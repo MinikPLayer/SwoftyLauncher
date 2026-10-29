@@ -9,4 +9,5 @@
 #include <swofty/game/game.hpp>
 #include <swofty/game/gamedb.hpp>
 #include <swofty/game/session.hpp>
+#include <swofty/game/teams.hpp>
 #include <swofty/game/vm.hpp>

@@ -1,0 +1,12 @@
+{
+ "log": {"max_mb": 8, "on_full": "stop", "summary_every_s": 60},
+ "limits": {"max_events_total": 3000, "max_read": 64},
+ "hooks": [
+  {"id": "t130.wing_init", "test": "T130", "sig": "car.front_wing_init", "kind": "func_start", "regs": ["rcx", "rdx"],
+   "fields": ["vid=u8:[[rcx+8]+0xe8]", "f1aero=ptr:[[rcx+8]+0x570]", "parts_begin=ptr:[rcx+0xb0]", "parts_end=ptr:[rcx+0xb8]"],
+   "ret": true, "max_per_sec": 0, "max_events": 500},
+  {"id": "t130.create", "test": "T130", "sig": "car.create_detachable_part", "kind": "func_start", "regs": ["rcx"],
+   "fields": ["vid=u8:[[rcx+8]+0xe8]", "pred=ptr:[rdx]", "ctx=ptr:[rdx+8]", "name_id=u32:[r8]", "kind=i32:[r9]", "k=f32:[rsp+0x28]"],
+   "ret": true, "bt": 3, "max_per_sec": 0, "max_events": 2400}
+ ]
+}

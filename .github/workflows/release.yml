@@ -209,10 +209,71 @@ jobs:
           name: windows
           path: swofty-launcher-*.zip
 
+  # The release gate (docs/std/compatibility.md#the-release-gate): the standard library's schemas against the previous
+  # release, then the compatibility suite in tools/compat, which builds and starts every Addon Browser addon version
+  # on the 1.5 core and on this one. Publishing waits for it.
+  gate:
+    name: Release gate
+    needs: [linux]
+    if: ${{ !cancelled() && needs.linux.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+          fetch-depth: 0
+
+      - name: Schema versions against the previous release
+        run: python3 tools/std/schemacheck.py --released-before "$(git rev-parse "$TAG^{commit}")^"
+
+      - name: Registry examples and must-fail cases
+        run: python3 tools/std/validate.py
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: linux
+          path: artefacts
+
+      # tools/compat/README.md: the gate builds every Addon Browser addon version with the 1.5 release (A) and this
+      # release (B) and needs a game folder and a baseline, which hosted runners don't have. A runner that has them
+      # names them in the repository variables; anywhere else the step is a notice. Exit 1 is a difference, 2 a tool
+      # error such as too little disk space; both fail the release.
+      - name: Compatibility gate
+        env:
+          GAME: ${{ vars.COMPAT_GAME_DIR }}
+          CLI_A: ${{ vars.COMPAT_REFERENCE_CLI }}
+          LOADER_A: ${{ vars.COMPAT_REFERENCE_LOADER }}
+          BASELINE: ${{ vars.COMPAT_BASELINE_DIR }}
+          CACHE: ${{ vars.COMPAT_CACHE_DIR }}
+        run: |
+          if [ ! -f tools/compat/run.sh ]; then
+            echo "::notice::tools/compat/run.sh is not in $TAG; the compatibility gate has nothing to run"
+            exit 0
+          fi
+          if [ -z "$GAME" ] || [ ! -f "$GAME/F1_25.exe" ] || [ -z "$CLI_A" ] || [ ! -x "$CLI_A" ]; then
+            echo "::notice::the compatibility gate needs F1 25 and the 1.5 swofty binary (vars.COMPAT_GAME_DIR, vars.COMPAT_REFERENCE_CLI), which this runner doesn't have; run tools/compat/run.sh run on a machine with the game before tagging"
+            exit 0
+          fi
+          tar xzf "artefacts/swofty-launcher-$TAG-linux-x86_64.tar.gz" -C "$RUNNER_TEMP"
+          b="$RUNNER_TEMP/swofty-launcher-$TAG-linux-x86_64"
+          set -- --cli-a "$CLI_A" --cli-b "$b/bin/swofty" --loader-b "$b/loader" --game "$GAME" \
+            --allow buildhash --allow loader
+          if [ -n "$LOADER_A" ]; then set -- "$@" --loader-a "$LOADER_A"; fi
+          if [ -n "$BASELINE" ]; then set -- "$@" --baseline-from "$BASELINE"; fi
+          if [ -n "$CACHE" ]; then set -- "$@" --cache "$CACHE"; fi
+          status=0
+          tools/compat/run.sh run "$@" || status=$?
+          case $status in
+            0) ;;
+            1) echo "::error::the compatibility gate found addons that build differently on $TAG; see its summary.txt" ;;
+            *) echo "::error::the compatibility gate could not run (exit $status: a download, a binary, a timeout or the disk)" ;;
+          esac
+          exit $status
+
   publish:
     name: Publish the release
-    needs: [linux, windows]
-    if: ${{ !cancelled() && !inputs.dry-run && needs.linux.result == 'success' && needs.windows.result == 'success' }}
+    needs: [linux, windows, gate]
+    if: ${{ !cancelled() && !inputs.dry-run && needs.linux.result == 'success' && needs.windows.result == 'success' && needs.gate.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v8

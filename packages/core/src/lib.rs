@@ -56,10 +56,12 @@ pub mod send_logs;
 pub mod session;
 pub mod settings;
 pub mod setup;
+pub mod stdlib;
 pub mod steam;
 pub mod steam_client;
 pub mod stock;
 pub mod store;
+pub mod testsuite;
 pub mod tracks;
 pub mod ui;
 pub mod update;
@@ -113,6 +115,9 @@ pub enum Error {
     Blocked(app_control::Block),
     #[error("{0}")]
     Requires(catalog::requires::Refusal),
+    /// The dependency check of the 1.6 standard library stopped Play.
+    #[error("{0}")]
+    Dependencies(String),
     #[error("{}", no_space(drive, *need, *free))]
     NoSpace { drive: String, need: u64, free: u64 },
     #[error("{}", busy::CANCELLED)]

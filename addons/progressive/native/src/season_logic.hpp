@@ -33,6 +33,7 @@
 #include <cstdlib>
 #include <functional>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -57,6 +58,14 @@ inline int year_for(int start, uint32_t season_index)
     return y > kLastYear ? kLastYear : static_cast<int>(y);
 }
 
+// The season moment the core hears of (career::report_season, standard library 1.6): the first idle Team HQ
+// of a season (game season index plus test seasons) not applied yet whose Season has its race weekends and a
+// current weekend, once per career and season in a session.
+inline bool season_moment(int applied_season, uint32_t index, bool weekends_ready, bool reported)
+{
+    return applied_season != static_cast<int>(index) && weekends_ready && !reported;
+}
+
 struct Look {
     std::string label;
     int stat = -1;
@@ -76,12 +85,18 @@ struct DevPoint {
 
 struct Team {
     int slot = 0;
-    std::string kind, name, lang, vehicle;
+    std::string kind, name, lang, vehicle, team_id;
     int vehicle_stat = -1;
     double gap_pct = -1;
     std::vector<SeatDriver> drivers;
     std::vector<DevPoint> development;
+    std::array<std::string, 2> seat_ids{};
 };
+
+inline bool record_seats(const Team &t)
+{
+    return !t.seat_ids[0].empty() || !t.seat_ids[1].empty();
+}
 
 // A real line-up change of the year (tools/gen.py from the Jolpica race entries): from real round
 // `round` driver `in` races seat `seat` (team position) of career slot `slot` (0-based) in place
@@ -93,9 +108,16 @@ struct Change {
     Look look;
 };
 
+struct ExtraTeam {
+    int slot = 0;
+    std::string team_id;
+    std::array<std::string, 2> seats{};
+};
+
 struct Year {
     int year = 0;
     std::array<Team, kSlots> teams{};
+    std::vector<ExtraTeam> extra_teams;
     std::vector<int> real_tracks;
     std::vector<std::string> circuits;
     std::vector<Change> changes;
@@ -191,15 +213,29 @@ inline bool parse(const std::string &text, Data &out, std::string &err)
         yr.year = year;
         for (auto &t : y["teams"].a) {
             int i = num(t["slot"]) - 1;
+            if (i >= kSlots && i < kSlots + 1 && t["team"].type == json::Value::Str && !t["team"].str().empty()) {
+                ExtraTeam x;
+                x.slot = i + 1;
+                x.team_id = t["team"].str();
+                const json::Value &ids = t["seats"];
+                for (size_t k = 0; k < x.seats.size() && k < ids.a.size(); ++k)
+                    x.seats[k] = ids.a[k].str();
+                yr.extra_teams.push_back(std::move(x));
+                continue;
+            }
             if (i < 0 || i >= kSlots)
                 continue;
             Team &o = yr.teams[i];
             o.slot = i + 1;
             o.kind = t["kind"].str();
+            o.team_id = t["team"].str();
             o.name = t["name"].str();
             o.lang = t["lang"].str();
             o.vehicle = t["vehicle"]["label"].str();
             o.vehicle_stat = num(t["vehicle"]["stat_id"]);
+            const json::Value &seat_ids = t["seats"];
+            for (size_t k = 0; k < o.seat_ids.size() && k < seat_ids.a.size(); ++k)
+                o.seat_ids[k] = seat_ids.a[k].str();
             const json::Value &pace = t["pace"];
             o.gap_pct = pace.type == json::Value::Obj && pace["gap_pct"].type == json::Value::Num ? pace["gap_pct"].n : -1;
             const json::Value &dev = t["development"];
@@ -359,10 +395,137 @@ struct Plan {
     std::array<bool, kSlots> closed{};
 };
 
+inline bool names_new_teams(const Data &d, int year)
+{
+    const Year *y = d.year(clamp_year(year));
+    if (!y)
+        return false;
+    if (!y->extra_teams.empty())
+        return true;
+    for (int i = 0; i < kSlots; ++i)
+        if (!y->teams[i].team_id.empty() && y->teams[i].team_id != d.slots[i].team)
+            return true;
+    return false;
+}
+
+inline bool added_team(const Data &d, const Year &y, int slot)
+{
+    const std::string &id = y.teams[slot].team_id;
+    return !id.empty() && id != d.slots[slot].team && id.rfind("constructor/", 0) != 0;
+}
+
+struct NameWrite {
+    std::string key, text;
+    bool clear = false;
+};
+
+using IdentityNames = std::function<std::optional<std::array<std::string, 3>>(const std::string &team)>;
+
+inline std::vector<NameWrite> team_name_writes(const Data &d, int year, const IdentityNames &identity)
+{
+    std::vector<NameWrite> out;
+    const Year *y = d.year(year);
+    for (int i = 0; i < kSlots; ++i) {
+        bool added = year < kLastYear && y && added_team(d, *y, i);
+        std::optional<std::array<std::string, 3>> own;
+        if (added && identity)
+            own = identity(y->teams[i].team_id);
+        for (size_t k = 0; k < d.slots[i].name_keys.size(); ++k) {
+            const std::string &key = d.slots[i].name_keys[k];
+            if (key.empty())
+                continue;
+            if (year >= kLastYear || !y)
+                out.push_back({key, {}, true});
+            else if (added)
+                out.push_back(own && !(*own)[k].empty() ? NameWrite{key, (*own)[k], false} : NameWrite{key, {}, true});
+            else if (y->teams[i].name.empty())
+                out.push_back({key, {}, true});
+            else
+                out.push_back({key, y->teams[i].name, false});
+        }
+    }
+    return out;
+}
+
+// The new-career wizard's names for a start season (ui/cards.cpp): only the slots whose team is an added team get
+// that team's own names on their name keys, so Choose Driver and Team Select list it in its slot while every other
+// team keeps the names the wizard shows; a year with no added team writes nothing.
+inline std::vector<NameWrite> added_team_name_writes(const Data &d, int year, const IdentityNames &identity)
+{
+    std::vector<NameWrite> out;
+    const Year *y = d.year(year);
+    if (!y || year >= kLastYear || !identity)
+        return out;
+    for (int i = 0; i < kSlots; ++i) {
+        if (!added_team(d, *y, i))
+            continue;
+        std::optional<std::array<std::string, 3>> own = identity(y->teams[i].team_id);
+        if (!own)
+            continue;
+        for (size_t k = 0; k < d.slots[i].name_keys.size(); ++k)
+            if (!d.slots[i].name_keys[k].empty() && !(*own)[k].empty())
+                out.push_back({d.slots[i].name_keys[k], (*own)[k], false});
+    }
+    return out;
+}
+
+// The logo key of an added team in a start season's slot whose career team row is `label`: the row label the core
+// gives the team's own row (its record key), whose logo slices the core's team applier built; empty when the slot
+// holds no added team that year.
+inline std::string added_team_logo(const Data &d, int year, const std::string &label)
+{
+    const Year *y = d.year(year);
+    if (!y || year >= kLastYear)
+        return std::string();
+    for (int i = 0; i < kSlots; ++i)
+        if (d.slots[i].team == label && added_team(d, *y, i)) {
+            const std::string &id = y->teams[i].team_id;
+            size_t slash = id.rfind('/');
+            return slash == std::string::npos ? id : id.substr(slash + 1);
+        }
+    return std::string();
+}
+
+inline std::string season_team(const Data &d, const Plan &p, int slot)
+{
+    const Year *y = d.year(clamp_year(p.year));
+    if (!y || slot < 0 || slot >= kSlots || p.closed[slot])
+        return std::string();
+    return y->teams[slot].team_id.empty() ? d.slots[slot].team : y->teams[slot].team_id;
+}
+
 inline bool no_team(const Data &d, int year, int slot)
 {
     const Year *y = d.year(clamp_year(year));
     return y && slot >= 0 && slot < kSlots && y->teams[slot].kind == "filler" && y->teams[slot].drivers.empty();
+}
+
+struct TeamSlot {
+    int slot = 0;
+    std::string team;
+    std::vector<std::string> seats;
+};
+
+inline std::vector<TeamSlot> team_slots(const Data &d, const Plan &p)
+{
+    std::vector<TeamSlot> out;
+    const Year *y = d.year(clamp_year(p.year));
+    for (int i = 0; i < kSlots; ++i) {
+        TeamSlot t{i + 1, season_team(d, p, i), {}};
+        if (y && !p.closed[i] && added_team(d, *y, i) && record_seats(y->teams[i]))
+            for (size_t k = 0; k < (y->teams[i].seat_ids[1].empty() ? 1u : 2u); ++k)
+                t.seats.push_back(y->teams[i].seat_ids[k]);
+        out.push_back(std::move(t));
+    }
+    if (y)
+        for (const ExtraTeam &x : y->extra_teams) {
+            TeamSlot t{x.slot, x.team_id, {}};
+            for (const std::string &id : x.seats)
+                if (!id.empty())
+                    t.seats.push_back(id);
+            out.push_back(std::move(t));
+        }
+    return out;
 }
 
 inline int closed_slots(const Plan &p)
@@ -398,10 +561,16 @@ inline lineup::Grid grid_of(const Year &y, const Resolve &r, const std::function
     for (int i = 0; i < kSlots; ++i) {
         std::vector<SeatDriver> ds = y.teams[i].drivers;
         std::stable_sort(ds.begin(), ds.end(), [](const SeatDriver &a, const SeatDriver &b) { return a.position < b.position; });
+        bool fixed = record_seats(y.teams[i]);
         int k = 0;
         for (auto &sd : ds) {
-            if (k >= lineup::kSeats)
+            if (fixed)
+                k = sd.position;
+            if (k < 0 || k >= lineup::kSeats || g[i][k] != lineup::kNone) {
+                if (fixed)
+                    continue;
                 break;
+            }
             int s = r.driver_stat(sd.driver);
             if (s < 0) {
                 if (notes)

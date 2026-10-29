@@ -1,0 +1,343 @@
+{
+  "name": "a layer with .in() applies only where its selectors match",
+  "rule": "\"in\" lists selectors that must all match the context (mode, content with its variant chain, content_exact, data_group, setup_mode, any); on a read or content registry get includes the layer only while they match (layers.md#where-a-layer-applies, events.md#scope)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "b",
+      "value": {
+        "name": "b",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "c",
+      "value": {
+        "name": "c",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.a",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "n": 1
+          },
+          "in": [
+            {
+              "mode": "driver_career"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod.b",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "select": {
+            "ids": "*"
+          },
+          "patch": {
+            "kind": "x"
+          },
+          "in": [
+            {
+              "content": "swofty.classic-seasons-2017/f1_2017"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod.c",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "name": "dg"
+          },
+          "in": [
+            {
+              "data_group": "f1_career_progressive"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod.d",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/b",
+          "patch": {
+            "n": 7
+          },
+          "in": [
+            {
+              "content_exact": "swofty.classic-seasons-2017/f1_2017"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod.e",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/c",
+          "patch": {
+            "n": 3
+          },
+          "in": [
+            {
+              "setup_mode": "swofty.f1-1990/f1_1990"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mod.f",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/c",
+          "patch": {
+            "name": "gptt"
+          },
+          "in": [
+            {
+              "any": [
+                {
+                  "mode": "grand_prix"
+                },
+                {
+                  "mode": "time_trial"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": "time_trial",
+        "content": [
+          "swofty.classic-seasons-2017/f1_2017"
+        ],
+        "data_group": null,
+        "setup_mode": "swofty_f1",
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 0,
+              "kind": "x",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.b"
+            }
+          },
+          "game/b": {
+            "status": "ok",
+            "value": {
+              "name": "b",
+              "n": 7,
+              "kind": "x",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.b",
+              "/n": "mod.d"
+            }
+          },
+          "game/c": {
+            "status": "ok",
+            "value": {
+              "name": "gptt",
+              "n": 0,
+              "kind": "x",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.b",
+              "/name": "mod.f"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": "time_trial",
+        "content": [
+          "mod.esp/f1_2017_v10",
+          "swofty.classic-seasons-2017/f1_2017"
+        ],
+        "data_group": null,
+        "setup_mode": "swofty_f1",
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 0,
+              "kind": "x",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.b"
+            }
+          },
+          "game/b": {
+            "status": "ok",
+            "value": {
+              "name": "b",
+              "n": 0,
+              "kind": "x",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.b"
+            }
+          },
+          "game/c": {
+            "status": "ok",
+            "value": {
+              "name": "gptt",
+              "n": 0,
+              "kind": "x",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.b",
+              "/name": "mod.f"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": "c1",
+        "mode": "driver_career",
+        "content": null,
+        "data_group": "f1_career_progressive",
+        "setup_mode": "swofty.f1-1990/f1_1990",
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "dg",
+              "n": 1,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.a",
+              "/name": "mod.c"
+            }
+          },
+          "game/b": {
+            "status": "ok",
+            "value": {
+              "name": "b",
+              "n": 0,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {}
+          },
+          "game/c": {
+            "status": "ok",
+            "value": {
+              "name": "c",
+              "n": 3,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.e"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

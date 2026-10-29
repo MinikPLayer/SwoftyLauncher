@@ -1,0 +1,1 @@
+{ "career.season": { "what_if_2020": { "extends": "swofty.progressive/what_if_2017", "teams": [ { "slot": 5, "team": "game/haas" } ] } } }

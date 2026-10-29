@@ -34,7 +34,7 @@ Then:
 
 1. Copy every key of a stock row, with its type, to the new row number (the current count). The [key schema](/reference/gamedb/schema) and `keys.tsv.gz` list the keys; `tools/track_keys.py keys` lists a track's.
 2. Give the row a new `_metadata_` label, unique in the table.
-3. Give it a new `stat_id` (teams, vehicles) or `statId` (tracks) above the stock maximum. Stock maxima: team 499, vehicle 508.
+3. Leave `stat_id` out of `set`. `add-row` gives the row the next free `stat_id`, counting the rows other addons added earlier in the build. An explicit `stat_id` that a row added earlier already holds is replaced with the next free one, and the build warns. Tracks use `statId`: give a new track one above the stock maximum.
 4. Raise the table's `_instancecount_` by one.
 
 Both halves are required:

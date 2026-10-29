@@ -1,5 +1,6 @@
 #![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
 
+mod data;
 mod existing;
 mod running;
 mod shortcut;
@@ -64,6 +65,8 @@ struct Installer {
     folder: String,
     desktop: bool,
     existing: existing::Existing,
+    data: data::Data,
+    data_folder: String,
     height: f32,
     stage: Arc<Mutex<Stage>>,
 }
@@ -76,27 +79,35 @@ impl Installer {
         let folder = existing
             .root()
             .map_or_else(existing::default_root, Path::to_path_buf);
+        let data = data::Data::find();
         Self {
             folder: folder.display().to_string(),
             desktop: true,
             existing,
+            data_folder: data.current().display().to_string(),
+            data,
             height: HEIGHT,
             stage: Arc::new(Mutex::new(Stage::Ready)),
         }
     }
 
     fn browse(&mut self) {
-        let start = PathBuf::from(&self.folder)
-            .ancestors()
-            .find(|p| p.is_dir())
-            .map(Path::to_path_buf);
-        let mut dialog = rfd::FileDialog::new().set_title("Install the Swofty Launcher in");
-        if let Some(start) = start {
-            dialog = dialog.set_directory(start);
-        }
-        if let Some(picked) = dialog.pick_folder() {
+        if let Some(picked) = pick_folder("Install the Swofty Launcher in", &self.folder) {
             self.folder = install_folder(picked).display().to_string();
         }
+    }
+
+    fn browse_data(&mut self) {
+        if let Some(picked) = pick_folder("Keep the Swofty data folder in", &self.data_folder) {
+            self.data_folder = data::pick(picked, &self.data).display().to_string();
+        }
+    }
+
+    fn data_move(&self) -> Result<Option<data::DataMove>, String> {
+        if !self.data.movable() {
+            return Ok(None);
+        }
+        resolve(&self.data_folder).and_then(|to| data::plan(&self.data, &to))
     }
 
     fn start(&mut self, ctx: &egui::Context) {
@@ -117,6 +128,23 @@ impl Installer {
             return;
         }
         let open = running::from(&root);
+        match self.data_move() {
+            Err(e) => {
+                *self.stage.lock().unwrap() = Stage::Failed(e);
+                return;
+            }
+            Ok(Some(_)) => {
+                let elsewhere: Vec<running::Running> = running::anywhere()
+                    .into_iter()
+                    .filter(|r| !open.contains(r))
+                    .collect();
+                if let Some(why) = running::holding(&elsewhere, false) {
+                    *self.stage.lock().unwrap() = Stage::Failed(why);
+                    return;
+                }
+            }
+            Ok(None) => {}
+        }
         if !open.is_empty() {
             *self.stage.lock().unwrap() = Stage::Open(root, running::describe(&open));
             return;
@@ -132,6 +160,13 @@ impl Installer {
                 return;
             }
         };
+        let data_move = match self.data_move() {
+            Ok(data_move) => data_move,
+            Err(e) => {
+                *self.stage.lock().unwrap() = Stage::Failed(e);
+                return;
+            }
+        };
         let reporter = Reporter {
             stage: self.stage.clone(),
             ctx: ctx.clone(),
@@ -139,9 +174,14 @@ impl Installer {
         reporter.report(0.0, if close { running::CLOSING } else { FINDING });
         let desktop = self.desktop;
         std::thread::spawn(move || {
+            let data_env = data_move.as_ref().and_then(|m| m.env()).map(Path::to_path_buf);
             let stage = match running::clear(&root, close, &reporter)
+                .and_then(|()| match &data_move {
+                    Some(m) => m.run(&data::Ops::system(), &reporter),
+                    None => Ok(()),
+                })
                 .and_then(|()| install(&root, desktop, moving.as_ref(), &reporter))
-                .and_then(|exe| launch(&exe))
+                .and_then(|exe| launch(&exe, data_env.as_deref()))
             {
                 Ok(()) => Stage::Launched,
                 Err(e) => Stage::Failed(e),
@@ -192,6 +232,30 @@ impl eframe::App for Installer {
                     ui.add_space(6.0);
                     ui.checkbox(&mut self.desktop, "Add a desktop shortcut");
                     self.existing.status(ui, &self.folder);
+                    ui.add_space(14.0);
+                    ui.label(RichText::new("Keep addons, profiles and backups in").color(MUTED));
+                    ui.add_enabled_ui(self.data.movable(), |ui| {
+                        ui.horizontal(|ui| {
+                            let browse = 84.0;
+                            let width = ui.available_width() - browse - ui.spacing().item_spacing.x;
+                            ui.add_sized(
+                                [width, 30.0],
+                                egui::TextEdit::singleline(&mut self.data_folder)
+                                    .align(egui::Align2::LEFT_CENTER),
+                            );
+                            if ui
+                                .add_sized([browse, 30.0], egui::Button::new("Browse…"))
+                                .clicked()
+                            {
+                                self.browse_data();
+                            }
+                        });
+                    });
+                    ui.add_space(4.0);
+                    match resolve(&self.data_folder).and_then(|to| self.data.describe(&to)) {
+                        Ok(text) => ui.label(RichText::new(text).color(MUTED)),
+                        Err(e) => ui.label(RichText::new(e).color(ERROR)),
+                    };
                 });
                 ui.add_space(18.0);
                 if let Some((root, why)) = open {
@@ -271,6 +335,18 @@ fn visuals() -> egui::Visuals {
     v
 }
 
+fn pick_folder(title: &str, current: &str) -> Option<PathBuf> {
+    let start = PathBuf::from(current)
+        .ancestors()
+        .find(|p| p.is_dir())
+        .map(Path::to_path_buf);
+    let mut dialog = rfd::FileDialog::new().set_title(title);
+    if let Some(start) = start {
+        dialog = dialog.set_directory(start);
+    }
+    dialog.pick_folder()
+}
+
 fn install_folder(picked: PathBuf) -> PathBuf {
     let empty = std::fs::read_dir(&picked).is_ok_and(|mut d| d.next().is_none());
     let installed = picked.join("bin").join(update::exe("swofty-launcher")).is_file();
@@ -325,7 +401,7 @@ fn install(
 /// hands it to the desktop's shell, so the launcher doesn't inherit the
 /// administrator rights; started directly, it gets none of the installer's
 /// compatibility layers.
-fn launch(exe: &Path) -> Result<(), String> {
+fn launch(exe: &Path, data_env: Option<&Path>) -> Result<(), String> {
     #[cfg(windows)]
     if let Some(root) = exe.parent().and_then(Path::parent)
         && swofty_core::compat::elevated()
@@ -333,7 +409,7 @@ fn launch(exe: &Path) -> Result<(), String> {
     {
         return Ok(());
     }
-    command(exe)
+    command(exe, data_env)
         .spawn()
         .map(drop)
         .map_err(|e| match Block::of(exe, &e) {
@@ -345,10 +421,13 @@ fn launch(exe: &Path) -> Result<(), String> {
         })
 }
 
-fn command(exe: &Path) -> Command {
+fn command(exe: &Path, data_env: Option<&Path>) -> Command {
     let mut command = Command::new(exe);
     if let Some(root) = exe.parent().and_then(Path::parent) {
         command.current_dir(root);
+    }
+    if let Some(data) = data_env {
+        command.env(data::ENV, data);
     }
     command
         .env_remove(COMPAT_LAYER)
@@ -385,7 +464,7 @@ mod tests {
     #[test]
     fn starts_the_launcher_in_its_folder_without_the_compatibility_layers() {
         let root = Path::new("SwoftyLauncher");
-        let c = command(&root.join("bin").join(update::exe("swofty-launcher")));
+        let c = command(&root.join("bin").join(update::exe("swofty-launcher")), None);
         assert_eq!(c.get_current_dir(), Some(root));
         assert!(c.get_envs().any(|(k, v)| k == COMPAT_LAYER && v.is_none()));
     }

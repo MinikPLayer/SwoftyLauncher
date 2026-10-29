@@ -12,6 +12,7 @@
 
 #include "../names.hpp"
 #include "../ratings_logic.hpp"
+#include "../records.hpp"
 #include "../stats_mem.hpp"
 #include "wizard_ratings.hpp"
 
@@ -42,7 +43,7 @@ bool data()
     if (g_state)
         return g_state > 0;
     std::string text, err;
-    if (swofty::storage::read("data/years.json", text) != swofty::storage::Result::ok) {
+    if (!pg::records::read_years(text, "wizard ratings")) {
         swofty::log("[progressive] wizard ratings: data/years.json is missing; Choose Driver shows the game's ratings");
         g_state = -1;
         return false;

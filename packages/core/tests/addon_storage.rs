@@ -465,3 +465,254 @@ fn an_older_stored_copy_gives_way_to_a_newer_leftover_in_the_game_folder() {
         "4 careers"
     );
 }
+
+#[test]
+fn each_profile_keeps_its_own_copy_of_an_addons_files() {
+    let f = Fixture::new("per-profile");
+    let profile = |name: &str| {
+        let mut p = f.with_addon();
+        p.profile = name.into();
+        p
+    };
+    f.session(&profile("real"), |f| f.put(CAREERS, "real history"));
+    addon_storage::profile_created(&f.data, "whatif", None).unwrap();
+    f.session(&profile("whatif"), |f| {
+        assert_eq!(f.read(CAREERS), None);
+        f.put(CAREERS, "what if");
+    });
+    f.session(&profile("real"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("real history"));
+    });
+    f.session(&profile("whatif"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("what if"));
+    });
+    addon_storage::profile_created(&f.data, "copy", Some("whatif")).unwrap();
+    f.session(&profile("copy"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("what if"));
+        f.put(CAREERS, "copied, then changed");
+    });
+    f.session(&profile("whatif"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("what if"));
+    });
+    let copies = addon_storage::copies_dir(&f.data, "t.store");
+    addon_storage::profile_renamed(&f.data, "copy", "renamed").unwrap();
+    assert!(copies.join("renamed/careers.json").is_file());
+    addon_storage::profile_deleted(&f.data, "renamed").unwrap();
+    assert!(!copies.join("renamed").exists());
+    assert!(!f.game.join("swofty/addons/t.store/.profiles").exists());
+}
+
+#[test]
+fn profiles_from_before_16_start_from_the_15_storage_and_then_keep_their_own() {
+    let f = Fixture::new("per-profile-seed");
+    let kept = addon_storage::addon_dir(&f.data, "t.store");
+    write(&kept.join("careers.json"), "3 careers");
+    let profile = |name: &str| {
+        let mut p = f.with_addon();
+        p.profile = name.into();
+        p
+    };
+    f.session(&profile("one"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("3 careers"));
+        f.put(CAREERS, "one's");
+    });
+    f.session(&profile("two"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("3 careers"));
+        f.put(CAREERS, "two's");
+    });
+    f.session(&profile("one"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("one's"));
+    });
+    f.session(&profile("two"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("two's"));
+    });
+    assert!(!kept.join(".profiles").exists());
+}
+
+fn as_profile(f: &Fixture, name: &str) -> Plan {
+    let mut p = f.with_addon();
+    p.profile = name.into();
+    p
+}
+
+fn forget_profiles(f: &Fixture) {
+    std::fs::remove_dir_all(addon_storage::copies_dir(&f.data, "t.store")).unwrap();
+}
+
+#[test]
+fn w8_review_a_new_profile_made_before_the_first_16_session_keeps_the_old_storage() {
+    let f = Fixture::new("w8-new-before-first");
+    f.session(&as_profile(&f, "main"), plays);
+    forget_profiles(&f);
+    let kept = addon_storage::addon_dir(&f.data, "t.store").join("careers.json");
+    assert_eq!(
+        std::fs::read_to_string(&kept).unwrap(),
+        "3 careers",
+        "the 1.5 storage as the 1.5 launcher left it"
+    );
+    addon_storage::profile_created(&f.data, "fresh", None).unwrap();
+    f.session(&as_profile(&f, "fresh"), |f| assert_eq!(f.read(CAREERS), None));
+    f.session(&as_profile(&f, "main"), |f| {
+        assert_eq!(
+            f.read(CAREERS).as_deref(),
+            Some("3 careers"),
+            "main's 1.5 careers are gone"
+        );
+    });
+}
+
+#[test]
+fn w8_review_renaming_a_profile_while_its_session_runs_keeps_that_session() {
+    let f = Fixture::new("w8-rename-running");
+    f.session(&as_profile(&f, "real"), |f| f.put(CAREERS, "season 1"));
+    let lock = f.start(&f.data, &as_profile(&f, "real"));
+    f.put(CAREERS, "season 2");
+    addon_storage::profile_created(&f.data, "renamed", Some("real")).unwrap();
+    addon_storage::profile_deleted(&f.data, "real").unwrap();
+    f.end(&f.data, lock);
+    f.session(&as_profile(&f, "renamed"), |f| {
+        assert_eq!(
+            f.read(CAREERS).as_deref(),
+            Some("season 2"),
+            "the running session's writes are lost"
+        );
+    });
+}
+
+#[test]
+fn w8_review_a_deleted_profile_name_reused_starts_empty() {
+    let f = Fixture::new("w8-delete-reuse");
+    f.session(&as_profile(&f, "a"), |f| f.put(CAREERS, "a's"));
+    addon_storage::profile_created(&f.data, "b", None).unwrap();
+    f.session(&as_profile(&f, "b"), |f| f.put(CAREERS, "b's"));
+    addon_storage::profile_deleted(&f.data, "b").unwrap();
+    f.session(&as_profile(&f, "a"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("a's"))
+    });
+    addon_storage::profile_created(&f.data, "b", None).unwrap();
+    f.session(&as_profile(&f, "b"), |f| {
+        assert_eq!(f.read(CAREERS), None, "the deleted profile b's files came back");
+    });
+}
+
+#[cfg(unix)]
+#[test]
+fn w8_review_a_profile_switch_that_fails_half_way_keeps_both_copies() {
+    use std::os::unix::fs::PermissionsExt;
+    let f = Fixture::new("w8-half-way");
+    f.session(&as_profile(&f, "real"), plays);
+    addon_storage::profile_created(&f.data, "other", None).unwrap();
+    f.session(&as_profile(&f, "other"), |f| f.put(CAREERS, "other's"));
+    let stuck = addon_storage::profile_dir(&f.data, "t.store", "real").join("slots/1/state.json");
+    std::fs::set_permissions(&stuck, std::fs::Permissions::from_mode(0o000)).unwrap();
+    {
+        let lock = SessionLock::try_acquire(&f.data).unwrap().unwrap();
+        let game = f.game();
+        recovery::recover(&lock, &f.data, &game, Scope::All).unwrap();
+        let failed = Installer {
+            session: true,
+            ..Installer::new(&f.data, &game)
+        }
+        .apply(&as_profile(&f, "real"));
+        assert!(failed.is_err(), "the copy back of real's files should fail");
+        drop(lock);
+    }
+    std::fs::set_permissions(&stuck, std::fs::Permissions::from_mode(0o644)).unwrap();
+    f.session(&as_profile(&f, "real"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("3 careers"));
+        assert_eq!(
+            f.read(SLOT).as_deref(),
+            Some("slot one"),
+            "real's slot file is gone"
+        );
+    });
+    f.session(&as_profile(&f, "other"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("other's"))
+    });
+}
+
+#[test]
+fn w8_review_a_new_empty_profile_doesnt_see_another_profiles_files_of_an_addon_stored_later() {
+    let f = Fixture::new("w8-later-addon");
+    f.session(&as_profile(&f, "main"), |_| {});
+    std::fs::remove_dir_all(addon_storage::addon_dir(&f.data, "t.store")).ok();
+    addon_storage::profile_created(&f.data, "fresh", None).unwrap();
+    f.session(&as_profile(&f, "main"), |f| f.put(CAREERS, "main's"));
+    f.session(&as_profile(&f, "fresh"), |f| {
+        assert_eq!(f.read(CAREERS), None, "fresh sees main's files");
+    });
+}
+
+#[test]
+fn a_profile_switch_cut_off_half_way_is_finished_at_the_next_start() {
+    let f = Fixture::new("swap-cut");
+    let profile = |name: &str| {
+        let mut p = f.with_addon();
+        p.profile = name.into();
+        p
+    };
+    f.session(&profile("a"), |f| f.put(CAREERS, "a's"));
+    addon_storage::profile_created(&f.data, "b", None).unwrap();
+    f.session(&profile("b"), |f| f.put(CAREERS, "b's"));
+    let copies = addon_storage::copies_dir(&f.data, "t.store");
+    let storage = addon_storage::addon_dir(&f.data, "t.store");
+    write(&copies.join(".incoming/careers.json"), "a's");
+    write(&copies.join(".incoming.ready"), "a");
+    std::fs::rename(&storage, copies.join(".outgoing")).unwrap();
+    f.session(&profile("a"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("a's"))
+    });
+    f.session(&profile("b"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("b's"))
+    });
+    assert!(!copies.join(".incoming").exists());
+    assert!(!copies.join(".outgoing").exists());
+}
+
+#[test]
+fn a_profile_switch_whose_copy_never_finished_leaves_the_storage_as_it_was() {
+    let f = Fixture::new("swap-partial");
+    let profile = |name: &str| {
+        let mut p = f.with_addon();
+        p.profile = name.into();
+        p
+    };
+    f.session(&profile("a"), |f| f.put(CAREERS, "a's"));
+    addon_storage::profile_created(&f.data, "b", None).unwrap();
+    f.session(&profile("b"), |f| f.put(CAREERS, "b's"));
+    let copies = addon_storage::copies_dir(&f.data, "t.store");
+    write(&copies.join(".incoming/careers.json"), "half");
+    f.session(&profile("b"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("b's"))
+    });
+    f.session(&profile("a"), |f| {
+        assert_eq!(f.read(CAREERS).as_deref(), Some("a's"))
+    });
+}
+
+#[test]
+fn restoring_the_game_folder_keeps_the_career_index_and_the_stat_id_store() {
+    let f = Fixture::new("restore-registry");
+    let original = f.snapshot();
+    let career = r#"[{ "career": "6f3e9a", "label": "Progressive", "addons": [ { "id": "t.store" } ] }]"#;
+    f.session(&f.with_addon(), |f| {
+        f.put("swofty/careers/index.json", career);
+        f.put("swofty/registry/ids.json", "{\"track\":{\"mod.sochi/sochi\":18}}");
+    });
+    recovery::restore(&f.data, &f.game()).unwrap();
+    assert_eq!(f.snapshot(), original);
+    let kept = swofty_core::stdlib::careers::read(&swofty_core::stdlib::careers::data_path(&f.data));
+    assert_eq!(kept.len(), 1);
+    assert_eq!(kept[0].profile.as_deref(), Some("with"));
+    assert_eq!(
+        std::fs::read_to_string(swofty_core::stdlib::careers::kept_ids(&f.data)).unwrap(),
+        "{\"track\":{\"mod.sochi/sochi\":18}}"
+    );
+    f.session(&f.with_addon(), |f| {
+        assert!(f.read("swofty/registry/ids.json").is_none());
+        let state = f
+            .read("swofty/state.json")
+            .expect("the install names the state folder");
+        assert!(state.contains("\"state_dir\""), "{state}");
+    });
+}

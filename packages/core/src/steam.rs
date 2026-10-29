@@ -268,7 +268,38 @@ pub struct ProtonSearch {
 /// `proton_9`. Searches compatibilitytools.d and every library's
 /// steamapps/common, with `first` searched ahead of the rest.
 pub fn find_proton(steam_root: &Path, first: Option<&Path>, tool: &str) -> ProtonSearch {
+    find_proton_in(steam_root, first, tool, &system_compat_dirs())
+}
+
+pub fn system_compat_dirs() -> Vec<PathBuf> {
+    let mut dirs: Vec<PathBuf> = std::env::var_os("STEAM_EXTRA_COMPAT_TOOLS_PATHS")
+        .map(|v| {
+            std::env::split_paths(&v)
+                .filter(|p| !p.as_os_str().is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
+    for fixed in [
+        "/usr/share/steam/compatibilitytools.d",
+        "/usr/local/share/steam/compatibilitytools.d",
+    ] {
+        dirs.push(PathBuf::from(fixed));
+    }
+    dirs
+}
+
+pub fn find_proton_in(
+    steam_root: &Path,
+    first: Option<&Path>,
+    tool: &str,
+    system: &[PathBuf],
+) -> ProtonSearch {
     let mut homes = vec![steam_root.join("compatibilitytools.d")];
+    for dir in system {
+        if !homes.contains(dir) {
+            homes.push(dir.clone());
+        }
+    }
     let mut libs: Vec<PathBuf> = first.into_iter().map(Path::to_path_buf).collect();
     libs.extend(libraries(steam_root));
     for lib in libs {
@@ -454,6 +485,29 @@ mod tests {
         assert!(miss.searched.contains(&lib.join("steamapps/common")));
         let _ = std::fs::remove_dir_all(&root);
         let _ = std::fs::remove_dir_all(&lib);
+    }
+
+    #[test]
+    fn finds_proton_in_system_compat_dirs_after_user_dir() {
+        let root = proton_tree("system");
+        let sys = std::env::temp_dir().join(format!("swofty-proton-sys-{}", std::process::id()));
+        put_proton(&sys.join("proton-ge-custom"));
+        put_proton(&root.join("steamapps/common/proton-ge-custom"));
+        let sys_list = [sys.clone()];
+        let hit = find_proton_in(&root, None, "proton-ge-custom", &sys_list);
+        assert_eq!(hit.found, Some(sys.join("proton-ge-custom")));
+        put_proton(&root.join("compatibilitytools.d/proton-ge-custom"));
+        let hit = find_proton_in(&root, None, "proton-ge-custom", &sys_list);
+        assert_eq!(
+            hit.found,
+            Some(root.join("compatibilitytools.d/proton-ge-custom"))
+        );
+        let miss = find_proton_in(&root, None, "nothing", &sys_list);
+        assert!(miss.found.is_none());
+        let pos = |p: &Path| miss.searched.iter().position(|s| s == p).unwrap();
+        assert!(pos(&sys) < pos(&root.join("steamapps/common")));
+        let _ = std::fs::remove_dir_all(&root);
+        let _ = std::fs::remove_dir_all(&sys);
     }
 
     #[test]

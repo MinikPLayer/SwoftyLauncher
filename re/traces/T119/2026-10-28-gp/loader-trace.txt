@@ -1,0 +1,20 @@
+# Excerpt of loader.log (session 20261028-015013, full log 470166 bytes, sha256 dde7bc987a944865): the trace plugin's lines. Each line keeps its line number in the full log.
+1:2026-10-28 12:50:17.754 [  380] swofty loader (version.dll proxy) attached, pid 376
+937:2026-10-28 12:50:18.102 [  380] addon swofty_trace.dll: loads at the window stage
+1432:2026-10-28 12:50:19.719 [  380] addon swofty_trace.dll: loading Z:\mnt\work\.f1-seasons\data\state\game-link\swofty\addons\re.car-trace\native\swofty_trace.dll
+1433:2026-10-28 12:50:19.720 [  380] addon swofty_trace.dll: loaded at 00006fffea3a0000, API v1 plugin, SwoftyModInit runs after the mixin commit
+1437:2026-10-28 12:50:19.720 [  380] addon swofty_trace.dll: calling SwoftyModInit (API v1)
+1438:2026-10-28 12:50:20.698 [  380] [trace] build check: match
+1440:2026-10-28 12:50:20.706 [  380] [trace] hook t112.apply_block installed at match=0x144742c70 target=0x144742c70
+1442:2026-10-28 12:50:20.712 [  380] [trace] hook t112.section_call installed at match=0x144743355 target=0x14474335b
+1444:2026-10-28 12:50:20.719 [  380] [trace] hook t113.apply_tuning installed at match=0x140c11550 target=0x140c11550
+1446:2026-10-28 12:50:20.725 [  380] [trace] hook t113.tuning_applied installed at match=0x140c13721 target=0x140c13721
+1448:2026-10-28 12:50:20.731 [  380] [trace] hook t119.car_built installed at match=0x144629964 target=0x144629969
+1450:2026-10-28 12:50:20.737 [  380] [trace] hook t119.car_removed installed at match=0x14473d138 target=0x14473d143
+1452:2026-10-28 12:50:20.743 [  380] [trace] hook t120.create_systems installed at match=0x144742790 target=0x144742790
+1454:2026-10-28 12:50:20.749 [  380] [trace] hook t121.register installed at match=0x144629637 target=0x14462963e
+1456:2026-10-28 12:50:20.755 [  380] [trace] hook t123.set_mode_net installed at match=0x14324b7c1 target=0x14324b7c1
+1458:2026-10-28 12:50:20.761 [  380] [trace] hook t123.set_mode_pose installed at match=0x14389bbec target=0x14389bbf3
+1460:2026-10-28 12:50:20.767 [  380] [trace] hook t123.set_mode_tyre_damage installed at match=0x14470e082 target=0x14470e082
+1461:2026-10-28 12:50:20.767 [  380] [trace] status=active hooks=11 installed=11 rejected=0
+1462:2026-10-28 12:50:20.767 [  380] addon swofty_trace.dll: SwoftyModInit returned 1 (ok)

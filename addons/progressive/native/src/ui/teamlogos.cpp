@@ -13,8 +13,11 @@
 // screen shows the year's logo. The year is the start season of an active Progressive wizard
 // (progressive_cards.dll ProgressiveCardsStartYear), else the year whose team names progressive.dll
 // shows (ProgressiveNamesYear: a Progressive career below 2026). 2026 and later, and every other
-// career and mode, resolve the stock paths. The resolver copies the path (up to 511 characters)
-// during the call, so the rewritten path lives in a thread-local buffer.
+// career and mode, resolve the stock paths. A slot whose team that year is an added team (the effective
+// career.season records, progressive_cards.dll ProgressiveCardsAddedTeamLogoFor) gets the team's own key
+// in the arrays the core's team.logo build gave it (cards_logic.hpp kAddedLogoArrays); the timing tower
+// arrays keep the years.json key. The resolver copies the path (up to 511 characters) during the call,
+// so the rewritten path lives in a thread-local buffer.
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -52,6 +55,7 @@ bool g_tried = false;
 std::atomic<bool> g_ready{false};
 std::vector<pc::LogoMap> g_logos;
 std::atomic<int> g_logged{0};
+std::atomic<int> g_added_logged{0};
 
 using YearFn = int (*)(void);
 
@@ -86,6 +90,28 @@ int year()
 {
     int y = call(g_cards);
     return y ? y : call(g_career);
+}
+
+using AddedFn = const char *(*)(int year, const char *label);
+std::atomic<AddedFn> g_added{nullptr};
+std::atomic<uint64_t> g_added_next{0};
+
+std::string added_key(int y, const std::string &label)
+{
+    AddedFn f = g_added.load();
+    if (!f) {
+        uint64_t now = GetTickCount64();
+        if (now < g_added_next.load())
+            return std::string();
+        g_added_next = now + kRetryMs;
+        HMODULE m = GetModuleHandleW(L"progressive_cards.dll");
+        f = m ? reinterpret_cast<AddedFn>(GetProcAddress(m, "ProgressiveCardsAddedTeamLogoFor")) : nullptr;
+        if (!f)
+            return std::string();
+        g_added = f;
+    }
+    const char *k = f(y, label.c_str());
+    return k ? std::string(k) : std::string();
 }
 
 void load()
@@ -128,6 +154,11 @@ SWOFTY_WRAP(pg_vm_resolve, void *, void *registry, const char *path, const void 
         return orig(registry, path, base, create);
     if (!g_ready.load())
         load();
+    if (pc::added_logo_path(path, [y](const std::string &label) { return added_key(y, label); }, t_path)) {
+        if (g_added_logged.fetch_add(1) < 8)
+            swofty::log("[progressive] team logos %d: %s -> %s (the slot's added team)", y, path, t_path.c_str());
+        return orig(registry, t_path.c_str(), base, create);
+    }
     if (g_ready.load() && pc::logo_path(g_logos, y, path, t_path)) {
         if (g_logged.fetch_add(1) < 12)
             swofty::log("[progressive] team logos %d: %s -> %s", y, path, t_path.c_str());

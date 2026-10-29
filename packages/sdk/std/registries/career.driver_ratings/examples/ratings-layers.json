@@ -1,0 +1,22 @@
+{
+  "career.driver_ratings": {
+    "swofty.progressive/2017/game/lewis_hamilton": {
+      "pace": 97
+    },
+    "$select": [
+      {
+        "ids": "swofty.progressive/*",
+        "where": {
+          "driver": "game/max_verstappen"
+        },
+        "when": {
+          "option": "young_max",
+          "on": true
+        },
+        "patch": {
+          "experience": 40
+        }
+      }
+    ]
+  }
+}

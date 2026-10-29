@@ -1,0 +1,144 @@
+{
+  "name": "a Team HQ tab from a 1.5 manifest takes another addon's title layer",
+  "rule": "the hub_tab manifest field provides a hub.tab record under the addon's id and the tab's name; a later addon's layer on its title wins, and a layer from an earlier addon in load order on the same field loses to it (compatibility.md#an-older-addon-on-16, layers.md#precedence)",
+  "registries": {
+    "hub.tab": {
+      "applies": "read"
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.early",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "hub.tab",
+          "target": "swofty.progressive/progressive",
+          "patch": {
+            "title": "Early"
+          }
+        }
+      ]
+    },
+    {
+      "id": "swofty.progressive",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "hub.tab",
+          "key": "progressive",
+          "stage": "on_load",
+          "value": {
+            "name": "progressive",
+            "title": "Progressive",
+            "data_group": "f1_career_progressive",
+            "options": [
+              "follow_mode",
+              "names_year"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.history",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "hub.tab",
+          "target": "swofty.progressive/progressive",
+          "patch": {
+            "title": "History"
+          },
+          "stage": "on_load"
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "hub.tab": {
+          "swofty.progressive/progressive": {
+            "status": "ok",
+            "value": {
+              "name": "progressive",
+              "title": "History",
+              "data_group": "f1_career_progressive",
+              "options": [
+                "follow_mode",
+                "names_year"
+              ]
+            },
+            "origins": {
+              "/title": "mod.history"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "field",
+          "registry": "hub.tab",
+          "id": "swofty.progressive/progressive",
+          "pointer": "/title",
+          "addons": [
+            "mod.early",
+            "mod.history"
+          ],
+          "winner": "mod.history"
+        }
+      ],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": [
+          "mod.history"
+        ]
+      },
+      "expect": {
+        "hub.tab": {
+          "swofty.progressive/progressive": {
+            "status": "ok",
+            "value": {
+              "name": "progressive",
+              "title": "Early",
+              "data_group": "f1_career_progressive",
+              "options": [
+                "follow_mode",
+                "names_year"
+              ]
+            },
+            "origins": {
+              "/title": "mod.early"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

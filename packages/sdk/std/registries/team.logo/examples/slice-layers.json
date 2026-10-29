@@ -1,0 +1,17 @@
+{
+  "team.logo": {
+    "game/williams": {
+      "images": {
+        "hud": "logos/williams_hud.png"
+      }
+    },
+    "game/mclaren": {
+      "images": {
+        "driver_select": "logos/mclaren_driver_select.png",
+        "hub": {
+          "stock": "ui/hub/mclaren.png"
+        }
+      }
+    }
+  }
+}

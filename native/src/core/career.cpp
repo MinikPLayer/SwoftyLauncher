@@ -4,10 +4,12 @@
 #include <swofty/mixin.hpp>
 
 #include <atomic>
+#include <cstring>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 
+#include "apply/moments.hpp"
 #include "career_state.hpp"
 #include "dbread_logic.hpp"
 #include "layout.hpp"
@@ -142,6 +144,7 @@ void publish(const runtime::career::Edges &e, const SwoftyCareerState &s)
         perf::mark("career", "unloaded");
         swofty::log("[career] career.unloaded (mode %s)", mode_name(e.old_mode));
         fire(SWOFTY_EVENT_CAREER_UNLOADED, e.old_mode, 0, &s);
+        swofty_core::apply::moments::career_unloaded();
     }
     if (e.loaded) {
         perf::mark("career", "loaded");
@@ -151,6 +154,8 @@ void publish(const runtime::career::Edges &e, const SwoftyCareerState &s)
                     : s.components == SWOFTY_CAREER_COMPONENTS_FALLBACK ? "fallback to flow"
                                                                         : "unseen",
                     mode_name(s.component_mode), mode_name(s.team_hq_mode));
+        std::string id = runtime::snapshots_career_loaded(s.key, s.mode);
+        swofty_core::apply::moments::career_loaded(id.c_str(), s.mode);
         fire(SWOFTY_EVENT_CAREER_LOADED, s.mode, 0, &s);
     }
     if (e.hub == 1) {
@@ -250,6 +255,11 @@ void on_flow(SwoftyContext *c)
     if (perf_on())
         perf_flow(hash, uint32_t(from), to, name);
     runtime::netplay_flow(hash, to);
+    runtime::testagent_flow(name, to);
+    if (known && to == 1 && !std::strcmp(known, "StateLoadSession"))
+        swofty_core::apply::moments::session_load("StateLoadSession");
+    if (known && to == 1 && !std::strcmp(known, "StateUnloadSession"))
+        swofty_core::apply::moments::session_end("StateUnloadSession");
     fire(SWOFTY_EVENT_FLOW_STATE, to, from, &f);
     settle_and_publish();
 }

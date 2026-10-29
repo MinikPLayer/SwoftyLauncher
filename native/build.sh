@@ -55,10 +55,10 @@ EOF
 ZS=third_party/zstd
 ZOBJ=()
 mkdir -p build/zstd
-for c in $ZS/common/*.c $ZS/compress/*.c; do
+for c in $ZS/common/*.c $ZS/compress/*.c $ZS/decompress/*.c; do
     o=build/zstd/$(basename "${c%.c}").o
     ZOBJ+=("$o")
-    [[ $o -nt $c ]] || "${PIN[@]}" "${CC[@]}" -O2 -DXXH_NAMESPACE=ZSTD_ -DZSTD_LEGACY_SUPPORT=0 -DDEBUGLEVEL=0 -I$ZS -c "$c" -o "$o" &
+    [[ $o -nt $c ]] || "${PIN[@]}" "${CC[@]}" -O2 -DXXH_NAMESPACE=ZSTD_ -DZSTD_LEGACY_SUPPORT=0 -DZSTD_DISABLE_ASM -DDEBUGLEVEL=0 -I$ZS -c "$c" -o "$o" &
 done
 [[ build/safetyhook.o -nt $SH/safetyhook.cpp ]] || "${PIN[@]}" "${CXX[@]}" -O2 -I$SH -c $SH/safetyhook.cpp -o build/safetyhook.o &
 wait
@@ -68,9 +68,11 @@ wait
 # unavailable at runtime, when the headers lack the KB structs they read (src/core/layout.hpp).
 GAME=()
 [[ -n ${GAME_INCLUDE:-} ]] && GAME=(-I"$GAME_INCLUDE")
+# The 1.6 handler guard is the one file that uses SEH (__try/__except), which clang only parses with -fms-extensions.
+"${PIN[@]}" "${CXX[@]}" -O2 -Wall -Wextra -fms-extensions -I$SDK -c src/core/hooks/guard.cpp -o build/hooks_guard.o
 "${PIN[@]}" "${CXX[@]}" -O2 -Wall -Wextra "${DEFS[@]}" -I$SDK "${GAME[@]}" -Iinclude -I$SH -I$ZS -shared -o "$OUT/swofty_core.dll" \
     src/core/manager.cpp src/core/crash.cpp src/core/settings.cpp src/core/swofty_core.cpp src/core/ui.cpp src/core/ui_vm.cpp src/core/items.cpp \
-    src/core/stage.cpp src/core/netplay.cpp src/core/netplay_drive.cpp src/core/netplay_bridge.cpp src/core/net_trace.cpp src/core/assets.cpp src/core/resources.cpp src/core/gamedb.cpp src/core/overlay.cpp src/core/events.cpp src/core/hud.cpp src/core/focus.cpp src/core/d3d12_hooks.cpp src/core/grade.cpp src/core/postfx.cpp src/core/telemetry.cpp src/core/dbread.cpp src/core/storage.cpp src/core/career.cpp src/core/career_content.cpp src/core/career_start.cpp src/core/popup.cpp src/core/mfd.cpp src/core/sdk.cpp src/core/perf.cpp src/core/lang_override.cpp src/core/characters.cpp src/core/career_wizard.cpp src/core/era_picker.cpp src/core/car_category.cpp src/core/save_splice.cpp src/core/ers_newlap.cpp src/core/track_acclim.cpp src/core/hub_tab.cpp build/safetyhook.o \
+    src/core/stage.cpp src/core/netplay.cpp src/core/netplay_drive.cpp src/core/netplay_bridge.cpp src/core/net_trace.cpp src/core/assets.cpp src/core/resources.cpp src/core/gamedb.cpp src/core/overlay.cpp src/core/events.cpp src/core/hud.cpp src/core/focus.cpp src/core/d3d12_hooks.cpp src/core/grade.cpp src/core/postfx.cpp src/core/telemetry.cpp src/core/dbread.cpp src/core/storage.cpp src/core/career.cpp src/core/career_content.cpp src/core/career_start.cpp src/core/popup.cpp src/core/sdk.cpp src/core/perf.cpp src/core/lang_override.cpp src/core/characters.cpp src/core/career_wizard.cpp src/core/era_picker.cpp src/core/car_category.cpp src/core/save_splice.cpp src/core/ers_newlap.cpp src/core/hub_tab.cpp src/core/registry/schema.cpp src/core/hooks/hooks.cpp src/core/hooks/core_events.cpp src/core/services/services.cpp src/core/career_ops/career_ops.cpp src/core/career_ops/stats.cpp build/hooks_guard.o src/core/registry/store.cpp src/core/registry/table.cpp src/core/registry/validate.cpp src/core/registry/core.cpp src/core/snapshots/snapshots.cpp src/core/snapshots/runtime.cpp src/core/track_acclim.cpp src/core/apply/scheduler.cpp src/core/apply/ids.cpp src/core/apply/moments.cpp src/core/apply/content/appliers.cpp src/core/testagent/agent.cpp src/core/mfd.cpp src/core/apply/files.cpp src/core/save_sandbox.cpp src/core/career_ops/track_fuel.cpp src/core/hooks/game_points.cpp src/core/hooks/session_points.cpp src/core/registry/older.cpp src/core/apply/content/logos.cpp src/core/team_slots.cpp build/safetyhook.o \
     build/Zydis.o "${ZOBJ[@]}" "${STATIC[@]}"
 
 "${PIN[@]}" "${CXX[@]}" -O2 -Wall -Wextra -I$SDK -Iinclude -shared -o "$OUT/swofty_gamelog.dll" src/gamelog/gamelog.cpp "${STATIC[@]}"

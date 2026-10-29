@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "career.season 1.0",
+  "x-registry": "career.season",
+  "x-version": "1.0",
+  "x-applies": "read",
+  "x-snapshot": true,
+  "x-snapshot-budget": 65536,
+  "description": "career::Season: one year of a career: the box it races in, its calendar, its line-up and mid-season changes.",
+  "type": "object",
+  "properties": {
+    "data_group": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "year": {
+      "type": "integer",
+      "minimum": 1950,
+      "maximum": 2100
+    },
+    "box": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "content.package"
+    },
+    "calendar": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "career.calendar"
+    },
+    "teams": {
+      "type": "array",
+      "x-key": [
+        "slot"
+      ],
+      "items": {
+        "$ref": "#/$defs/season_team"
+      }
+    },
+    "changes": {
+      "type": "array",
+      "x-key": [
+        "round",
+        "slot",
+        "seat"
+      ],
+      "items": {
+        "$ref": "#/$defs/season_change"
+      }
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "career.season",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "data_group",
+    "year"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "season_team": {
+      "description": "career::SeasonTeam: the career team in slot 1-12 and its two seats. team names a team.identity record: a stock team, a new team or a constructor/ id.",
+      "type": "object",
+      "properties": {
+        "slot": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "team": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "team.identity"
+        },
+        "seats": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "x-ref": "driver.identity"
+          }
+        }
+      },
+      "required": [
+        "slot"
+      ],
+      "additionalProperties": false
+    },
+    "season_change": {
+      "description": "career::SeasonChange: from this round on, this seat.",
+      "type": "object",
+      "properties": {
+        "round": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "slot": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "seat": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "out": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "driver.identity"
+        },
+        "in": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-ref": "driver.identity"
+        },
+        "kind": {
+          "enum": [
+            "swap",
+            "stand_in",
+            "move",
+            "replace"
+          ],
+          "default": "swap"
+        },
+        "until_round": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        }
+      },
+      "required": [
+        "round",
+        "slot",
+        "seat"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

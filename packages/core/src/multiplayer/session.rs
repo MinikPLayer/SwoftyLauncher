@@ -61,7 +61,8 @@ pub trait GameControl: Send + Sync {
     /// `swofty/netplay.json`; `None` when it can't be reached.
     fn files_dir(&self) -> Option<PathBuf>;
     fn status(&self) -> Result<GameStatus, game::Error>;
-    fn configure(&self, self_member: u8, base: u16) -> Result<GameStatus, game::Error>;
+    /// Set the room; `name` is this player's signed-in name for the game's driver.
+    fn configure(&self, self_member: u8, base: u16, name: Option<&str>) -> Result<GameStatus, game::Error>;
     fn host(&self, category: Category) -> Result<GameStatus, game::Error>;
     fn join(&self, ip: Ipv4Addr) -> Result<GameStatus, game::Error>;
     fn leave(&self) -> Result<GameStatus, game::Error>;
@@ -103,8 +104,8 @@ impl GameControl for Mailbox {
         }
     }
 
-    fn configure(&self, self_member: u8, base: u16) -> Result<GameStatus, game::Error> {
-        game::configure(&self.dir()?, self_member, base)
+    fn configure(&self, self_member: u8, base: u16, name: Option<&str>) -> Result<GameStatus, game::Error> {
+        game::configure(&self.dir()?, self_member, base, name)
     }
 
     fn host(&self, category: Category) -> Result<GameStatus, game::Error> {
@@ -1031,6 +1032,20 @@ impl Worker {
         self.lobby.as_ref()?.member(&me.id)?.number()
     }
 
+    /// This player's signed-in name, as the lobby lists it, for the game's driver.
+    fn driver_name(&self) -> Option<String> {
+        let me = self.me.as_ref()?;
+        let listed = self
+            .lobby
+            .as_ref()
+            .and_then(|l| l.member(&me.id))
+            .map(|m| m.name.as_str());
+        [listed, Some(me.name.as_str())]
+            .into_iter()
+            .flatten()
+            .find_map(game::driver_name)
+    }
+
     fn start_bridge(&mut self) -> Result<(), Halt> {
         let Some(key) = self.key else {
             return Err(Halt::Step(
@@ -1116,7 +1131,8 @@ impl Worker {
         let me = self.self_number().expect("bridge started");
         let base = self.bridge.as_ref().map(Bridge::base).expect("bridge started");
         self.configured = true;
-        match self.setup.game.configure(me, base) {
+        let name = self.driver_name();
+        match self.setup.game.configure(me, base, name.as_deref()) {
             Ok(status) => self.game_status = Some(status),
             Err(e) => {
                 let (why, status) = refused(e);
@@ -2154,7 +2170,12 @@ mod tests {
             Ok(lock(&self.status).clone())
         }
 
-        fn configure(&self, self_member: u8, base: u16) -> Result<GameStatus, game::Error> {
+        fn configure(
+            &self,
+            self_member: u8,
+            base: u16,
+            name: Option<&str>,
+        ) -> Result<GameStatus, game::Error> {
             let mut s = lock(&self.status);
             s.configured = true;
             s.self_member = self_member;
@@ -2162,7 +2183,7 @@ mod tests {
             let port = self.socket.local_addr().unwrap().port();
             let netplay = json!({"pid": 1, "self": self_member, "base": base, "game_port": port});
             std::fs::write(self.dir.join(bridge::STATUS_FILE), netplay.to_string()).unwrap();
-            lock(&self.log).push(format!("configure {self_member} {base}"));
+            lock(&self.log).push(format!("configure {self_member} {base} {}", name.unwrap_or("-")));
             if self.configure_fails.load(Ordering::Relaxed) {
                 return Err(game::Error::Timeout(Duration::from_secs(10)));
             }
@@ -2370,7 +2391,7 @@ mod tests {
         assert_eq!(
             host_game.log(),
             vec![
-                format!("configure 1 {}", state.base.unwrap()),
+                format!("configure 1 {} Host", state.base.unwrap()),
                 "host f1-2026".into()
             ]
         );
@@ -2385,7 +2406,7 @@ mod tests {
         assert_eq!(
             guest_game.log(),
             vec![
-                format!("configure 2 {}", guest_state.base.unwrap()),
+                format!("configure 2 {} Ana", guest_state.base.unwrap()),
                 "join 10.77.0.1".into()
             ]
         );
@@ -2890,10 +2911,10 @@ mod tests {
                 panic!("no command arrived");
             })
         };
-        let s = control.configure(3, 41000).unwrap();
+        let s = control.configure(3, 41000, Some("Ana")).unwrap();
         assert_eq!((s.configured, s.self_member, s.base), (true, 3, 41000));
         let cmd = responder.join().unwrap();
-        assert_eq!(cmd["args"], json!({"self": 3, "base": 41000}));
+        assert_eq!(cmd["args"], json!({"self": 3, "base": 41000, "name": "Ana"}));
         std::fs::remove_dir_all(&dir).ok();
     }
 }

@@ -28,6 +28,66 @@ pub struct AiHandlingConfig {
 }
 
 #[repr(C)]
+pub struct CarAssists {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarComponentBase {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarConvexHull {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarCoreAero {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarDamageBodyPart {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarDamageSuspension {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarDebugSystem {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarDifferential {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarErs {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarErsMode {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarF1Aero {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarF1Plank {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
 pub struct CarPerfVehicle {
     _opaque: [u8; 0],
 }
@@ -38,7 +98,87 @@ pub struct CarPhysicsRecord {
 }
 
 #[repr(C)]
-pub struct CarWheelState {
+pub struct CarSetupValues {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarSpline {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarSteering {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarSuspAxle {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarSuspBrakeType {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarSuspCorner {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarSuspTyreType {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarSuspension {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarTuning {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarTurbo {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarTyreCompound {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarTyreMfCurve {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarTyreState {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarVehicleManager {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarVtfAsset {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarWheel {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct CarWheelProxies {
     _opaque: [u8; 0],
 }
 
@@ -64,6 +204,16 @@ pub struct FEHomeViewModel {
 
 #[repr(C)]
 pub struct GdbTableCursor {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct GdbValueSlot {
+    _opaque: [u8; 0],
+}
+
+#[repr(C)]
+pub struct InputRecord {
     _opaque: [u8; 0],
 }
 
@@ -137,6 +287,17 @@ pub struct ActivityDef {
     pub r#type: u8,
 }
 const _: () = assert!(core::mem::offset_of!(ActivityDef, r#type) == 0x10);
+
+#[repr(C)]
+pub struct AiController {
+    _pad_0x0: [u8; 0x8],
+    pub input: *mut InputRecord,
+    pub owner: *mut c_void,
+    pub vehicle: u8,
+}
+const _: () = assert!(core::mem::offset_of!(AiController, input) == 0x8);
+const _: () = assert!(core::mem::offset_of!(AiController, owner) == 0x10);
+const _: () = assert!(core::mem::offset_of!(AiController, vehicle) == 0x18);
 
 #[repr(C)]
 pub struct BankAccount {
@@ -224,6 +385,135 @@ pub struct CalendarActivity {
 const _: () = assert!(core::mem::offset_of!(CalendarActivity, day) == 0xa);
 const _: () = assert!(core::mem::offset_of!(CalendarActivity, activity) == 0x10);
 const _: () = assert!(core::mem::size_of::<CalendarActivity>() == 0x20);
+
+#[repr(C)]
+pub struct CarBrakeEcu {
+    _pad_0x0: [u8; 0x21d8],
+    pub brake_bias: f32,
+    pub brake_pressure: f32,
+}
+const _: () = assert!(core::mem::offset_of!(CarBrakeEcu, brake_bias) == 0x21d8);
+const _: () = assert!(core::mem::offset_of!(CarBrakeEcu, brake_pressure) == 0x21dc);
+
+#[repr(C)]
+pub struct CarChassis {
+    _pad_0x0: [u8; 0x150],
+    pub mass: f32,
+}
+const _: () = assert!(core::mem::offset_of!(CarChassis, mass) == 0x150);
+
+#[repr(C)]
+pub struct CarDamageFrontWing {
+    _pad_0x0: [u8; 0xa8],
+    pub parts_allocator: *mut c_void,
+    pub parts_begin: *mut *mut c_void,
+    pub parts_end: *mut *mut c_void,
+    pub parts_capacity: u64,
+}
+const _: () = assert!(core::mem::offset_of!(CarDamageFrontWing, parts_allocator) == 0xa8);
+const _: () = assert!(core::mem::offset_of!(CarDamageFrontWing, parts_begin) == 0xb0);
+const _: () = assert!(core::mem::offset_of!(CarDamageFrontWing, parts_end) == 0xb8);
+const _: () = assert!(core::mem::offset_of!(CarDamageFrontWing, parts_capacity) == 0xc0);
+
+#[repr(C)]
+pub struct CarObfFloat {}
+
+#[repr(C)]
+pub struct CarEngine {
+    _pad_0x0: [u8; 0x2528],
+    pub limiter_rotation_rate: f32,
+    _pad_0x252c: [u8; 0xc],
+    pub rotation_rate: f32,
+    _pad_0x253c: [u8; 0x38],
+    pub throttle: f32,
+}
+const _: () = assert!(core::mem::offset_of!(CarEngine, limiter_rotation_rate) == 0x2528);
+const _: () = assert!(core::mem::offset_of!(CarEngine, rotation_rate) == 0x2538);
+const _: () = assert!(core::mem::offset_of!(CarEngine, throttle) == 0x2574);
+
+#[repr(C)]
+pub struct CarFuelEcu {
+    _pad_0x0: [u8; 0x128],
+    pub fuel_mode: i32,
+}
+const _: () = assert!(core::mem::offset_of!(CarFuelEcu, fuel_mode) == 0x128);
+
+#[repr(C)]
+pub struct CarFuelTank {
+    _pad_0x0: [u8; 0x100],
+    pub fuel_mass: f32,
+    _pad_0x104: [u8; 0x4],
+    pub fuel_flow: f32,
+}
+const _: () = assert!(core::mem::offset_of!(CarFuelTank, fuel_mass) == 0x100);
+const _: () = assert!(core::mem::offset_of!(CarFuelTank, fuel_flow) == 0x108);
+
+#[repr(C)]
+pub struct CarGearBox {
+    _pad_0x0: [u8; 0x680],
+    pub gear_index: u32,
+    pub target_gear_index: u32,
+}
+const _: () = assert!(core::mem::offset_of!(CarGearBox, gear_index) == 0x680);
+const _: () = assert!(core::mem::offset_of!(CarGearBox, target_gear_index) == 0x684);
+
+#[repr(C)]
+pub struct CarLive {
+    pub teleport_tag: *mut c_char,
+    pub teleport_priority: i32,
+    _pad_0xc: [u8; 0x4],
+    pub teleport_prev_mtx: [f32; 16],
+    pub teleport_new_mtx: [f32; 16],
+    pub teleport_dt: f32,
+    pub teleport_flags: u32,
+    _pad_0x98: [u8; 0x50],
+    pub vehicle_id: u8,
+    _pad_0xe9: [u8; 0x2af],
+    pub system_count: u32,
+    _pad_0x39c: [u8; 0x194],
+    pub engine: *mut c_void,
+    pub gearbox: *mut c_void,
+    pub fuel_tank: *mut c_void,
+    pub fuel_ecu: *mut c_void,
+    pub brake_ecu: *mut c_void,
+    pub chassis: *mut c_void,
+    pub steering: *mut c_void,
+    pub core_aero: *mut c_void,
+    pub f1_aero: *mut c_void,
+    pub differential: *mut c_void,
+    pub suspension: *mut c_void,
+    _pad_0x588: [u8; 0x8],
+    pub f1_tuning: *mut c_void,
+    pub f1_assists: *mut c_void,
+    pub turbo: *mut c_void,
+    pub ers: *mut c_void,
+    _pad_0x5b0: [u8; 0x9990],
+    pub handling_version: u32,
+}
+const _: () = assert!(core::mem::offset_of!(CarLive, teleport_tag) == 0x0);
+const _: () = assert!(core::mem::offset_of!(CarLive, teleport_priority) == 0x8);
+const _: () = assert!(core::mem::offset_of!(CarLive, teleport_prev_mtx) == 0x10);
+const _: () = assert!(core::mem::offset_of!(CarLive, teleport_new_mtx) == 0x50);
+const _: () = assert!(core::mem::offset_of!(CarLive, teleport_dt) == 0x90);
+const _: () = assert!(core::mem::offset_of!(CarLive, teleport_flags) == 0x94);
+const _: () = assert!(core::mem::offset_of!(CarLive, vehicle_id) == 0xe8);
+const _: () = assert!(core::mem::offset_of!(CarLive, system_count) == 0x398);
+const _: () = assert!(core::mem::offset_of!(CarLive, engine) == 0x530);
+const _: () = assert!(core::mem::offset_of!(CarLive, gearbox) == 0x538);
+const _: () = assert!(core::mem::offset_of!(CarLive, fuel_tank) == 0x540);
+const _: () = assert!(core::mem::offset_of!(CarLive, fuel_ecu) == 0x548);
+const _: () = assert!(core::mem::offset_of!(CarLive, brake_ecu) == 0x550);
+const _: () = assert!(core::mem::offset_of!(CarLive, chassis) == 0x558);
+const _: () = assert!(core::mem::offset_of!(CarLive, steering) == 0x560);
+const _: () = assert!(core::mem::offset_of!(CarLive, core_aero) == 0x568);
+const _: () = assert!(core::mem::offset_of!(CarLive, f1_aero) == 0x570);
+const _: () = assert!(core::mem::offset_of!(CarLive, differential) == 0x578);
+const _: () = assert!(core::mem::offset_of!(CarLive, suspension) == 0x580);
+const _: () = assert!(core::mem::offset_of!(CarLive, f1_tuning) == 0x590);
+const _: () = assert!(core::mem::offset_of!(CarLive, f1_assists) == 0x598);
+const _: () = assert!(core::mem::offset_of!(CarLive, turbo) == 0x5a0);
+const _: () = assert!(core::mem::offset_of!(CarLive, ers) == 0x5a8);
+const _: () = assert!(core::mem::offset_of!(CarLive, handling_version) == 0x9f40);
 
 #[repr(C)]
 pub struct CarNumberComponent {
@@ -417,6 +707,25 @@ const _: () = assert!(core::mem::offset_of!(ContractRecord, day_contract_decided
 const _: () = assert!(core::mem::offset_of!(ContractRecord, accepted) == 0x6c);
 const _: () = assert!(core::mem::offset_of!(ContractRecord, acknowledged) == 0x6d);
 const _: () = assert!(core::mem::size_of::<ContractRecord>() == 0x70);
+
+#[repr(C)]
+pub struct ControllerSet {
+    _pad_0x0: [u8; 0x10],
+    pub mode_masked: u32,
+    _pad_0x14: [u8; 0x4],
+    pub mode_key: u32,
+    _pad_0x1c: [u8; 0x4],
+    pub human_controller: *mut c_void,
+    pub ai_controller: *mut c_void,
+    pub flags: u32,
+    pub vehicle: u8,
+}
+const _: () = assert!(core::mem::offset_of!(ControllerSet, mode_masked) == 0x10);
+const _: () = assert!(core::mem::offset_of!(ControllerSet, mode_key) == 0x18);
+const _: () = assert!(core::mem::offset_of!(ControllerSet, human_controller) == 0x20);
+const _: () = assert!(core::mem::offset_of!(ControllerSet, ai_controller) == 0x28);
+const _: () = assert!(core::mem::offset_of!(ControllerSet, flags) == 0x30);
+const _: () = assert!(core::mem::offset_of!(ControllerSet, vehicle) == 0x34);
 
 #[repr(C)]
 pub struct CostCapComponent {
@@ -986,6 +1295,13 @@ const _: () = assert!(core::mem::offset_of!(GameWeatherSystem, weekend) == 0x1f1
 const _: () = assert!(core::mem::offset_of!(GameWeatherSystem, dataset_dynamic) == 0x2f3a);
 
 #[repr(C)]
+pub struct GdbDatabase {
+    _pad_0x0: [u8; 0xf0],
+    pub loaded: u8,
+}
+const _: () = assert!(core::mem::offset_of!(GdbDatabase, loaded) == 0xf0);
+
+#[repr(C)]
 pub struct GdbStringRecord {
     _pad_0x0: [u8; 0x10],
     pub enc_size: u64,
@@ -993,6 +1309,19 @@ pub struct GdbStringRecord {
 }
 const _: () = assert!(core::mem::offset_of!(GdbStringRecord, enc_size) == 0x10);
 const _: () = assert!(core::mem::offset_of!(GdbStringRecord, enc) == 0x18);
+
+#[repr(C)]
+pub struct GdbValueMap {
+    _pad_0x0: [u8; 0x28],
+    pub num_elements: u64,
+    pub mask: u64,
+    pub max_num_elements_allowed: u64,
+    _pad_0x40: [u8; 0x8],
+}
+const _: () = assert!(core::mem::offset_of!(GdbValueMap, num_elements) == 0x28);
+const _: () = assert!(core::mem::offset_of!(GdbValueMap, mask) == 0x30);
+const _: () = assert!(core::mem::offset_of!(GdbValueMap, max_num_elements_allowed) == 0x38);
+const _: () = assert!(core::mem::size_of::<GdbValueMap>() == 0x48);
 
 #[repr(C)]
 pub struct VmPropHolder {
@@ -1222,6 +1551,21 @@ const _: () = assert!(core::mem::offset_of!(SaveDataContainer, retain_unknown_ke
 const _: () = assert!(core::mem::offset_of!(SaveDataContainer, retained_count) == 0x1c8);
 
 #[repr(C)]
+pub struct SaveSlotInfo {
+    pub slot_id: u64,
+    pub slot_guid: u64,
+}
+const _: () = assert!(core::mem::offset_of!(SaveSlotInfo, slot_id) == 0x0);
+const _: () = assert!(core::mem::offset_of!(SaveSlotInfo, slot_guid) == 0x8);
+
+#[repr(C)]
+pub struct SaveSlotManager {
+    _pad_0x0: [u8; 0x280],
+    pub current: *mut SaveSlotInfo,
+}
+const _: () = assert!(core::mem::offset_of!(SaveSlotManager, current) == 0x280);
+
+#[repr(C)]
 pub struct ScheduleComponent {
     _pad_0x0: [u8; 0x410],
     pub seasons_begin: *mut ScheduleSeason,
@@ -1301,6 +1645,29 @@ const _: () = assert!(core::mem::offset_of!(Session, participants_begin) == 0x20
 const _: () = assert!(core::mem::offset_of!(Session, participants_end) == 0x28);
 const _: () = assert!(core::mem::offset_of!(Session, participants_capacity) == 0x30);
 const _: () = assert!(core::mem::size_of::<Session>() == 0xa0);
+
+#[repr(C)]
+pub struct SpectatorDirector {
+    _pad_0x0: [u8; 0xd0],
+    pub ui_active: u8,
+    pub active: u8,
+    _pad_0xd2: [u8; 0x1],
+    pub should_quit: u8,
+    _pad_0xd4: [u8; 0x2],
+    pub current_driver: u8,
+    _pad_0xd7: [u8; 0x1],
+    pub current_camera: i32,
+    pub requested_driver: u8,
+    _pad_0xdd: [u8; 0x3],
+    pub requested_camera: i32,
+}
+const _: () = assert!(core::mem::offset_of!(SpectatorDirector, ui_active) == 0xd0);
+const _: () = assert!(core::mem::offset_of!(SpectatorDirector, active) == 0xd1);
+const _: () = assert!(core::mem::offset_of!(SpectatorDirector, should_quit) == 0xd3);
+const _: () = assert!(core::mem::offset_of!(SpectatorDirector, current_driver) == 0xd6);
+const _: () = assert!(core::mem::offset_of!(SpectatorDirector, current_camera) == 0xd8);
+const _: () = assert!(core::mem::offset_of!(SpectatorDirector, requested_driver) == 0xdc);
+const _: () = assert!(core::mem::offset_of!(SpectatorDirector, requested_camera) == 0xe0);
 
 #[repr(C)]
 pub struct SponsorEntry {
@@ -1424,6 +1791,48 @@ pub struct StatInfo {
 const _: () = assert!(core::mem::offset_of!(StatInfo, stat_id) == 0x8);
 const _: () = assert!(core::mem::offset_of!(StatInfo, weight) == 0x130);
 const _: () = assert!(core::mem::offset_of!(StatInfo, default_value) == 0x134);
+
+#[repr(C)]
+pub struct TeamRecord {
+    _pad_0x0: [u8; 0xb0],
+    pub display_name: *mut c_char,
+    _pad_0xb8: [u8; 0x90],
+    pub display_name_code: *mut c_char,
+    _pad_0x150: [u8; 0x90],
+    pub display_name_short: *mut c_char,
+    _pad_0x1e8: [u8; 0x90],
+    pub display_name_super_short: *mut c_char,
+    _pad_0x280: [u8; 0x90],
+    pub livery_name: *mut c_char,
+    _pad_0x318: [u8; 0x90],
+    pub team_base: *mut c_char,
+    _pad_0x3b0: [u8; 0x128],
+    pub timing_tower_texture_path: *mut c_char,
+    _pad_0x4e0: [u8; 0x84],
+    pub primary_colour: i32,
+    pub secondary_colour: i32,
+    pub tertiary_colour: i32,
+    pub team_wear_primary_colour: i32,
+    pub team_wear_secondary_colour: i32,
+    pub team_wear_tertiary_colour: i32,
+    pub ui_team_colour: i32,
+    _pad_0x580: [u8; 0x1e8],
+}
+const _: () = assert!(core::mem::offset_of!(TeamRecord, display_name) == 0xb0);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, display_name_code) == 0x148);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, display_name_short) == 0x1e0);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, display_name_super_short) == 0x278);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, livery_name) == 0x310);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, team_base) == 0x3a8);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, timing_tower_texture_path) == 0x4d8);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, primary_colour) == 0x564);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, secondary_colour) == 0x568);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, tertiary_colour) == 0x56c);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, team_wear_primary_colour) == 0x570);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, team_wear_secondary_colour) == 0x574);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, team_wear_tertiary_colour) == 0x578);
+const _: () = assert!(core::mem::offset_of!(TeamRecord, ui_team_colour) == 0x57c);
+const _: () = assert!(core::mem::size_of::<TeamRecord>() == 0x768);
 
 #[repr(C)]
 pub struct TeamRenownData {
@@ -1776,6 +2185,21 @@ const _: () = assert!(core::mem::offset_of!(Weekend, progress_state) == 0x23c);
 const _: () = assert!(core::mem::offset_of!(Weekend, track_stat_id) == 0x278);
 const _: () = assert!(core::mem::size_of::<Weekend>() == 0x4f0);
 
+pub type Car_Create_DetachablePart_t = unsafe extern "C" fn(
+    part_manager: *mut c_void,
+    cb: *mut *mut c_void,
+    name_id: *mut u32,
+    params: *mut i32,
+    k: f32,
+) -> *mut c_void;
+pub type Car_FrontWing_Init_t = unsafe extern "C" fn(front_wing: *mut c_void, reset: c_char);
+pub type Car_Register_DetachablePart_Thunk_t = unsafe extern "C" fn(
+    front_wing: *mut c_void,
+    cb: *mut *mut c_void,
+    name_id: *mut u32,
+    params: *mut c_void,
+    k: f32,
+);
 pub type Car_Reset_LastFittedUpgrade_t = unsafe extern "C" fn(inst: *mut c_void);
 pub type Career_Add_SeasonWeekend_t = unsafe extern "C" fn(season: *mut c_void, weekend: *mut c_void) -> u64;
 pub type Career_Add_TeamModifier_t = unsafe extern "C" fn(list: *mut c_void, key: u32, value: f32);
@@ -1932,6 +2356,8 @@ pub type Game_CareerActivities_AddActivity_t =
     unsafe extern "C" fn(calendar: *mut c_void, activity: *const c_void, day: u32);
 pub type Game_CareerActivities_RemoveActivity_t =
     unsafe extern "C" fn(calendar: *mut c_void, activity: *const c_void, day: u16);
+pub type Game_CareerContinue_HandleCommand_t =
+    unsafe extern "C" fn(vm: *mut c_void, cmd: *mut *mut NeStr, value: *mut c_void) -> u64;
 pub type Game_CareerSetup_ResetEntrants_t = unsafe extern "C" fn(setup: *mut c_void);
 pub type Game_CareerWizard_PushNextStep_t = unsafe extern "C" fn(wizard: *mut c_void);
 pub type Game_CareerWizard_StartsInF1_t = unsafe extern "C" fn(
@@ -2001,7 +2427,7 @@ pub type Game_PitLane_MoveDownSpline_t = unsafe extern "C" fn(
     p9: bool,
 );
 pub type Game_Place_Vehicle_t = unsafe extern "C" fn(
-    teleport_req: *mut c_void,
+    car: *mut c_void,
     tag: *const c_char,
     priority: c_int,
     mtx44_a: *const f32,
@@ -2033,6 +2459,8 @@ pub type Game_SaveData_SerialiseContainer_t = unsafe extern "C" fn(
     groups: u64,
 ) -> *mut c_int;
 pub type Game_SaveData_WriteBag_t = unsafe extern "C" fn(codec: *mut NeBagCodec, bag: *mut c_void) -> c_int;
+pub type Game_SaveMgr_RequestProfileSave_Thunk_t =
+    unsafe extern "C" fn(save_mgr: *mut c_void, callback: *mut c_void, a3: u8, a4: u8) -> bool;
 pub type Game_SceneManagerSpawn_SpawnScene_t = unsafe extern "C" fn(
     mgr: *mut c_void,
     opts: *const u8,
@@ -2049,6 +2477,9 @@ pub type Game_Set_VehicleController_Thunk_t =
     unsafe extern "C" fn(system: *mut c_void, vehicle: u64, ai: u32, flag: i32);
 pub type Game_SpeechSystem_PostLine_t =
     unsafe extern "C" fn(speech: *mut c_void, line: *mut c_void, retrigger: u8);
+pub type Game_TeamHQAdvanceViewModel_OnCommandRaised_t =
+    unsafe extern "C" fn(vm: *mut c_void, cmd: *mut *mut NeStr, data: *mut c_void) -> u64;
+pub type Game_TeamHQAdvanceViewModel_Update_t = unsafe extern "C" fn(vm: *mut c_void) -> u64;
 pub type Game_Teleport_Vehicle_t = unsafe extern "C" fn(
     car: *mut c_void,
     name: *const c_char,
@@ -2057,6 +2488,9 @@ pub type Game_Teleport_Vehicle_t = unsafe extern "C" fn(
     dt: f32,
     flags: u32,
 );
+pub type Gdb_HashMap_Rehash_t = unsafe extern "C" fn(map: *mut GdbValueMap, num_buckets: u64);
+pub type Gdb_Load_GameDatabase_t =
+    unsafe extern "C" fn(db: *mut GdbDatabase, cfg: *mut c_void) -> *mut GdbDatabase;
 pub type Gdb_Lookup_Key_t = unsafe extern "C" fn(path: *const c_char) -> *mut *mut c_void;
 pub type Ne_Compare_StringNoCase_t = unsafe extern "C" fn(a: *const c_char, b: *const c_char) -> i32;
 pub type Ne_Detach_ChildNode_t = unsafe extern "C" fn(parent: *mut c_void, child: *mut c_void) -> c_int;
@@ -2079,6 +2513,16 @@ pub type Ne_Play_FullscreenVideo_t = unsafe extern "C" fn(
     layer: i32,
 );
 pub type Ne_Post_BusMessage_t = unsafe extern "C" fn(bus: *mut c_void, msg: *mut c_void) -> u64;
+pub type Ne_SaveSystem2Win_Mount_t = unsafe extern "C" fn(
+    device: *mut c_void,
+    op: *mut c_void,
+    save: *mut c_void,
+    for_saving: u8,
+    a5: u8,
+    created: *mut u8,
+) -> u32;
+pub type Ne_SaveSystem2Win_Start_t = unsafe extern "C" fn(device: *mut c_void) -> u64;
+pub type Ne_SaveSystem_InitDevice_t = unsafe extern "C" fn(save_system: *mut c_void) -> c_int;
 pub type Ne_StringTable_Lookup_t = unsafe extern "C" fn(table: *mut c_void, hash: u64) -> *const c_char;
 pub type Sess_Build_GroupResult_t =
     unsafe extern "C" fn(weekend: *mut c_void, group: u8, result: *mut c_void);
@@ -2174,8 +2618,133 @@ pub type Vm_Set_TabEnabled_t = unsafe extern "C" fn(tabs: usize, node: usize, en
 
 pub mod bindings {
     use super::{Binding, Status};
+    pub const Car_Assets_CreateSystemForPerformanceMode: Binding = Binding {
+        id: "Car_Assets_CreateSystemForPerformanceMode",
+        kind: "func",
+        status: Status::Stable,
+    };
+    pub const Car_Build_VtfComponents: Binding = Binding {
+        id: "Car_Build_VtfComponents",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Chassis_Build: Binding = Binding {
+        id: "Car_Chassis_Build",
+        kind: "func",
+        status: Status::Stable,
+    };
+    pub const Car_Create_DetachablePart: Binding = Binding {
+        id: "Car_Create_DetachablePart",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_FrontWing_Init: Binding = Binding {
+        id: "Car_FrontWing_Init",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_FrontWing_OnCollision: Binding = Binding {
+        id: "Car_FrontWing_OnCollision",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Load_Vtf: Binding = Binding {
+        id: "Car_Load_Vtf",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Physics_PostVehicleUpdate: Binding = Binding {
+        id: "Car_Physics_PostVehicleUpdate",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Read_Engine: Binding = Binding {
+        id: "Car_Read_Engine",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Read_F1Aero: Binding = Binding {
+        id: "Car_Read_F1Aero",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Read_F1Assists: Binding = Binding {
+        id: "Car_Read_F1Assists",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Read_F1Tuning: Binding = Binding {
+        id: "Car_Read_F1Tuning",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Read_GearBox: Binding = Binding {
+        id: "Car_Read_GearBox",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Register_DetachablePart_Thunk: Binding = Binding {
+        id: "Car_Register_DetachablePart_Thunk",
+        kind: "func",
+        status: Status::Experimental,
+    };
     pub const Car_Reset_LastFittedUpgrade: Binding = Binding {
         id: "Car_Reset_LastFittedUpgrade",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Setup_ApplyTuning: Binding = Binding {
+        id: "Car_Setup_ApplyTuning",
+        kind: "func",
+        status: Status::Stable,
+    };
+    pub const Car_Tuning_SetChassisZCom: Binding = Binding {
+        id: "Car_Tuning_SetChassisZCom",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Tyre_GripScale: Binding = Binding {
+        id: "Car_Tyre_GripScale",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Tyre_MagicFormula: Binding = Binding {
+        id: "Car_Tyre_MagicFormula",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Tyre_UpdateWear: Binding = Binding {
+        id: "Car_Tyre_UpdateWear",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Upgrades_ApplyToVehicle: Binding = Binding {
+        id: "Car_Upgrades_ApplyToVehicle",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Upgrades_CalcNonLinearMass: Binding = Binding {
+        id: "Car_Upgrades_CalcNonLinearMass",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Write_Differential: Binding = Binding {
+        id: "Car_Write_Differential",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Write_FuelTank: Binding = Binding {
+        id: "Car_Write_FuelTank",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Write_GearBox: Binding = Binding {
+        id: "Car_Write_GearBox",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Car_Write_Turbo: Binding = Binding {
+        id: "Car_Write_Turbo",
         kind: "func",
         status: Status::Experimental,
     };
@@ -2454,6 +3023,11 @@ pub mod bindings {
         kind: "func",
         status: Status::Experimental,
     };
+    pub const Game_CareerContinue_HandleCommand: Binding = Binding {
+        id: "Game_CareerContinue_HandleCommand",
+        kind: "func",
+        status: Status::Experimental,
+    };
     pub const Game_CareerSetup_ResetEntrants: Binding = Binding {
         id: "Game_CareerSetup_ResetEntrants",
         kind: "func",
@@ -2659,6 +3233,11 @@ pub mod bindings {
         kind: "func",
         status: Status::Stable,
     };
+    pub const Game_SaveMgr_RequestProfileSave_Thunk: Binding = Binding {
+        id: "Game_SaveMgr_RequestProfileSave_Thunk",
+        kind: "func",
+        status: Status::Experimental,
+    };
     pub const Game_SceneManagerSpawn_SpawnScene: Binding = Binding {
         id: "Game_SceneManagerSpawn_SpawnScene",
         kind: "func",
@@ -2684,13 +3263,38 @@ pub mod bindings {
         kind: "func",
         status: Status::Experimental,
     };
+    pub const Game_TeamHQAdvanceViewModel_OnCommandRaised: Binding = Binding {
+        id: "Game_TeamHQAdvanceViewModel_OnCommandRaised",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Game_TeamHQAdvanceViewModel_Update: Binding = Binding {
+        id: "Game_TeamHQAdvanceViewModel_Update",
+        kind: "func",
+        status: Status::Experimental,
+    };
     pub const Game_Teleport_Vehicle: Binding = Binding {
         id: "Game_Teleport_Vehicle",
         kind: "func",
         status: Status::Experimental,
     };
+    pub const Gdb_HashMap_Rehash: Binding = Binding {
+        id: "Gdb_HashMap_Rehash",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Gdb_Load_GameDatabase: Binding = Binding {
+        id: "Gdb_Load_GameDatabase",
+        kind: "func",
+        status: Status::Experimental,
+    };
     pub const Gdb_Lookup_Key: Binding = Binding {
         id: "Gdb_Lookup_Key",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Ne_CloudUploader_Upload: Binding = Binding {
+        id: "Ne_CloudUploader_Upload",
         kind: "func",
         status: Status::Experimental,
     };
@@ -2749,6 +3353,31 @@ pub mod bindings {
         kind: "func",
         status: Status::Experimental,
     };
+    pub const Ne_SaveSystem2Win_Mount: Binding = Binding {
+        id: "Ne_SaveSystem2Win_Mount",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Ne_SaveSystem2Win_Start: Binding = Binding {
+        id: "Ne_SaveSystem2Win_Start",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Ne_SaveSystem2Win_WriteInfoXml: Binding = Binding {
+        id: "Ne_SaveSystem2Win_WriteInfoXml",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Ne_SaveSystem_BuildSaveInfoList: Binding = Binding {
+        id: "Ne_SaveSystem_BuildSaveInfoList",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Ne_SaveSystem_InitDevice: Binding = Binding {
+        id: "Ne_SaveSystem_InitDevice",
+        kind: "func",
+        status: Status::Experimental,
+    };
     pub const Ne_StringTable_Lookup: Binding = Binding {
         id: "Ne_StringTable_Lookup",
         kind: "func",
@@ -2756,6 +3385,21 @@ pub mod bindings {
     };
     pub const Sess_Build_GroupResult: Binding = Binding {
         id: "Sess_Build_GroupResult",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Sess_ControllerSystem_ApplyInputs: Binding = Binding {
+        id: "Sess_ControllerSystem_ApplyInputs",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Sess_ControllerSystem_BuildSets: Binding = Binding {
+        id: "Sess_ControllerSystem_BuildSets",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Sess_ControllerSystem_DestroySets: Binding = Binding {
+        id: "Sess_ControllerSystem_DestroySets",
         kind: "func",
         status: Status::Experimental,
     };
@@ -2871,6 +3515,21 @@ pub mod bindings {
     };
     pub const Sess_Set_SafetyCarDeploymentType: Binding = Binding {
         id: "Sess_Set_SafetyCarDeploymentType",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Sess_SpectatorDirector_SetActive: Binding = Binding {
+        id: "Sess_SpectatorDirector_SetActive",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Sess_SpectatorDirector_Update: Binding = Binding {
+        id: "Sess_SpectatorDirector_Update",
+        kind: "func",
+        status: Status::Experimental,
+    };
+    pub const Sess_SpectatorHud_Hide: Binding = Binding {
+        id: "Sess_SpectatorHud_Hide",
         kind: "func",
         status: Status::Experimental,
     };
@@ -3016,6 +3675,16 @@ pub mod bindings {
     };
     pub const g_Game_VehicleStateRoot: Binding = Binding {
         id: "g_Game_VehicleStateRoot",
+        kind: "data",
+        status: Status::Experimental,
+    };
+    pub const g_Gdb_Database: Binding = Binding {
+        id: "g_Gdb_Database",
+        kind: "data",
+        status: Status::Experimental,
+    };
+    pub const g_Gdb_RecordAllocator: Binding = Binding {
+        id: "g_Gdb_RecordAllocator",
         kind: "data",
         status: Status::Experimental,
     };
@@ -3258,6 +3927,66 @@ pub mod bindings {
         id: "k_Sess_TyreComponentType",
         kind: "data",
         status: Status::Experimental,
+    };
+    pub const site_Car_AeroStoreRearDownforce: Binding = Binding {
+        id: "site_Car_AeroStoreRearDownforce",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Car_AeroStoreTotalDrag: Binding = Binding {
+        id: "site_Car_AeroStoreTotalDrag",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Car_AeroStoreTotalLift: Binding = Binding {
+        id: "site_Car_AeroStoreTotalLift",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Car_EngineDriveTorque: Binding = Binding {
+        id: "site_Car_EngineDriveTorque",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Car_ErsGearModifierLoad: Binding = Binding {
+        id: "site_Car_ErsGearModifierLoad",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Car_FuelFlowStore: Binding = Binding {
+        id: "site_Car_FuelFlowStore",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Car_FuelMassStore: Binding = Binding {
+        id: "site_Car_FuelMassStore",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Car_LiveCarBuilt: Binding = Binding {
+        id: "site_Car_LiveCarBuilt",
+        kind: "site",
+        status: Status::Stable,
+    };
+    pub const site_Car_RegisterVehicleId: Binding = Binding {
+        id: "site_Car_RegisterVehicleId",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Car_SetupTuningApplied: Binding = Binding {
+        id: "site_Car_SetupTuningApplied",
+        kind: "site",
+        status: Status::Stable,
+    };
+    pub const site_Car_UpgradeSectionApplyCall: Binding = Binding {
+        id: "site_Car_UpgradeSectionApplyCall",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Car_VehicleTableRemove: Binding = Binding {
+        id: "site_Car_VehicleTableRemove",
+        kind: "site",
+        status: Status::Stable,
     };
     pub const site_Career_ApplyUpgradeBlockNameDefault: Binding = Binding {
         id: "site_Career_ApplyUpgradeBlockNameDefault",
@@ -4064,6 +4793,11 @@ pub mod bindings {
         kind: "site",
         status: Status::Stable,
     };
+    pub const site_Game_SaveSlot_Selected: Binding = Binding {
+        id: "site_Game_SaveSlot_Selected",
+        kind: "site",
+        status: Status::Experimental,
+    };
     pub const site_Game_TeamSelect_NumberResult: Binding = Binding {
         id: "site_Game_TeamSelect_NumberResult",
         kind: "site",
@@ -4076,6 +4810,16 @@ pub mod bindings {
     };
     pub const site_Gdb_DeptCountStore: Binding = Binding {
         id: "site_Gdb_DeptCountStore",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Gdb_InsertGrowCall: Binding = Binding {
+        id: "site_Gdb_InsertGrowCall",
+        kind: "call",
+        status: Status::Experimental,
+    };
+    pub const site_Gdb_ReserveTarget: Binding = Binding {
+        id: "site_Gdb_ReserveTarget",
         kind: "site",
         status: Status::Experimental,
     };
@@ -4249,6 +4993,11 @@ pub mod bindings {
         kind: "call",
         status: Status::Experimental,
     };
+    pub const site_Sess_ControllerSystem_ApplyRecordCall: Binding = Binding {
+        id: "site_Sess_ControllerSystem_ApplyRecordCall",
+        kind: "call",
+        status: Status::Experimental,
+    };
     pub const site_Sess_InGamePlayerFinishedAiCall: Binding = Binding {
         id: "site_Sess_InGamePlayerFinishedAiCall",
         kind: "call",
@@ -4257,6 +5006,26 @@ pub mod bindings {
     pub const site_Sess_InGameSessionCompleteAiCall: Binding = Binding {
         id: "site_Sess_InGameSessionCompleteAiCall",
         kind: "call",
+        status: Status::Experimental,
+    };
+    pub const site_Team_LoadInsertCall: Binding = Binding {
+        id: "site_Team_LoadInsertCall",
+        kind: "call",
+        status: Status::Experimental,
+    };
+    pub const site_Team_LoadInserted: Binding = Binding {
+        id: "site_Team_LoadInserted",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Team_SessionCarBadgeLabel: Binding = Binding {
+        id: "site_Team_SessionCarBadgeLabel",
+        kind: "site",
+        status: Status::Experimental,
+    };
+    pub const site_Team_TimingPillBadgeLabel: Binding = Binding {
+        id: "site_Team_TimingPillBadgeLabel",
+        kind: "site",
         status: Status::Experimental,
     };
     pub const vt_Career_BankTransactionMessage: Binding = Binding {
@@ -4344,6 +5113,11 @@ pub mod bindings {
         kind: "vtable",
         status: Status::Experimental,
     };
+    pub const vt_Game_FECareerViewModel: Binding = Binding {
+        id: "vt_Game_FECareerViewModel",
+        kind: "vtable",
+        status: Status::Experimental,
+    };
     pub const vt_Game_SaveDataRootContainer: Binding = Binding {
         id: "vt_Game_SaveDataRootContainer",
         kind: "vtable",
@@ -4351,6 +5125,16 @@ pub mod bindings {
     };
     pub const vt_Game_TrackListComponent: Binding = Binding {
         id: "vt_Game_TrackListComponent",
+        kind: "vtable",
+        status: Status::Experimental,
+    };
+    pub const vt_Ne_SaveSystem2Win: Binding = Binding {
+        id: "vt_Ne_SaveSystem2Win",
+        kind: "vtable",
+        status: Status::Experimental,
+    };
+    pub const vt_Sess_AiController: Binding = Binding {
+        id: "vt_Sess_AiController",
         kind: "vtable",
         status: Status::Experimental,
     };

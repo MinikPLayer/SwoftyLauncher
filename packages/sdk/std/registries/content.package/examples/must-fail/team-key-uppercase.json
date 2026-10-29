@@ -1,0 +1,15 @@
+{
+  "content.package": {
+    "team_key_uppercase": {
+      "$comment": "a team key is lowercase letters, digits and _",
+      "entrant_list": "cs_f1_2017",
+      "season": 2017,
+      "teams": [
+        {
+          "key": "Red Bull",
+          "vehicle": "swofty.classic-seasons-2017/redbull"
+        }
+      ]
+    }
+  }
+}

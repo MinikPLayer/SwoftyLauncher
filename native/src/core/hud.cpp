@@ -869,6 +869,11 @@ struct Capture {
     ID3D12Resource *buf = nullptr;
     UINT64 size = 0;
     bool failed = false;
+    // An on-demand frame (the test agent's capture): the next presented frame goes to request.
+    std::mutex request_lock;
+    std::wstring request, writing;
+    int request_state = 0;
+    std::string request_why;
 } cap;
 
 std::string env(const char *name)
@@ -918,7 +923,7 @@ DWORD WINAPI capture_write(void *)
             std::string png = hud::png::encode_rgb(rgb.data(), cap.width, cap.height);
             wchar_t name[64];
             _snwprintf(name, 64, L"\\frame-%04u.png", cap.count);
-            std::wstring path = cap.dir + name;
+            std::wstring path = cap.writing.empty() ? cap.dir + name : cap.writing;
             if (!runtime::write_file(path, png))
                 why = "writing " + runtime::narrow(path) + " failed";
             else
@@ -929,6 +934,12 @@ DWORD WINAPI capture_write(void *)
     }
     if (!why.empty())
         swofty::log("[capture] frame %u: %s", cap.count, why.c_str());
+    if (!cap.writing.empty()) {
+        std::lock_guard<std::mutex> g(cap.request_lock);
+        cap.writing.clear();
+        cap.request_state = why.empty() ? 1 : -1;
+        cap.request_why = why;
+    }
     cap.busy.store(false);
     return 0;
 }
@@ -949,8 +960,18 @@ void capture_step(IDXGISwapChain3 *sc, ID3D12CommandQueue *q, const DXGI_SWAP_CH
             cap.busy.store(false);
         return;
     }
-    if (cap.last && now - cap.last < cap.every_ms)
+    bool requested;
+    {
+        std::lock_guard<std::mutex> g(cap.request_lock);
+        requested = !cap.request.empty();
+    }
+    if (!requested && (cap.dir.empty() || (cap.last && now - cap.last < cap.every_ms)))
         return;
+    if (requested) {
+        std::lock_guard<std::mutex> g(cap.request_lock);
+        cap.writing = cap.request;
+        cap.request.clear();
+    }
     if (hud::png::fmt_of(int(desc.BufferDesc.Format)) == hud::png::Fmt::unknown) {
         cap.failed = true;
         swofty::log("[capture] back buffer format %d is not one the capture converts; capture off",
@@ -1913,6 +1934,32 @@ void hud_fatal()
     ID3D12Device *dev = live_dev.load();
     if (dev && !lost_once.load() && dev->GetDeviceRemovedReason() != S_OK)
         device_lost(S_OK);
+}
+
+bool frame_capture_request(const std::wstring &path)
+{
+    std::lock_guard<std::mutex> g(cap.request_lock);
+    if (!cap.request.empty() || !cap.writing.empty())
+        return false;
+    cap.request = path;
+    cap.request_state = 0;
+    cap.request_why.clear();
+    cap.on = true;
+    return true;
+}
+
+int frame_capture_poll(std::string *why)
+{
+    std::lock_guard<std::mutex> g(cap.request_lock);
+    if (cap.failed) {
+        cap.request.clear();
+        if (why)
+            *why = "frame capture is off (see the [capture] line in loader.log)";
+        return -1;
+    }
+    if (cap.request_state < 0 && why)
+        *why = cap.request_why;
+    return cap.request_state;
 }
 
 }

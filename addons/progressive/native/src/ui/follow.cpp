@@ -59,6 +59,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -68,6 +69,7 @@
 #include <swofty/game.hpp>
 #include <swofty/mem.hpp>
 #include <swofty/mixin.hpp>
+#include <swofty/systems/career.hpp>
 
 #include "../meetings_logic.hpp"
 #include "../scene_logic.hpp"
@@ -559,6 +561,29 @@ int clear_pending_events(const char *when)
     return removed;
 }
 
+std::set<std::string> g_subscribed;
+
+bool point_live(const char *point)
+{
+    auto t = swofty::detail::hooks_table();
+    uint32_t version = 0;
+    return g_subscribed.count(point) && t && t->live && t->live(point, &version) == SWOFTY_ASSET_OK;
+}
+
+void after_decision(const uint32_t *link)
+{
+    g_scene.clear();
+    if (!link || !swofty::career::is(kGroup))
+        return;
+    sc::Route route = sc::route(*link);
+    if (route == sc::Route::none) {
+        swofty::log("[progressive] follow: contract decision link 0x%08x: %s", *link, sc::route_name(route));
+        return;
+    }
+    std::string where = std::string("the negotiation decision, ") + sc::route_name(route);
+    arm_scene(where.c_str());
+}
+
 void contract_events_check(const char *when, bool store_only)
 {
     if (!swofty::career::is(kGroup))
@@ -593,16 +618,8 @@ void on_career(const SwoftyEvent *ev, void *)
 SWOFTY_WRAP(Career_Decide_ContractNegotiation, uint32_t *, void *state, uint32_t *link)
 {
     uint32_t *r = orig(state, link);
-    g_scene.clear();
-    if (!link || !swofty::career::is(kGroup))
-        return r;
-    sc::Route route = sc::route(*link);
-    if (route == sc::Route::none) {
-        swofty::log("[progressive] follow: contract decision link 0x%08x: %s", *link, sc::route_name(route));
-        return r;
-    }
-    std::string where = std::string("the negotiation decision, ") + sc::route_name(route);
-    arm_scene(where.c_str());
+    if (!point_live(swofty::career::events::ContractDecide::point))
+        after_decision(link);
     return r;
 }
 
@@ -685,38 +702,38 @@ SWOFTY_WRAP(Career_ContractOutro_OnUpdate, uint32_t *, void *state, uint32_t *li
     return link;
 }
 
-SWOFTY_WRAP(Game_CareerActivities_AddActivity, void, void *calendar, const void *activity, uint32_t day)
+static bool skip_contract_event(void *calendar, const void *activity, uint32_t day)
 {
     auto def = reinterpret_cast<uintptr_t>(activity);
     if (!def || rdv<uint8_t>(def + offsetof(ActivityDef, type)) != sc::kContractEvent || !swofty::career::is(kGroup))
-        return orig(calendar, activity, day);
+        return false;
     auto cal = reinterpret_cast<uintptr_t>(calendar);
     auto contracts = reinterpret_cast<uintptr_t>(
         swofty::career::component_by_desc(k_Career_DriverCareerContractsManagerComponentDesc.get()));
     uint32_t driver = 0;
     if (!contracts || !own_calendar(contracts, cal, driver))
-        return orig(calendar, activity, day);
+        return false;
     if (follow_mode() != 1) {
         swofty::log("[progressive] follow: contract event on day %u: this career chooses its team; the event stays", day);
-        return orig(calendar, activity, day);
+        return false;
     }
     if (uint32_t h = humans(); h > 1) {
         swofty::log("[progressive] follow: contract event on day %u: %u human players; the event stays", day, h);
-        return orig(calendar, activity, day);
+        return false;
     }
     uintptr_t rec = contract_record(contracts, driver);
     if (!rec || !rdv<uint8_t>(rec + offsetof(DriverContract, active))) {
         swofty::log("[progressive] follow: contract event on day %u for driver %u: no contract yet (a new career, no "
                     "weekend yet); the event stays until the first Team HQ signs and removes it",
                     day, driver >> 16);
-        return orig(calendar, activity, day);
+        return false;
     }
     if (!sign(contracts)) {
         g_scene.clear();
         swofty::log("[progressive] follow: contract event on day %u for driver %u: nothing signed; the event stays (its "
                     "contract scene is skipped when he opens it, if a later signing works)",
                     day, driver >> 16);
-        return orig(calendar, activity, day);
+        return false;
     }
     sc::Skip signed_now = g_scene;
     g_scene.clear();
@@ -724,6 +741,13 @@ SWOFTY_WRAP(Game_CareerActivities_AddActivity, void, void *calendar, const void 
                 "(one season, target %d); no Team HQ card, no contract scene",
                 day, driver >> 16, signed_now.where().c_str(), signed_now.team >> 16, signed_now.year > 0 ? " for " : "",
                 signed_now.year > 0 ? std::to_string(signed_now.year).c_str() : "", signed_now.target);
+    return true;
+}
+
+SWOFTY_WRAP(Game_CareerActivities_AddActivity, void, void *calendar, const void *activity, uint32_t day)
+{
+    if (point_live(swofty::career::events::AddActivity::point) || !skip_contract_event(calendar, activity, day))
+        orig(calendar, activity, day);
 }
 
 SWOFTY_WRAP(Game_DriverContracts_OfferSecretMeeting, void, void *contracts, const void *meeting, uint32_t team,
@@ -737,9 +761,27 @@ SWOFTY_WRAP(Game_DriverContracts_OfferSecretMeeting, void, void *contracts, cons
                     notify ? "the player's secret meetings or contracts screen" : "the career's daily tick");
 }
 
+void subscribe_points()
+{
+    namespace ce = swofty::career::events;
+    uint32_t token = 0;
+    swofty::events::Result r =
+        swofty::events::on<ce::AddActivity>().replace([](ce::AddActivity &a, const swofty::events::Context &) {
+            return skip_contract_event(a.calendar, a.activity, a.day);
+        }, &token);
+    if (r == swofty::events::Result::ok)
+        g_subscribed.insert(ce::AddActivity::point);
+    r = swofty::events::on<ce::ContractDecide>().after([](const ce::ContractDecide &d, const swofty::events::Context &) {
+        after_decision(d.link ? &d.link : nullptr);
+    }, &token);
+    if (r == swofty::events::Result::ok)
+        g_subscribed.insert(ce::ContractDecide::point);
+}
+
 SWOFTY_ON_LOAD
 {
     uint32_t token = 0;
+    subscribe_points();
     for (const char *ev : {SWOFTY_EVENT_CAREER_HUB, SWOFTY_EVENT_CAREER_LOADED, SWOFTY_EVENT_CAREER_UNLOADED}) {
         swofty::events::Result r = swofty::events::subscribe(ev, on_career, nullptr, &token);
         if (r != swofty::events::Result::ok)

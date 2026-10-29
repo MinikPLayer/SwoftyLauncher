@@ -1,0 +1,19 @@
+{
+  "career.wizard": {
+    "f1_career_1990": {
+      "content": "swofty.f1-1990/f1-1990",
+      "data_group": "f1_career_1990",
+      "steps": [
+        {
+          "route": "swofty_1990_rules",
+          "title": {
+            "literal": "1990 rules"
+          },
+          "options": [
+            "points_1990"
+          ]
+        }
+      ]
+    }
+  }
+}

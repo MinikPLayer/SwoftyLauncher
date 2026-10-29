@@ -1,0 +1,180 @@
+{
+  "name": "a career character record from 1.5 calls takes another addon's swap, filtered to its data group",
+  "rule": "the 1.5 characters calls of one addon and data group provide one career.character record under that addon's id and the data group; swaps is keyed by character, and another addon's layer with in data_group changes one swap only while a career of that group is the context (compatibility.md#an-older-addon-on-16, layers.md#where-a-layer-applies)",
+  "registries": {
+    "career.character": {
+      "applies": "content",
+      "key_fields": {
+        "/swaps": [
+          "character"
+        ]
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "swofty.f1-1990",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "career.character",
+          "key": "f1_career_1990",
+          "stage": "on_load",
+          "value": {
+            "replaces": null,
+            "portrait": null,
+            "mute": [
+              "agent"
+            ],
+            "data_group": "f1_career_1990",
+            "swaps": [
+              {
+                "character": "agent",
+                "with": "race_engineer"
+              },
+              {
+                "character": "team_principal",
+                "with": "rival"
+              }
+            ],
+            "strings": {
+              "*": {
+                "lng_agent_name": "Ron"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.people",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "career.character",
+          "target": "swofty.f1-1990/f1_career_1990",
+          "patch": {
+            "swaps": [
+              {
+                "character": "agent",
+                "with": "teammate"
+              }
+            ],
+            "strings": {
+              "eng": {
+                "lng_agent_name": "Ronald"
+              }
+            }
+          },
+          "in": [
+            {
+              "data_group": "f1_career_1990"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": "driver_career",
+        "content": null,
+        "data_group": "f1_career_1990",
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.character": {
+          "swofty.f1-1990/f1_career_1990": {
+            "status": "ok",
+            "value": {
+              "replaces": null,
+              "portrait": null,
+              "mute": [
+                "agent"
+              ],
+              "data_group": "f1_career_1990",
+              "swaps": [
+                {
+                  "character": "agent",
+                  "with": "teammate"
+                },
+                {
+                  "character": "team_principal",
+                  "with": "rival"
+                }
+              ],
+              "strings": {
+                "*": {
+                  "lng_agent_name": "Ron"
+                },
+                "eng": {
+                  "lng_agent_name": "Ronald"
+                }
+              }
+            },
+            "origins": {
+              "/swaps/character=agent/with": "mod.people",
+              "/strings/eng": "mod.people"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": "grand_prix",
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "career.character": {
+          "swofty.f1-1990/f1_career_1990": {
+            "status": "ok",
+            "value": {
+              "replaces": null,
+              "portrait": null,
+              "mute": [
+                "agent"
+              ],
+              "data_group": "f1_career_1990",
+              "swaps": [
+                {
+                  "character": "agent",
+                  "with": "race_engineer"
+                },
+                {
+                  "character": "team_principal",
+                  "with": "rival"
+                }
+              ],
+              "strings": {
+                "*": {
+                  "lng_agent_name": "Ron"
+                }
+              }
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "vehicle.package 1.0",
+  "x-registry": "vehicle.package",
+  "x-version": "1.0",
+  "x-applies": "boot",
+  "x-snapshot": false,
+  "description": "cars::Package: one entrants.vehicles.vehicle_packages row.",
+  "type": "object",
+  "properties": {
+    "donor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "vehicle.package"
+    },
+    "resource_path": {
+      "type": "string"
+    },
+    "ai_package_folder": {
+      "type": "string"
+    },
+    "driver_animation_set": {
+      "type": "string"
+    },
+    "halo": {
+      "type": "boolean",
+      "default": true
+    },
+    "aero_2026": {
+      "type": "boolean",
+      "default": false
+    },
+    "setups_from": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "vehicle.package",
+      "description": "null: the donor's"
+    },
+    "stat_id": {
+      "$ref": "#/$defs/stat_id"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "vehicle.package",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [],
+  "additionalProperties": true,
+  "$defs": {
+    "stat_id": {
+      "description": "A StatId: an explicit id, or \"auto\" (absent: \"auto\") for the core to allocate one.",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "auto"
+        }
+      ]
+    }
+  }
+}

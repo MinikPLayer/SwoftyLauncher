@@ -1,0 +1,7 @@
+{
+  "livery": {
+    "mod.rb-repaint/repaint": {
+      "textures": "livery_v2/"
+    }
+  }
+}

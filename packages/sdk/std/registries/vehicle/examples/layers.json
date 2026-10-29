@@ -1,0 +1,32 @@
+{
+  "vehicle": {
+    "swofty.classic-seasons-2017/ferrari": {
+      "engine_sound": "mod.esp/v10_screamer",
+      "livery": null
+    },
+    "$select": [
+      {
+        "ids": "game/*",
+        "where": {
+          "performance_class": "f1_26"
+        },
+        "when": {
+          "option": "cars",
+          "is": "all"
+        },
+        "patch": {
+          "engine_sound": "mod.esp/v10_screamer"
+        }
+      },
+      {
+        "tag": "c/f1_cars",
+        "except": [
+          "game/safety_car"
+        ],
+        "patch": {
+          "tyre_wear_scale": 1.1
+        }
+      }
+    ]
+  }
+}

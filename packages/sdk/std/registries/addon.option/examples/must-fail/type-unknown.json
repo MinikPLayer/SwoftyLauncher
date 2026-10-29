@@ -1,0 +1,9 @@
+{
+  "addon.option": {
+    "list_type": {
+      "$comment": "type is toggle, slider or choice",
+      "type": "list",
+      "value": "a"
+    }
+  }
+}

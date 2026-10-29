@@ -5,9 +5,36 @@ description: Show your own names and descriptions from a data addon, with stock 
 
 # In-game text
 
-In-game text is keyed by tags such as `lng_team_tor_hashtag`. Database fields such as `name_loc_tag` and `desc_loc_tag` tell the game which tag to show. The text itself lives in the game's language files (`.lng`), one per language.
+In-game text is keyed by tags such as `lng_team_tor_hashtag`, and a data addon shows its own text by pointing a `_loc_tag` field at a stock tag or by adding strings with `lang` operations.
 
-You have two ways to change that text from a [data addon](./): point a field at a tag the game already has, or add your own string with a `lang` operation.
+## In full
+
+```json [swofty.json]
+"operations": {
+  "assets": ["assets/text.json"]
+}
+```
+
+```jsonc [assets/text.json]
+{
+  "schema_version": 1,
+  "ops": [
+    // your own strings: every language (*), or one
+    { "op": "lang.set", "language": "*", "key": "lng_my_track_title", "value": "Test Ring" },
+    { "op": "lang.set", "language": "eng", "key": "lng_my_track_desc", "value": "A private test circuit." },
+    // a field that names a tag: here, a stock tag the game already has
+    { "op": "db.set",
+      "select": "customisation.custom_se_liveries.se_liveries.se_livery[_metadata_=toro_rosso_miami_2026]",
+      "field": "name_loc_tag", "value": "lng_team_tor_hashtag" }
+  ]
+}
+```
+
+```text
+runtime: swofty/assets.json with 0 asset group(s), 0 resource(s), 1 database edit(s), 1 language table(s), 0 overlay file(s)
+```
+
+Database fields such as `name_loc_tag` and `desc_loc_tag` tell the game which tag to show. The text itself lives in the game's language files (`.lng`), one per language. A data addon ([Data addons](./)) points a field at a tag the game already has, or adds its own string with a `lang` operation.
 
 ## 1. Point a field at a stock tag
 
@@ -25,11 +52,13 @@ To offer a choice of tags, use a `choice` setting. The [livery example](./livery
 
 Put your `lang` operations in an `operations.assets` file. swofty_core adds the strings while the game boots, and the game's language files stay stock.
 
-| Op | Fields | Change |
-|---|---|---|
-| `lang.set` | `language` (a code, or `*` for every language), `key`, `value` | Set one string |
-| `lang.table` | `language`, `source` (a `.lng` file in the addon) | Set every string in a table |
-| `lang.default` | `language` (a code, or `*`), `key`, `value` | Set one string unless an addon sets it |
+```jsonc
+{ "op": "lang.set", "language": "*", "key": "lng_my_track_title", "value": "Test Ring" }       // one string; * is every language
+{ "op": "lang.table", "language": "eng", "source": "lang/eng.lng" }                          // every string in a .lng file in the addon
+{ "op": "lang.default", "language": "*", "key": "lng_my_track_title", "value": "Test Ring" }  // one string, unless an addon sets it
+```
+
+`lang.table`'s `source` can also be an object with a `root` ([Sources](./operations#sources)).
 
 ```json [assets/text.json]
 {

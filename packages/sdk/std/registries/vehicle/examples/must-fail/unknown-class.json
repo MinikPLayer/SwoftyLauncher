@@ -1,0 +1,9 @@
+{
+  "vehicle": {
+    "unknown_class": {
+      "$comment": "performance_class is one of f1, f1_26, f2, classic, my_team, safety_car",
+      "label": "f3_car",
+      "performance_class": "f3"
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "team.logo": {
+    "williams_2017": {
+      "images": {
+        "driver_select": "logos/williams_2017_driver_select.png",
+        "team_select": "logos/williams_2017_team_select.png",
+        "hud": "logos/williams_2017_hud.png",
+        "broadcast": "logos/williams_2017_broadcast.png",
+        "hub": "logos/williams_2017_hub.png"
+      }
+    }
+  }
+}

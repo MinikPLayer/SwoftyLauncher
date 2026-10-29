@@ -1,0 +1,9 @@
+{
+  "career.driver_ratings": {
+    "missing_driver": {
+      "$comment": "driver is required",
+      "season": "swofty.progressive/2017",
+      "pace": 95
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "career.character": {
+    "f1_career_1990": {
+      "replaces": null,
+      "portrait": null,
+      "data_group": "f1_career_1990",
+      "mute": [
+        "agent"
+      ],
+      "swaps": [
+        {
+          "character": "agent",
+          "with": "race_engineer"
+        }
+      ],
+      "strings": {
+        "*": {
+          "lng_agent_name": "Ron"
+        }
+      }
+    }
+  }
+}

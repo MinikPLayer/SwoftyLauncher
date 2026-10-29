@@ -23,11 +23,11 @@
 //
 // State comes from what core already sees: flow states (StateFrontend for the front end,
 // StateOnlineLobby for a LAN lobby) and the screens the UI opens (fe_home for the main menu).
-// status and clear always answer. configure (the room: member number and bridge base port, shared
-// with the bridge hooks through netplay_session.hpp), host, join and leave need SWOFTY_NETPLAY in
-// the game's environment, host and join also a configured room, and each a game state that allows
-// it. host, join and leave report unavailable until their game entry points are bound
-// (research/multiplayer/lan-netplay-design.md, "Driving host/join").
+// status and clear always answer. configure (the room: member number, bridge base port and the
+// signed-in name for the driver, shared with the hooks through netplay_session.hpp), host, join and
+// leave need SWOFTY_NETPLAY in the game's environment, host and join also a configured room, and each
+// a game state that allows it. host, join and leave report unavailable until their game entry points
+// are bound (research/multiplayer/lan-netplay-design.md, "Driving host/join").
 
 namespace runtime {
 std::string hook_error(const safetyhook::MidHook::Error &e);
@@ -356,7 +356,7 @@ void netplay_home_vm(void *vm)
 
 void netplay_drive_setup()
 {
-    char v[256] = {};
+    char v[1024] = {};
     DWORD n = GetEnvironmentVariableA("SWOFTY_NETPLAY", v, sizeof v);
     armed = n > 0 && n < sizeof v;
     if (!armed)
@@ -517,9 +517,10 @@ void netplay_tick()
     if (error.empty()) {
         switch (c.op) {
         case drive::Op::configure:
-            if (runtime::netplay_session::configure(c.self, c.base))
+            if (runtime::netplay_session::configure(c.self, c.base)) {
+                runtime::netplay_session::set_name(c.name);
                 runtime::netplay_bridge_status_changed();
-            else
+            } else
                 error = "the room was refused (self " + std::to_string(c.self) + ", base " + std::to_string(c.base) + ")";
             break;
         case drive::Op::clear:

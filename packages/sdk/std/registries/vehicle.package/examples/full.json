@@ -1,0 +1,14 @@
+{
+  "vehicle.package": {
+    "full": {
+      "donor": "game/f1_2025",
+      "resource_path": "f1990_vehicle_package/teams/[FILENAME]/wep/[FILENAME]",
+      "ai_package_folder": "f1990_vehicle_package",
+      "driver_animation_set": "cs_2017",
+      "halo": false,
+      "aero_2026": false,
+      "setups_from": "game/f1_2025",
+      "stat_id": 77
+    }
+  }
+}

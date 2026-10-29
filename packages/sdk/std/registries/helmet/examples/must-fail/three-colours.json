@@ -1,0 +1,13 @@
+{
+  "helmet": {
+    "short": {
+      "$comment": "colours holds exactly four",
+      "archive": "helmets/a.erp",
+      "colours": [
+        "#FFFFFF",
+        "#000000",
+        "#FF0000"
+      ]
+    }
+  }
+}

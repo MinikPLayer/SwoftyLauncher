@@ -1,0 +1,11 @@
+{
+  "career.mode": {
+    "progressive": {
+      "data_group": "progressive",
+      "save_container": "progressive",
+      "title": "lng_progressive_title",
+      "kind": "driver_career",
+      "freeze": "at_creation"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "career.content": {
+    "badge_too_big": {
+      "$comment": "badge is below 256",
+      "data_group": "f1_career_1990",
+      "badge": 256
+    }
+  }
+}

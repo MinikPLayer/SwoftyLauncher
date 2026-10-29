@@ -1,0 +1,201 @@
+{
+  "name": "a disabled addon's records, layers and tag members vanish",
+  "rule": "with an addon off, its records are no_record, its layers don't run, its tag members are skipped and listing leaves its ids out (registry.md#tags, dependencies.md)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {
+    "test.thing": {
+      "c/things": [
+        "game/a"
+      ]
+    }
+  },
+  "addons": [
+    {
+      "id": "mod.x",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "test.thing",
+          "key": "x",
+          "value": {
+            "name": "x",
+            "n": 0,
+            "kind": "f1",
+            "items": []
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "n": 3
+          }
+        },
+        {
+          "op": "tag_add",
+          "registry": "test.thing",
+          "tag": "c/things",
+          "id": "mod.x/x"
+        }
+      ]
+    },
+    {
+      "id": "mod.s",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "select": {
+            "tag": "c/things"
+          },
+          "patch": {
+            "kind": "tagged"
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 3,
+              "kind": "tagged",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.x",
+              "/kind": "mod.s"
+            }
+          },
+          "mod.x/x": {
+            "status": "ok",
+            "value": {
+              "name": "x",
+              "n": 0,
+              "kind": "tagged",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.s"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [],
+      "lists": [
+        {
+          "registry": "test.thing",
+          "prefix": "",
+          "ids": [
+            "game/a",
+            "mod.x/x"
+          ]
+        }
+      ],
+      "tag_members": [
+        {
+          "registry": "test.thing",
+          "tag": "c/things",
+          "ids": [
+            "game/a",
+            "mod.x/x"
+          ]
+        }
+      ]
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": [
+          "mod.x"
+        ]
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 0,
+              "kind": "tagged",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.s"
+            }
+          },
+          "mod.x/x": {
+            "status": "no_record"
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [],
+      "lists": [
+        {
+          "registry": "test.thing",
+          "prefix": "",
+          "ids": [
+            "game/a"
+          ]
+        }
+      ],
+      "tag_members": [
+        {
+          "registry": "test.thing",
+          "tag": "c/things",
+          "ids": [
+            "game/a"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "wearable.season_set 1.0",
+  "x-registry": "wearable.season_set",
+  "x-version": "1.0",
+  "x-applies": "boot",
+  "x-snapshot": false,
+  "description": "wearables::SeasonSet: one team_customisation_for_year row: a team's suit and gloves for one year. A season's own set wins over the base kit in that season.",
+  "type": "object",
+  "properties": {
+    "team": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "team.identity"
+    },
+    "season": {
+      "type": "integer",
+      "minimum": 1950,
+      "maximum": 2100
+    },
+    "suit": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "suit"
+    },
+    "gloves": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "x-ref": "gloves"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "wearable.season_set",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "team",
+    "season"
+  ],
+  "additionalProperties": true
+}

@@ -1,0 +1,13 @@
+{
+  "data_group": "f1_career_progressive",
+  "year": 2016,
+  "teams": [
+    { "slot": 1, "team": "game/mercedes", "seats": ["game/lewis_hamilton", "game/nico_rosberg"] },
+    { "slot": 4, "team": "game/mclaren", "seats": ["game/fernando_alonso", "game/jenson_button"] },
+    { "slot": 11, "team": null, "seats": [] }
+  ],
+  "changes": [
+    { "round": 5, "slot": 3, "seat": 0, "out": "game/daniil_kvyat", "in": "game/max_verstappen", "kind": "swap" },
+    { "round": 2, "slot": 4, "seat": 0, "out": "game/fernando_alonso", "in": "game/stoffel_vandoorne|game/kevin_magnussen", "kind": "stand_in" }
+  ]
+}

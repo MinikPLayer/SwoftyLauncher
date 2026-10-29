@@ -1,0 +1,8 @@
+{
+  "career.season@1": {
+    "$select": [
+      { "ids": "swofty.classic-seasons-2017/*", "where": { "year": { "min": 2016, "max": 2019 } }, "patch": { "data_group": "f1_career_classic" } }
+    ],
+    "game/f1_2025": { "changes": null }
+  }
+}

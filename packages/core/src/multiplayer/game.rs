@@ -61,14 +61,84 @@ impl fmt::Display for Category {
     }
 }
 
+/// The most bytes of a driver name: the game keeps presence names in 128-byte buffers.
+pub const DRIVER_NAME_BYTES: usize = 127;
+
+/// Control characters, line and paragraph separators, and characters that draw nothing: soft
+/// hyphen, zero-width and bidi marks, fillers, variation selectors, tags.
+fn invisible(c: char) -> bool {
+    matches!(
+        u32::from(c),
+        0..=0x1f
+            | 0x7f..=0x9f
+            | 0xad
+            | 0x34f
+            | 0x61c
+            | 0x115f
+            | 0x1160
+            | 0x17b4
+            | 0x17b5
+            | 0x180b..=0x180f
+            | 0x200b..=0x200f
+            | 0x2028..=0x202e
+            | 0x2060..=0x206f
+            | 0x3164
+            | 0xfe00..=0xfe0f
+            | 0xfeff
+            | 0xffa0
+            | 0xfff9..=0xfffb
+            | 0x1d173..=0x1d17a
+            | 0xe0000..=0xe0fff
+    )
+}
+
+fn blank(c: char) -> bool {
+    matches!(
+        u32::from(c),
+        0x20 | 0xa0 | 0x1680 | 0x2000..=0x200a | 0x202f | 0x205f | 0x3000
+    )
+}
+
+/// The signed-in name as the game's driver carries it: control and invisible characters dropped,
+/// spaces trimmed and runs of them made one space, cut to [`DRIVER_NAME_BYTES`] at a character
+/// boundary. `None` when nothing is left, so the game keeps its own name. Core applies the same rules.
+pub fn driver_name(raw: &str) -> Option<String> {
+    let mut out = String::new();
+    let mut space = false;
+    for c in raw.chars() {
+        if invisible(c) || blank(c) {
+            space |= blank(c) && !out.is_empty();
+            continue;
+        }
+        if out.len() + usize::from(space) + c.len_utf8() > DRIVER_NAME_BYTES {
+            break;
+        }
+        if space {
+            out.push(' ');
+            space = false;
+        }
+        out.push(c);
+    }
+    (!out.is_empty()).then_some(out)
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
     Status,
-    Configure { self_member: u8, base: u16 },
+    /// The room, and the signed-in name for this game's driver (already through [`driver_name`]).
+    Configure {
+        self_member: u8,
+        base: u16,
+        name: Option<String>,
+    },
     Clear,
     Cancel,
-    Host { category: Category },
-    Join { ip: Ipv4Addr },
+    Host {
+        category: Category,
+    },
+    Join {
+        ip: Ipv4Addr,
+    },
     Leave,
 }
 
@@ -98,7 +168,16 @@ impl Command {
         let args = match self {
             Command::Host { category } => json!({ "category": category.as_str() }),
             Command::Join { ip } => json!({ "ip": ip.to_string() }),
-            Command::Configure { self_member, base } => json!({ "self": self_member, "base": base }),
+            Command::Configure {
+                self_member,
+                base,
+                name: Some(name),
+            } => json!({ "self": self_member, "base": base, "name": name }),
+            Command::Configure {
+                self_member,
+                base,
+                name: None,
+            } => json!({ "self": self_member, "base": base }),
             Command::Status | Command::Clear | Command::Cancel | Command::Leave => json!({}),
         };
         json!({ "seq": seq, "op": self.op(), "args": args })
@@ -317,9 +396,19 @@ pub fn join(game_dir: &Path, ip: Ipv4Addr) -> Result<GameStatus, Error> {
     .map(|r| r.status)
 }
 
-pub fn configure(game_dir: &Path, self_member: u8, base: u16) -> Result<GameStatus, Error> {
+/// Set the room; `name` is this player's signed-in name for the driver, cleaned by [`driver_name`].
+pub fn configure(
+    game_dir: &Path,
+    self_member: u8,
+    base: u16,
+    name: Option<&str>,
+) -> Result<GameStatus, Error> {
     {
-        let cmd = Command::Configure { self_member, base };
+        let cmd = Command::Configure {
+            self_member,
+            base,
+            name: name.and_then(driver_name),
+        };
         send(game_dir, &cmd, cmd.timeout())
     }
     .map(|r| r.status)
@@ -468,10 +557,20 @@ mod tests {
         assert_eq!(
             Command::Configure {
                 self_member: 2,
-                base: 40000
+                base: 40000,
+                name: None
             }
             .to_json(11),
             json!({ "seq": 11, "op": "configure", "args": { "self": 2, "base": 40000 } })
+        );
+        assert_eq!(
+            Command::Configure {
+                self_member: 3,
+                base: 40000,
+                name: Some("Swofty".into())
+            }
+            .to_json(14),
+            json!({ "seq": 14, "op": "configure", "args": { "self": 3, "base": 40000, "name": "Swofty" } })
         );
         assert_eq!(Command::Clear.to_json(12)["op"], "clear");
         assert_eq!(
@@ -494,6 +593,58 @@ mod tests {
         );
         assert_eq!(Command::Status.timeout(), REPLY_TIMEOUT);
         assert_eq!(Command::Status.to_json(10)["args"], json!({}));
+    }
+
+    #[test]
+    fn driver_names_are_cleaned_for_the_game() {
+        assert_eq!(driver_name("xSoul").as_deref(), Some("xSoul"));
+        assert_eq!(driver_name("  Sloths\t\r\n").as_deref(), Some("Sloths"));
+        assert_eq!(
+            driver_name("A\u{202e}B\u{feff}C\u{ad}D\u{200b}").as_deref(),
+            Some("ABCD")
+        );
+        assert_eq!(
+            driver_name("Swofty \u{3000}\u{a0} One").as_deref(),
+            Some("Swofty One")
+        );
+        assert_eq!(driver_name("José 🏎").as_deref(), Some("José 🏎"));
+        assert_eq!(driver_name(""), None);
+        assert_eq!(driver_name(" \u{200d}\u{7} "), None);
+        let longest = "a".repeat(DRIVER_NAME_BYTES - 1);
+        assert_eq!(
+            driver_name(&format!("{longest}é")).as_deref(),
+            Some(longest.as_str())
+        );
+        assert_eq!(
+            driver_name(&format!("{longest}bé")).map(|n| n.len()),
+            Some(DRIVER_NAME_BYTES)
+        );
+        assert_eq!(
+            driver_name(&format!("{} b", "a".repeat(126))).as_deref(),
+            Some("a".repeat(126).as_str())
+        );
+        assert_eq!(
+            driver_name(&"z".repeat(300)).map(|n| n.len()),
+            Some(DRIVER_NAME_BYTES)
+        );
+    }
+
+    #[test]
+    fn configure_sends_the_cleaned_name_or_none() {
+        let game = temp_game("configure");
+        let t = responder(game.clone(), |cmd| {
+            assert_eq!(cmd["op"], "configure");
+            assert_eq!(cmd["args"], json!({ "self": 2, "base": 40000, "name": "Swofty" }));
+            json!({ "seq": cmd["seq"], "op": "configure", "ok": true, "error": null, "status": status_value("main_menu"), "t": 3 })
+        });
+        configure(&game, 2, 40000, Some(" Swofty\u{200b} ")).unwrap();
+        t.join().unwrap();
+        let t = responder(game.clone(), |cmd| {
+            assert_eq!(cmd["args"], json!({ "self": 2, "base": 40000 }));
+            json!({ "seq": cmd["seq"], "op": "configure", "ok": true, "error": null, "status": status_value("main_menu"), "t": 4 })
+        });
+        configure(&game, 2, 40000, Some("\u{7} ")).unwrap();
+        t.join().unwrap();
     }
 
     #[test]

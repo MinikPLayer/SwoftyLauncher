@@ -1,0 +1,277 @@
+{
+  "name": "an option-bound layer follows the option's value",
+  "rule": "\"when\" binds a layer to one of its addon's options (is: one value, in: several, on/off: a toggle); each evaluation is the result after the option changed, with the bound edits run again (layers.md#option-bound-layers)",
+  "registries": {
+    "vehicle.handling": {
+      "applies": "session"
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "vehicle.handling",
+      "key": "ferrari_2025",
+      "value": {
+        "class": "f1",
+        "damage_scale": 1.0
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "vehicle.handling",
+      "key": "f2_2025",
+      "value": {
+        "class": "f2",
+        "damage_scale": 1.0
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "william09leo.heavier-damage-realism",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "vehicle.handling",
+          "select": {
+            "where": {
+              "class": "f1"
+            }
+          },
+          "when": {
+            "option": "damage",
+            "is": "heavy"
+          },
+          "patch": {
+            "damage_scale": 1.6
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "vehicle.handling",
+          "select": {
+            "where": {
+              "class": "f1"
+            }
+          },
+          "when": {
+            "option": "damage",
+            "is": "brutal"
+          },
+          "patch": {
+            "damage_scale": 2.4
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "vehicle.handling",
+          "select": {
+            "where": {
+              "class": "f2"
+            }
+          },
+          "when": {
+            "option": "damage",
+            "in": [
+              "heavy",
+              "brutal"
+            ]
+          },
+          "patch": {
+            "damage_scale": 1.3
+          }
+        }
+      ]
+    },
+    {
+      "id": "kizi.wet",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "vehicle.handling",
+          "select": {
+            "where": {
+              "class": "f2"
+            }
+          },
+          "when": {
+            "option": "wet",
+            "on": true
+          },
+          "edit": [
+            {
+              "op": "mul",
+              "path": "/damage_scale",
+              "value": 2
+            }
+          ]
+        },
+        {
+          "op": "layer",
+          "registry": "vehicle.handling",
+          "select": {
+            "where": {
+              "class": "f1"
+            }
+          },
+          "when": {
+            "option": "wet",
+            "off": true
+          },
+          "patch": {
+            "class": "f1"
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {
+          "william09leo.heavier-damage-realism": {
+            "damage": "realistic"
+          },
+          "kizi.wet": {
+            "wet": false
+          }
+        },
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "vehicle.handling": {
+          "game/ferrari_2025": {
+            "status": "ok",
+            "value": {
+              "class": "f1",
+              "damage_scale": 1.0
+            },
+            "origins": {}
+          },
+          "game/f2_2025": {
+            "status": "ok",
+            "value": {
+              "class": "f2",
+              "damage_scale": 1.0
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {
+          "william09leo.heavier-damage-realism": {
+            "damage": "heavy"
+          },
+          "kizi.wet": {
+            "wet": false
+          }
+        },
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "vehicle.handling": {
+          "game/ferrari_2025": {
+            "status": "ok",
+            "value": {
+              "class": "f1",
+              "damage_scale": 1.6
+            },
+            "origins": {
+              "/damage_scale": "william09leo.heavier-damage-realism"
+            }
+          },
+          "game/f2_2025": {
+            "status": "ok",
+            "value": {
+              "class": "f2",
+              "damage_scale": 1.3
+            },
+            "origins": {
+              "/damage_scale": "william09leo.heavier-damage-realism"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {
+          "william09leo.heavier-damage-realism": {
+            "damage": "brutal"
+          },
+          "kizi.wet": {
+            "wet": true
+          }
+        },
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "vehicle.handling": {
+          "game/ferrari_2025": {
+            "status": "ok",
+            "value": {
+              "class": "f1",
+              "damage_scale": 2.4
+            },
+            "origins": {
+              "/damage_scale": "william09leo.heavier-damage-realism"
+            }
+          },
+          "game/f2_2025": {
+            "status": "ok",
+            "value": {
+              "class": "f2",
+              "damage_scale": 2.6
+            },
+            "origins": {
+              "/damage_scale": "kizi.wet"
+            }
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "field",
+          "registry": "vehicle.handling",
+          "id": "game/f2_2025",
+          "pointer": "/damage_scale",
+          "addons": [
+            "william09leo.heavier-damage-realism",
+            "kizi.wet"
+          ],
+          "winner": "kizi.wet"
+        }
+      ],
+      "refusals": []
+    }
+  ]
+}

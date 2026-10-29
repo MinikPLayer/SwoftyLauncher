@@ -1,4 +1,5 @@
 #include "career_ui.hpp"
+#include "registry/older.hpp"
 
 #include <swofty/game.hpp>
 
@@ -67,6 +68,7 @@ struct Entry {
     std::string group, from, to;
     uint32_t a, b;
     HMODULE owner;
+    std::string addon;
 };
 
 StartsInF1 *orig_starts;
@@ -75,7 +77,33 @@ BuildTabs *orig_tabs;
 SetTabState *orig_tab_state;
 
 std::mutex lock;
-std::vector<Entry> entries;
+std::vector<Entry> entries, effective;
+
+namespace older = swofty_core::registry::older;
+
+void rebuild_effective()
+{
+    auto &st = runtime::older_store();
+    std::vector<Entry> out;
+    for (auto &id : older::in_load_order(st, older::WIZARD))
+        for (auto &e : older::wizard_entries(older::effective(st, older::WIZARD, id)))
+            out.push_back({Kind(e.kind), e.group, e.from, e.to, e.a, e.b, nullptr, older::addon_of(id)});
+    effective = std::move(out);
+}
+
+void store_record(const std::string &addon, const std::string &group)
+{
+    std::vector<older::WizardEntry> given;
+    for (auto &e : entries)
+        if (e.addon == addon && e.group == group)
+            given.push_back({older::WizardKind(e.kind), e.group, e.from, e.to, e.a, e.b});
+    auto &st = runtime::older_store();
+    if (given.empty())
+        older::drop(st, addon, older::WIZARD, group);
+    else
+        older::put(st, addon, older::WIZARD, group, older::wizard_record(group, given), "career::wizard");
+    rebuild_effective();
+}
 std::set<std::string> interned;
 std::string last_tile;
 std::atomic<uintptr_t> hidden_header{0};
@@ -127,7 +155,8 @@ template <class F> bool find(Kind kind, const std::string &group, F &&match)
     if (!any.load() || group.empty())
         return false;
     std::lock_guard<std::mutex> g(lock);
-    for (auto it = entries.rbegin(); it != entries.rend(); ++it)
+    rebuild_effective();
+    for (auto it = effective.rbegin(); it != effective.rend(); ++it)
         if (it->kind == kind && it->group == group && match(*it))
             return true;
     return false;
@@ -240,7 +269,7 @@ uint64_t hidden_mask(const void *group)
     for (const uint8_t *p = copy.begin; p < copy.end; p += CONTENT_TAB, i++) {
         std::string name = tab_name(p);
         bool hide = false;
-        for (auto &e : entries)
+        for (auto &e : effective)
             hide |= e.kind == TAB && e.group == g && e.from == name;
         if (hide)
             mask |= uint64_t(1) << i, dropped++;
@@ -314,7 +343,7 @@ int need(int i, bool want)
 }
 
 int put(Kind kind, const char *group, std::string from, const char *to, uint32_t a, uint32_t b, bool on, HMODULE owner,
-        int part)
+        int part, const std::string &addon)
 {
     if (!cu::valid_name(group) || (to && *to && !cu::valid_name(to)))
         return SWOFTY_ASSET_INVALID;
@@ -324,8 +353,9 @@ int put(Kind kind, const char *group, std::string from, const char *to, uint32_t
             return e.kind == kind && e.group == group && e.from == from && e.a == a && e.owner == owner;
         });
         if (on)
-            entries.push_back({kind, group, std::move(from), to ? to : "", a, b, owner});
-        any = !entries.empty();
+            entries.push_back({kind, group, std::move(from), to ? to : "", a, b, owner, addon});
+        store_record(addon, group);
+        any = !effective.empty();
     }
     return need(part, on);
 }
@@ -351,38 +381,44 @@ int api_group(char *out, size_t cap)
 
 int api_starts_in_f1(const char *group, int on)
 {
-    return put(START, group, "", nullptr, 0, 0, on, cu::caller(__builtin_return_address(0)), 0);
+    return put(START, group, "", nullptr, 0, 0, on, cu::caller(__builtin_return_address(0)), 0,
+               runtime::older_addon(__builtin_return_address(0)));
 }
 
 int api_tile_route(const char *group, const char *from, const char *to)
 {
-    return put(TILE_ROUTE, group, from ? from : "", to, 0, 0, to && *to, cu::caller(__builtin_return_address(0)), 1);
+    return put(TILE_ROUTE, group, from ? from : "", to, 0, 0, to && *to, cu::caller(__builtin_return_address(0)), 1,
+               runtime::older_addon(__builtin_return_address(0)));
 }
 
 int api_replace_step(const char *group, uint32_t step, uint32_t with)
 {
     if (step > 0xff || with > 0xff)
         return SWOFTY_ASSET_INVALID;
-    return put(STEP, group, "", nullptr, step, with, with != step, cu::caller(__builtin_return_address(0)), 2);
+    return put(STEP, group, "", nullptr, step, with, with != step, cu::caller(__builtin_return_address(0)), 2,
+               runtime::older_addon(__builtin_return_address(0)));
 }
 
 int api_force_option(const char *group, uint32_t option, uint32_t with)
 {
     if (option > 0xff || with > 0xff)
         return SWOFTY_ASSET_INVALID;
-    return put(OPTION, group, "", nullptr, option, with, with != option, cu::caller(__builtin_return_address(0)), 2);
+    return put(OPTION, group, "", nullptr, option, with, with != option, cu::caller(__builtin_return_address(0)), 2,
+               runtime::older_addon(__builtin_return_address(0)));
 }
 
 int api_confirm_route(const char *group, const char *from, const char *to)
 {
-    return put(CONFIRM_ROUTE, group, from ? from : "", to, 0, 0, to && *to, cu::caller(__builtin_return_address(0)), 3);
+    return put(CONFIRM_ROUTE, group, from ? from : "", to, 0, 0, to && *to, cu::caller(__builtin_return_address(0)), 3,
+               runtime::older_addon(__builtin_return_address(0)));
 }
 
 int api_hide_driver_tab(const char *group, const char *tab, int on)
 {
     if (!cu::valid_name(tab))
         return SWOFTY_ASSET_INVALID;
-    return put(TAB, group, tab, nullptr, 0, 0, on, cu::caller(__builtin_return_address(0)), 4);
+    return put(TAB, group, tab, nullptr, 0, 0, on, cu::caller(__builtin_return_address(0)), 4,
+               runtime::older_addon(__builtin_return_address(0)));
 }
 
 int api_clear(const char *group)
@@ -390,9 +426,11 @@ int api_clear(const char *group)
     if (!cu::valid_name(group))
         return SWOFTY_ASSET_INVALID;
     HMODULE owner = cu::caller(__builtin_return_address(0));
+    std::string addon = runtime::older_addon(__builtin_return_address(0));
     std::lock_guard<std::mutex> g(lock);
     std::erase_if(entries, [&](const Entry &e) { return e.group == group && e.owner == owner; });
-    any = !entries.empty();
+    store_record(addon, group);
+    any = !effective.empty();
     return SWOFTY_ASSET_OK;
 }
 

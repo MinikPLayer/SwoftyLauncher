@@ -857,6 +857,29 @@ static void stage_early(void)
         CloseHandle(mx);
 }
 
+static void register_early(void)
+{
+    HANDLE mx = CreateMutexW(NULL, FALSE, L"Codemasters F1 25");
+    expect(mx && GetModuleHandleW(L"t_register.dll"), "register: CreateMutexW loaded the addon that exports SwoftyAddonRegister");
+    Sleep(600);
+    wchar_t path[MAX_PATH];
+    GetModuleFileNameW(NULL, path, MAX_PATH);
+    wchar_t *slash = wcsrchr(path, L'\\');
+    if (slash)
+        wcscpy(slash + 1, L"swofty\\loader.log");
+    HANDLE log = CreateFileW(path, FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    const char line[] = "fake game: the game database loads now\r\n";
+    DWORD put = 0;
+    expect(log != INVALID_HANDLE_VALUE && WriteFile(log, line, sizeof line - 1, &put, NULL),
+           "register: the database moment is marked in loader.log");
+    if (log != INVALID_HANDLE_VALUE)
+        CloseHandle(log);
+    Sleep(300);
+    if (mx)
+        CloseHandle(mx);
+}
+
 static int stage_window(HWND w)
 {
     printf("      window stage: fn<Fake_Stage_Site> = %p (function at %p) returned %lld; fn<Fake_Stage_Wrap> = %p "
@@ -1044,6 +1067,7 @@ int main(int argc, char **argv)
     int fallback = argc > 1 && !strcmp(argv[1], "fallback"), vm = argc > 1 && !strcmp(argv[1], "vm");
     int session = argc > 1 && !strcmp(argv[1], "session"), settings = argc > 1 && !strncmp(argv[1], "settings", 8);
     int stages = argc > 1 && !strcmp(argv[1], "stages");
+    int registers = argc > 1 && !strcmp(argv[1], "register");
     int nopool = argc > 1 && !strcmp(argv[1], "nopool");
     setvbuf(stdout, NULL, _IONBF, 0);
     fake_log_gate.hashes[0x22222222 % 373] = 0xbeef;
@@ -1078,6 +1102,8 @@ int main(int argc, char **argv)
            "IAT trigger armed on USER32!RegisterClassExW and CreateWindowExW before the window exists");
     if (stages)
         stage_early();
+    if (registers)
+        register_early();
     if (nopool || (argc > 1 && !strcmp(argv[1], "nearfull")))
         expect(exhaust_near(nopool) > 0, "the address space within 2 GB of the image is taken before the core loads");
     ATOM(WINAPI * rc)(const WNDCLASSEXW *) = fallback ? (void *)real_rc : (void *)__imp_RegisterClassExW;
@@ -1099,6 +1125,12 @@ int main(int argc, char **argv)
            "IAT slots restored after the trigger");
     if (stages)
         return stage_window(w);
+    if (registers) {
+        Sleep(800);
+        printf("%s (%d failure(s))\n", fails ? "FAILED" : "ALL PASSED", fails);
+        DestroyWindow(w);
+        return fails != 0;
+    }
     if (nopool) {
         printf("%s (%d failure(s))\n", fails ? "FAILED" : "ALL PASSED", fails);
         DestroyWindow(w);

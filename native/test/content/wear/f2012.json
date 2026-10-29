@@ -1,0 +1,110 @@
+{
+  "helmet": {
+    "salo_helmet": {
+      "archive": "helmets/salo.erp",
+      "from": "game/2024-ferrari_charles_leclerc",
+      "colours": [
+        "#CC0000",
+        "#FFFFFF",
+        "#000000",
+        "#000000"
+      ]
+    }
+  },
+  "suit": {
+    "sauber_2012": {
+      "archive": "kit/sauber_2012.erp",
+      "from": "game/2024-ferrari",
+      "team": "swofty.f2012/sauber"
+    },
+    "salo_suit": {
+      "archive": "suits/salo.erp",
+      "from": "game/2024-ferrari_charles_leclerc"
+    }
+  },
+  "gloves": {
+    "sauber_2012": {
+      "archive": "kit/sauber_2012.erp",
+      "from": "game/2024-ferrari",
+      "team": "swofty.f2012/sauber"
+    },
+    "salo_gloves": {
+      "archive": "suits/salo.erp",
+      "from": "game/2024-ferrari_charles_leclerc"
+    }
+  },
+  "driver.head": {
+    "mika_salo": {
+      "archive": "heads/mika_salo.erp",
+      "morph": "heads/mika_salo_morph.erp",
+      "rig_from": "game/jarno_opmeer",
+      "customisable": false
+    }
+  },
+  "driver.look": {
+    "mika_salo": {
+      "helmet": "swofty.f2012/salo_helmet",
+      "suit": "swofty.f2012/salo_suit",
+      "gloves": "swofty.f2012/salo_gloves"
+    }
+  },
+  "driver.person": {
+    "mika_salo": {
+      "name": "Mika Salo",
+      "nationality": "finland",
+      "driver": null
+    }
+  },
+  "driver.identity": {
+    "mika_salo": {
+      "donor": "game/jarno_opmeer",
+      "person": "person/mika_salo",
+      "names": {
+        "first": {
+          "literal": "Mika"
+        },
+        "last": {
+          "literal": "Salo"
+        },
+        "full": {
+          "literal": "Mika Salo"
+        },
+        "code": "SAL"
+      },
+      "nationality": "finland",
+      "number": 17,
+      "head": "swofty.f2012/mika_salo",
+      "look": "swofty.f2012/mika_salo",
+      "audio_name": "DefaultName",
+      "date_of_birth": {
+        "year": 1966,
+        "month": "November",
+        "day": 30
+      }
+    }
+  },
+  "driver.stats": {
+    "mika_salo": {
+      "driver": "swofty.f2012/mika_salo",
+      "pace": {
+        "start": 78,
+        "peak": 84
+      },
+      "racecraft": {
+        "start": 75,
+        "peak": 82
+      }
+    }
+  },
+  "wearable.season_set": {
+    "sauber_2012": {
+      "team": "swofty.f2012/sauber",
+      "season": 2012,
+      "suit": "swofty.f2012/sauber_2012",
+      "gloves": "swofty.f2012/sauber_2012",
+      "drivers": [
+        "swofty.f2012/mika_salo"
+      ]
+    }
+  }
+}

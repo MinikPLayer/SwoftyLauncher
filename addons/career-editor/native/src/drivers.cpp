@@ -2391,6 +2391,17 @@ std::string number_json(const std::vector<Row> &rows, uint32_t driver, uint32_t 
     return w.text();
 }
 
+const SwoftyCareerOps *core_number_ops()
+{
+    static const SwoftyCareerOps *ops = [] {
+        HMODULE core = GetModuleHandleW(L"swofty_core.dll");
+        auto get = core ? reinterpret_cast<SwoftyCoreCareerOpsFn>(GetProcAddress(core, "SwoftyCoreCareerOps")) : nullptr;
+        const SwoftyCareerOps *t = get ? get() : nullptr;
+        return t && t->version >= 4 && t->set_car_number ? t : nullptr;
+    }();
+    return ops;
+}
+
 ce::OpResult op_number_set(const ce::Json &args)
 {
     const char *op = "drivers.number.set";
@@ -2430,6 +2441,16 @@ ce::OpResult op_number_set(const ce::Json &args)
             return op_fail(op, "refused", "an entrant row's identity is not unique in the line-up; nothing written");
     r.before = number_json(rows, key, other_key);
 
+    if (const SwoftyCareerOps *core = core_number_ops()) {
+        int cr = core->set_car_number(save_id(key), want, holder ? SWOFTY_NUMBER_SWAP : 0);
+        std::vector<Row> after;
+        if (cr != SWOFTY_ASSET_OK || !entrant_rows(entity, after))
+            return op_fail(op, "write_failed", "the core's set_car_number did not write the number (see the core's log)");
+        r.after = number_json(after, key, other_key);
+        r.ok = true;
+        ce::log("drivers.number.set driver %u #%u through the core's set_car_number", save_id(key), want);
+        return r;
+    }
     bool week_a = false, week_b = false;
     bool ok = write_number(entity, row, want, week_a);
     ok = ok && (!holder || write_number(entity, other, had, week_b));

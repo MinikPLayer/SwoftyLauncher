@@ -84,7 +84,44 @@ pub fn from(root: &Path) -> Vec<Running> {
         .collect()
 }
 
-fn part_in(exe: &str, bin: &Path) -> Option<&'static str> {
+pub fn anywhere() -> Vec<Running> {
+    let me = std::process::id();
+    processes()
+        .into_iter()
+        .filter(|(pid, _)| *pid != me)
+        .filter_map(|(pid, exe)| {
+            Some(Running {
+                pid,
+                part: part(&exe)?.0,
+            })
+        })
+        .collect()
+}
+
+pub fn data_block() -> Option<String> {
+    holding(&anywhere(), process::game_running())
+}
+
+pub fn holding(open: &[Running], game: bool) -> Option<String> {
+    let mut names: Vec<&str> = PARTS
+        .iter()
+        .filter(|(n, _)| open.iter().any(|r| r.part == *n))
+        .map(|(_, t)| *t)
+        .collect();
+    if game {
+        names.push("F1 25");
+    }
+    let names = match names.as_slice() {
+        [] => return None,
+        [one] => (*one).to_owned(),
+        [rest @ .., last] => format!("{} and {last}", rest.join(", ")),
+    };
+    Some(format!(
+        "Close {names} before moving the data folder, then select Try again."
+    ))
+}
+
+fn part(exe: &str) -> Option<(&'static str, &str)> {
     let exe = exe.strip_suffix(" (deleted)").unwrap_or(exe);
     let cut = exe.rfind(['/', '\\'])?;
     let file = &exe[cut + 1..];
@@ -94,7 +131,12 @@ fn part_in(exe: &str, bin: &Path) -> Option<&'static str> {
         .iter()
         .map(|(n, _)| *n)
         .find(|n| file == *n || windows == Some(*n))?;
-    process::same_folder(Path::new(&exe[..cut.max(1)]), bin).then_some(part)
+    Some((part, &exe[..cut.max(1)]))
+}
+
+fn part_in(exe: &str, bin: &Path) -> Option<&'static str> {
+    let (part, dir) = part(exe)?;
+    process::same_folder(Path::new(dir), bin).then_some(part)
 }
 
 pub fn describe(open: &[Running]) -> String {
@@ -287,6 +329,25 @@ mod tests {
             "The swofty command line is open from this folder and must close before the files are replaced."
         );
         assert_eq!(describe(&[]), "");
+    }
+
+    #[test]
+    fn names_everything_that_holds_the_data_folder() {
+        let r = |part| Running { pid: 1, part };
+        assert_eq!(holding(&[], false), None);
+        assert_eq!(
+            holding(&[], true).unwrap(),
+            "Close F1 25 before moving the data folder, then select Try again."
+        );
+        assert_eq!(
+            holding(&[r("swofty"), r("swofty-ui"), r("swofty-launcher")], true).unwrap(),
+            "Close Swofty Launcher, Swofty UI, the swofty command line and F1 25 before moving the data folder, then select Try again."
+        );
+        assert_eq!(
+            part(r"D:\Other\bin\swofty.exe").map(|p| p.0),
+            Some("swofty"),
+            "from any folder"
+        );
     }
 
     #[cfg(any(target_os = "linux", windows))]

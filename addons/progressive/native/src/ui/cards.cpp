@@ -18,7 +18,10 @@
 // registry's list by stat id and point +0xe18 back at it when the career is built. The view is
 // also put back when the wizard is left (a career tile press or career.starting) and at Team HQ.
 // During the populate the driver pool (ICONS) and the F2 list read empty, so the cards are the
-// season list's drivers only.
+// season list's drivers only. When the effective career.season records seat drivers years.json does
+// not (an added team's new driver) or take some off, the season list (F1CAREER_PG<yy>) reads its
+// effective rows (choose_logic.hpp reseat(), fill()) during the populate and its own again after it,
+// so a card is made for each driver of the effective season and for no one else.
 //
 // Team Select's 3D cars do not come from +0xe18. Its team list (0x141873a30) builds one carousel
 // item per team (0x141879310), which spawns the car of the team's first line-up row (the game
@@ -58,6 +61,7 @@
 #include <cstddef>
 #include <iterator>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -68,7 +72,15 @@
 #include <swofty/mem.hpp>
 #include <swofty/mixin.hpp>
 
+#include <swofty/lang.hpp>
+#include <swofty/registry.hpp>
+#include <swofty/storage.hpp>
+#include <swofty/systems/teams.hpp>
+
 #include "../cards_logic.hpp"
+#include "../choose_logic.hpp"
+#include "../names.hpp"
+#include "../records.hpp"
 #include "wizard_ratings.hpp"
 
 namespace {
@@ -236,8 +248,15 @@ void restore_cars(const char *why, bool apply = true)
     g_team_swaps.clear();
 }
 
+void wizard_teams(int year);
+void keep_teams();
+
 void take_back(const char *why, bool restore_rows)
 {
+    if (std::string_view(why) == pc::kEventHub)
+        keep_teams();
+    else
+        wizard_teams(0);
     restore_cars(why, restore_rows);
     pg::wizard_ratings::restore(why, std::string_view(why) != pc::kEventHub);
     g_live = false;
@@ -254,11 +273,80 @@ void take_back(const char *why, bool restore_rows)
     g_mode = 0;
 }
 
+struct Effective {
+    bool tried = false;
+    bool differs = false;
+    progressive::season::Data base, effective;
+};
+
+void load_effective(Effective &e);
+
+Effective &effective_years()
+{
+    static Effective e;
+    static std::once_flag once;
+    std::call_once(once, [] { load_effective(e); });
+    return e;
+}
+
+void load_effective(Effective &e)
+{
+    e.tried = true;
+    std::string file, text, err;
+    if (swofty::storage::read("data/years.json", file) != swofty::storage::Result::ok)
+        return;
+    text = file;
+    if (!pg::records::read_years(text, "Choose Driver") || text == file)
+        return;
+    if (!progressive::season::parse(file, e.base, err) || !progressive::season::parse(text, e.effective, err)) {
+        swofty::log("[progressive] cards: Choose Driver keeps the game's season lists: years.json REFUSED: %s", err.c_str());
+        return;
+    }
+    e.differs = true;
+}
+
+int driver_row_stat(const std::string &label)
+{
+    uint32_t s = 0;
+    return pg::names::load() && pg::names::stat(pg::names::Kind::driver, label, s) && s <= 0xffff ? static_cast<int>(s) : -1;
+}
+
+std::vector<EntrantRecord> g_season_store;
+uintptr_t g_season_list = 0;
+
+bool season_rows(unsigned stat, int year, Rows &out, std::vector<EntrantRecord> &store, uintptr_t list, const Rows &career,
+                 const Rows &pool)
+{
+    if (!rows_of(list, out) || !out.count)
+        return false;
+    Effective &e = effective_years();
+    if (!e.differs)
+        return true;
+    store.assign(out.begin, out.begin + out.count);
+    progressive::choose::Stats st = progressive::choose::reseat(store, e.base, e.effective, year, driver_row_stat);
+    if (!st.changed())
+        return true;
+    progressive::choose::Filled f = progressive::choose::fill(store, {career, pool});
+    out.begin = store.data();
+    out.count = store.size();
+    if (st.added || st.removed)
+        g_season_list = list;
+    swofty::log("[progressive] cards: Choose Driver %d (list %u): the effective career.season seats: %zu driver(s) moved, "
+                "%zu added, %zu taken off; %zu look(s) and %zu number(s) from the drivers' own entrant rows",
+                year, stat, st.moved, st.added, st.removed, f.looks, f.numbers);
+    return true;
+}
+
 bool dress(uintptr_t vm, uintptr_t mode, uintptr_t entrants, uintptr_t career_list, int year)
 {
     unsigned stat = pc::kFirstSeasonList + static_cast<unsigned>(year - pc::kFirstYear);
-    Rows career{}, season{}, first{};
-    if (!rows_of(career_list, career) || !rows_of(list_at(entrants, stat), season) || !season.count) {
+    Rows career{}, season{}, first{}, pool{};
+    std::vector<EntrantRecord> &season_store = g_season_store;
+    g_season_list = 0;
+    bool have_career = rows_of(career_list, career);
+    rows_of(list_at(entrants, pc::kPoolList), pool);
+    if (!have_career || !season_rows(stat, year, season, season_store, list_at(entrants, stat), career, pool) ||
+        !season.count) {
         if (g_logged++ < 8)
             swofty::log("[progressive] cards: %d: the career list (%u) or the season list (%u) has no rows; Choose Driver "
                         "keeps the 2026 looks",
@@ -266,8 +354,10 @@ bool dress(uintptr_t vm, uintptr_t mode, uintptr_t entrants, uintptr_t career_li
         return false;
     }
     rows_of(list_at(entrants, pc::kFirstSeasonList), first);
+    if (season.begin != season_store.data())
+        pool = {};
     pc::Stats st{};
-    size_t n = pc::build(career, season, first, g_rows, kMaxRows, st);
+    size_t n = pc::build(career, season, first, g_rows, kMaxRows, st, pool);
     if (!n || st.season == 0)
         return false;
     std::memcpy(g_header, reinterpret_cast<const void *>(career_list), kListHeader);
@@ -289,6 +379,10 @@ bool dress(uintptr_t vm, uintptr_t mode, uintptr_t entrants, uintptr_t career_li
                     "%zu team(s), %zu row(s); kept through Team Select",
                     year, static_cast<unsigned long long>(vm), st.season, year, st.looks, st.cars, st.numbers, st.missing,
                     st.filled, st.benched, st.teams, n);
+    if (st.pooled)
+        swofty::log("[progressive] cards: Choose Driver %d: %zu seat driver(s) of the effective career.season records "
+                    "seated from the driver pool list (%u) on their team rows (an added team's new drivers)",
+                    year, st.pooled, pc::kPoolList);
     return true;
 }
 
@@ -471,6 +565,86 @@ void gate_team(uintptr_t vm)
                 g_year, driver, what, w.was, want);
 }
 
+// An added team of the start season (season_logic.hpp added_team, a career.season record naming a team an addon
+// made) in the wizard: the core dresses its slot row (career::apply_teams' start request: names and colours of the
+// loaded team record, which Choose Driver and Team Select read) and the slot's name keys get the team's own names, so
+// the new-career flow lists it in its slot. Both come off when the wizard is left; at the new career's Team HQ they
+// stay, and the season start dresses the same row (season.cpp names it the same). Applied on the next frame (the
+// core's operations run on the flow thread).
+std::atomic<int> g_teams_want{0};
+int g_teams_year = 0, g_teams_tries = 0, g_teams_wait = 0;
+std::vector<std::string> g_team_keys;
+
+std::optional<std::array<std::string, 3>> identity_names(const std::string &team)
+{
+    if (!swofty::detail::registry_table())
+        return std::nullopt;
+    std::optional<swofty::teams::Identity> rec = swofty::teams::identities.get(swofty::Ref<swofty::teams::Identity>(team));
+    if (!rec)
+        return std::nullopt;
+    auto literal = [](const swofty::Text &t) { return t.is_literal() ? t.str() : std::string(); };
+    return std::array<std::string, 3>{literal(rec->names.title), literal(rec->names.short_name),
+                                      literal(rec->names.super_short)};
+}
+
+void teams_frame(double, void *)
+{
+    int want = g_teams_want.load();
+    if (want == g_teams_year || (g_teams_wait && --g_teams_wait))
+        return;
+    const SwoftyCareerOps *ops = pg::records::core_ops();
+    std::string result = "no core career operations";
+    if (ops && ops->version >= 3 && ops->apply_teams) {
+        std::string req = "{\"start\":{\"data_group\":\"" + std::string(kGroup) + "\",\"year\":" + std::to_string(want) + "}}";
+        char out[2048];
+        size_t len = 0;
+        int r = ops->apply_teams(SwoftyText{req.data(), req.size()}, out, sizeof out, &len);
+        if (r == SWOFTY_ASSET_LATE && ++g_teams_tries < 10) {
+            g_teams_wait = 60;
+            return;
+        }
+        result = r == SWOFTY_ASSET_OK ? "the core dressed the slot rows" : "the core's start request returned " + std::to_string(r);
+    }
+    g_teams_tries = 0;
+    g_teams_wait = 0;
+    bool lang = swofty::lang::available();
+    for (const std::string &k : g_team_keys)
+        if (lang)
+            swofty::lang::clear(k);
+    size_t cleared = g_team_keys.size(), set = 0;
+    g_team_keys.clear();
+    if (want && lang) {
+        Effective &e = effective_years();
+        for (auto &w : progressive::season::added_team_name_writes(e.effective, want, identity_names))
+            if (swofty::lang::set(w.key, w.text) == swofty::lang::Result::ok) {
+                g_team_keys.push_back(w.key);
+                ++set;
+            }
+    }
+    if (lang && (set || cleared))
+        swofty::lang::refresh();
+    g_teams_year = want;
+    if (set || cleared || want)
+        swofty::log("[progressive] cards: added teams %d: %s; %zu name key(s) set, %zu cleared", want, result.c_str(), set, cleared);
+}
+
+void wizard_teams(int year)
+{
+    g_teams_want = year;
+}
+
+void keep_teams()
+{
+    if (!g_teams_year && !g_teams_want.load())
+        return;
+    swofty::log("[progressive] cards: added teams %d: kept for the new career's Team HQ (%zu name key(s)); the season start "
+                "dresses the same rows",
+                g_teams_year, g_team_keys.size());
+    g_team_keys.clear();
+    g_teams_year = 0;
+    g_teams_want = 0;
+}
+
 void on_event(const SwoftyEvent *ev, void *)
 {
     if (pc::takes_back(ev->name, ev->a)) {
@@ -526,6 +700,7 @@ SWOFTY_VTABLE(vt_Game_DriverCareerDriverSelectViewModel, 13, void *, void *vm)
                     static_cast<unsigned long long>(setup), static_cast<unsigned long long>(career_list));
     if (ours && year >= pc::kFirstYear && year <= pc::kLastListYear)
         dress(at, mode, entrants, career_list, year);
+    wizard_teams(g_mode ? g_year : 0);
     if (g_mode)
         pg::wizard_ratings::show(g_year, "Choose Driver populate");
     else
@@ -540,7 +715,27 @@ SWOFTY_VTABLE(vt_Game_DriverCareerDriverSelectViewModel, 13, void *, void *vm)
         if (list && end && list != career_list && put<uintptr_t>(list + kListEnd, rd<uintptr_t>(list + kListBegin)))
             hidden[hid++] = {list, end};
     }
+    uintptr_t season_list = ours && g_mode ? g_season_list : 0;
+    uintptr_t season_begin = season_list ? rd<uintptr_t>(season_list + kListBegin) : 0;
+    uintptr_t season_end = season_list ? rd<uintptr_t>(season_list + kListEnd) : 0;
+    bool reseated = false;
+    if (season_begin && season_end && season_list != career_list && !g_season_store.empty()) {
+        auto b = reinterpret_cast<uintptr_t>(g_season_store.data());
+        if (put<uintptr_t>(season_list + kListBegin, b)) {
+            reseated = put<uintptr_t>(season_list + kListEnd, b + g_season_store.size() * sizeof(EntrantRecord));
+            if (!reseated)
+                put<uintptr_t>(season_list + kListBegin, season_begin);
+        }
+    }
     void *r = orig(vm);
+    if (reseated) {
+        put<uintptr_t>(season_list + kListEnd, season_end);
+        put<uintptr_t>(season_list + kListBegin, season_begin);
+        if (g_logged++ < 16)
+            swofty::log("[progressive] cards: Choose Driver %d: the cards list the effective career.season drivers (the season "
+                        "list read its %zu effective row(s) during the populate, then its own %zu again)",
+                        year, g_season_store.size(), (season_end - season_begin) / sizeof(EntrantRecord));
+    }
     for (size_t i = 0; i < hid; ++i)
         put<uintptr_t>(hidden[i].list + kListEnd, hidden[i].end);
     if (ours && g_logged++ < 16) {
@@ -594,9 +789,36 @@ extern "C" __declspec(dllexport) int ProgressiveCardsNumber(uint32_t driver)
     return v && v->car_number != pc::kNoNumber ? v->car_number : -1;
 }
 
+// progressive_logos.dll: the logo key of the start season's added team in the slot whose career team row is label,
+// null when the view is not active or the slot holds no added team.
+extern "C" __declspec(dllexport) const char *ProgressiveCardsAddedTeamLogo(const char *label)
+{
+    static thread_local std::string key;
+    int year = ProgressiveCardsStartYear();
+    if (!year || !label)
+        return nullptr;
+    key = progressive::season::added_team_logo(effective_years().effective, year, label);
+    return key.empty() ? nullptr : key.c_str();
+}
+
+// progressive_teamlogos.dll: the logo key of the added team the effective career.season records put in that year's
+// slot whose career team row is label, in the wizard or a running career; null when the slot holds no added team.
+extern "C" __declspec(dllexport) const char *ProgressiveCardsAddedTeamLogoFor(int year, const char *label)
+{
+    static thread_local std::string key;
+    if (year < pc::kFirstYear || year > pc::kLastListYear || !label)
+        return nullptr;
+    key = progressive::season::added_team_logo(effective_years().effective, year, label);
+    return key.empty() ? nullptr : key.c_str();
+}
+
 SWOFTY_ON_LOAD
 {
     uint32_t token = 0;
+    swofty::events::Result f = swofty::events::on_frame(teams_frame, nullptr, &token);
+    if (f != swofty::events::Result::ok)
+        swofty::log("[progressive] cards: on_frame: %s; a start season's added teams are not shown in the wizard",
+                    swofty::events::name(f));
     for (std::string_view ev : pc::kEvents) {
         swofty::events::Result r = swofty::events::subscribe(ev, on_event, nullptr, &token);
         if (r != swofty::events::Result::ok)

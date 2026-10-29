@@ -25,6 +25,8 @@ jobs:
       native: ${{ github.event_name != 'pull_request' || steps.filter.outputs.native == 'true' }}
       swofty-ui: ${{ github.event_name != 'pull_request' || steps.filter.outputs.swofty-ui == 'true' }}
       docs: ${{ github.event_name != 'pull_request' || steps.filter.outputs.docs == 'true' }}
+      std: ${{ github.event_name != 'pull_request' || steps.filter.outputs.std == 'true' }}
+      compat: ${{ github.event_name != 'pull_request' || steps.filter.outputs.compat == 'true' }}
     steps:
       - id: filter
         if: github.event_name == 'pull_request'
@@ -77,6 +79,8 @@ jobs:
               - packages/sdk/**
               - tools/pack_addon.py
               - tools/rtassets.py
+              - templates/std/**
+              - tools/std/templates.py
             # build.py puts tools/ on the module path; the app imports erp, pkg and idf from there.
             swofty-ui:
               - *always
@@ -90,6 +94,15 @@ jobs:
               - package.json
               - pnpm-lock.yaml
               - pnpm-workspace.yaml
+            # The registry schemas and examples, the tools that check them, and the templates whose data files they validate.
+            std:
+              - *always
+              - packages/sdk/std/**
+              - tools/std/**
+              - templates/std/**
+            compat:
+              - *always
+              - tools/compat/**
 
   rust:
     name: Rust (${{ matrix.os }})
@@ -177,6 +190,18 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  # The gate needs a game folder; its comparison logic runs here against a fake swofty.
+  compat:
+    name: Compatibility gate tool
+    needs: changes
+    if: needs.changes.outputs.compat == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Unit tests
+        run: python3 -m unittest discover -s tools/compat/tests -t tools/compat
+
   # The rust job lints the installer on both systems; this job builds the release binary people test.
   installer:
     name: Installer (${{ matrix.os }})
@@ -231,6 +256,34 @@ jobs:
 
       - name: Build
         run: pnpm --filter @f1modmanager/docs docs:build
+
+  std:
+    name: Standard library schemas
+    needs: changes
+    if: needs.changes.outputs.std == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      # The whole history and its tags: schemacheck reads the schema files of the last release.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Schema tooling tests
+        run: python3 -m unittest discover -s tools/std/tests
+
+      # Schema files at the last v* tag before the merge base are released and must be unchanged; every new
+      # minor may only add to the one before it, and every new major declares its adapter.
+      - name: Schema versions
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.sha }}
+        run: python3 tools/std/schemacheck.py --released-before "$(git merge-base "$BASE" HEAD)"
+
+      - name: Registry examples and must-fail cases
+        run: python3 tools/std/validate.py
+
+      # The native job builds the templates; this checks their registry data files against the schemas.
+      - name: Template data files
+        run: python3 tools/std/templates.py --no-build
 
   native:
     name: Native loader and Wine test
@@ -295,6 +348,11 @@ jobs:
       - name: Build version.dll, swofty_core.dll and the bundled addons
         run: native/build.sh
 
+      # Builds every templates/std addon with its native/build.sh and validates its registry data files;
+      # nothing to do until the folder has addons.
+      - name: Standard library templates
+        run: python3 tools/std/templates.py
+
       - name: Bundled addon packages
         run: |
           python3 - <<'EOF'
@@ -314,6 +372,40 @@ jobs:
 
       - name: Events dispatcher unit test
         run: native/test/run_events_test.sh
+      - name: Hook points, events and services host test
+        run: native/test/run_hooks_test.sh
+      - name: Game hook points host test
+        run: native/test/run_game_points_test.sh
+      - name: Session control, AI controller and spectator points host test
+        run: native/test/run_session_points_test.sh
+      - name: Hook points review test
+        run: native/test/run_w5_review_test.sh
+      - name: swofty::json unit test
+        run: native/test/run_json_test.sh
+      - name: Schema check unit and agreement test
+        run: native/test/run_schema_test.sh
+      - name: Standard library 1.6 headers compile test
+        run: native/test/run_sdk_headers_test.sh
+      - name: Registry core (shared corpus, Python reference, random stacks, read benchmark)
+        run: native/test/run_registry_test.sh
+      - name: Career snapshots (swofty_registry entry, freezes, budgets, migration, fixtures)
+        run: native/test/run_snapshots_test.sh
+      - name: Career operations planner and SDK calls host test
+        run: native/test/run_career_ops_test.sh
+      - name: Live apply paths (scheduler, put-back, context, budgets, sizing, stat ids, reports)
+        run: native/test/run_apply_test.sh
+      - name: Content registries (row engine, Classic Seasons lowering, variants, stat-id pools)
+        run: native/test/run_content_test.sh
+      - name: Progressive registration test
+        env:
+          ZIG_GLOBAL_CACHE_DIR: ${{ github.workspace }}/native/build/zig-cache
+          ZIG_LOCAL_CACHE_DIR: ${{ github.workspace }}/native/build/zig-cache
+        run: addons/progressive/native/test/register/run.sh
+      - name: Progressive effective records test
+        env:
+          ZIG_GLOBAL_CACHE_DIR: ${{ github.workspace }}/native/build/zig-cache
+          ZIG_LOCAL_CACHE_DIR: ${{ github.workspace }}/native/build/zig-cache
+        run: addons/progressive/native/test/records/run.sh
       - name: Overlay draw-list unit test
         run: native/test/run_hud_test.sh
       - name: Shader look unit test
@@ -385,6 +477,9 @@ jobs:
       - name: Wine test
         run: native/test/run_wine_test.sh
 
+      # The 1.6 handler guard, built as build.sh builds it, against faults and SDK handlers that throw.
+      - name: Handler guard Wine test
+        run: native/test/run_guard_test.sh
       - name: Overlay toolkit Wine test
         run: native/test/run_toolkit_test.sh
 
@@ -401,6 +496,9 @@ jobs:
       - name: Career UI Wine test
         run: native/test/run_career_ui_test.sh
 
+      - name: Save sandbox host and Wine test
+        run: native/test/run_save_sandbox_test.sh
+
       - name: Loader log fallback Wine test
         run: native/test/run_log_fallback_test.sh
 
@@ -409,6 +507,9 @@ jobs:
 
       - name: Socket hooks Wine test
         run: native/test/run_netplay_test.sh
+
+      - name: Test agent Wine test
+        run: native/test/run_testagent_test.sh
 
       # Saved after the Wine tests, which compile their fixtures into the same cache.
       - name: Save the Zig cache

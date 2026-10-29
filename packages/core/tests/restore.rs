@@ -229,7 +229,7 @@ fn profile_switches_return_to_the_baseline() {
 
 #[test]
 fn a_kill_between_any_two_steps_rolls_back_to_the_baseline() {
-    let total = 7;
+    let total = 8;
     for k in 0..=total {
         let f = Fixture::new(&format!("kill{k}"));
         let original = f.snapshot();
@@ -312,7 +312,7 @@ fn an_install_of_thousands_of_files_writes_the_journal_once() {
     );
     let open = Journal::open(&f.data).unwrap();
     assert!(open[0].committed && open[0].entries.iter().all(|e| e.state == State::Done));
-    assert_eq!(open[0].entries.len(), 7 + 10_000 + 51);
+    assert_eq!(open[0].entries.len(), 8 + 10_000 + 51);
     assert_eq!(f.read("2025_asset_groups/many/7/9957.erp"), "9957");
 
     let mut stopped = Installer::new(&f.data, &game);

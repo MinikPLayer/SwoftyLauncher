@@ -1,0 +1,10 @@
+{
+  "team.identity": {
+    "no_livery_name": {
+      "$comment": "livery_name is required",
+      "names": {
+        "title": "lng_x"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "career.character": {
+    "mute_string": {
+      "$comment": "mute is a list of speakers",
+      "data_group": "f1_career_1990",
+      "mute": "agent"
+    }
+  }
+}

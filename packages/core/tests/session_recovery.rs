@@ -211,7 +211,7 @@ fn a_session_that_crashed_is_rolled_back_at_the_next_start() {
     );
     assert!(
         lines.contains(&format!(
-            "rolled back journal {} (17 change(s) for profile MODDED) that a session left open",
+            "rolled back journal {} (18 change(s) for profile MODDED) that a session left open",
             open[0].id
         )),
         "{lines:?}"
@@ -314,7 +314,19 @@ fn leftovers_whose_journal_was_lost_are_proven_ours_and_cleared() {
     };
     assert!(found.iter().all(|c| c.owned), "{found:?}");
     let paths: Vec<&str> = found.iter().map(|c| c.path.as_str()).collect();
-    assert_eq!(paths, [UI, GVDB, ARCHIVE, MIP, CORE, SETTINGS, "version.dll"]);
+    assert_eq!(
+        paths,
+        [
+            UI,
+            GVDB,
+            ARCHIVE,
+            MIP,
+            CORE,
+            SETTINGS,
+            "swofty/state.json",
+            "version.dll"
+        ]
+    );
     assert!(found[0].replaced && !found[2].replaced);
     assert!(Journal::open(&f.data).unwrap().is_empty(), "nothing is written");
 
@@ -471,7 +483,7 @@ fn a_build_cancelled_mid_copy_leaves_the_game_folder_as_it_was() {
         panic!("the cancel must stop the copy");
     };
     let seen = seen.into_inner();
-    assert_eq!(seen.last(), Some(&(2, 7)), "{seen:?}");
+    assert_eq!(seen.last(), Some(&(2, 8)), "{seen:?}");
     assert_eq!(f.read(GVDB), "db-modded", "the copy stopped between files");
     assert_ne!(f.snapshot(), original);
 

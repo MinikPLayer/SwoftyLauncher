@@ -1,0 +1,532 @@
+{
+ "schema": 1,
+ "generated_by": "re/tools/trace_build.py",
+ "generated": "2026-10-28T12:28:24",
+ "signatures_file": "re/db/signatures.json",
+ "tests": [],
+ "sources": [
+  "re/tests/T112.trace.json",
+  "re/tests/T113.trace.json",
+  "re/tests/T119.trace.json",
+  "re/tests/T120.trace.json",
+  "re/tests/T121.trace.json",
+  "re/tests/T123.trace.json"
+ ],
+ "build": {
+  "exe": "F1_25.exe",
+  "sha256": "d873a1c8d2044cef2fd76c99c9d5a97649c5b815d055540995105f46619865ae",
+  "size": 408063872,
+  "pe_timestamp": 1789118616
+ },
+ "check_sha256": true,
+ "allow_build_mismatch": false,
+ "allowed_sections": [
+  ".xtls"
+ ],
+ "log": {
+  "max_mb": 16,
+  "on_full": "stop",
+  "flush_ms": 100,
+  "summary_every_s": 60
+ },
+ "limits": {
+  "max_events_total": 20000,
+  "max_read": 64
+ },
+ "hooks": [
+  {
+   "id": "t112.apply_block",
+   "test": "T112",
+   "kind": "func_start",
+   "sig": {
+    "id": "car.upgrades_apply_to_vehicle",
+    "section": ".xtls",
+    "pattern": "41 57 41 56 41 55 41 54 56 57 55 53 48 81 EC 28 01 00 00 C5 F8 29 BC 24 10 01 00 00 C5 F8 29 B4 24 00 01 00 00 C5 F8 28 F3",
+    "anchor": 0,
+    "resolve": {
+     "kind": "addr"
+    },
+    "rva": "0x4742c70"
+   },
+   "regs": [
+    "xmm3"
+   ],
+   "args": 3,
+   "fields": [
+    {
+     "name": "block",
+     "type": "cstr[64]",
+     "expr": "rdx"
+    },
+    {
+     "name": "flag",
+     "type": "u32",
+     "expr": "r8"
+    },
+    {
+     "name": "veh",
+     "type": "u8",
+     "expr": "[[[rcx+0x10]+0x10]+0xe8]"
+    },
+    {
+     "name": "eqperf",
+     "type": "u32",
+     "expr": "[[[rcx+0x10]+0x10]+0x12c]"
+    },
+    {
+     "name": "applied_begin",
+     "type": "ptr",
+     "expr": "[rcx+0x20]"
+    },
+    {
+     "name": "applied_end",
+     "type": "ptr",
+     "expr": "[rcx+0x28]"
+    }
+   ],
+   "bt": 4,
+   "max_per_sec": 200,
+   "max_events": 4000
+  },
+  {
+   "id": "t112.section_call",
+   "test": "T112",
+   "kind": "mid",
+   "sig": {
+    "id": "car.upgrade_section_apply_call",
+    "section": ".xtls",
+    "pattern": "88 05 ?? ?? ?? ?? 48 8B 01 48 8D 54 24 58",
+    "anchor": 6,
+    "resolve": {
+     "kind": "addr"
+    },
+    "expect": "48 8B 01 48 8D 54 24 58",
+    "rva": "0x474335b"
+   },
+   "regs": [
+    "rcx",
+    "xmm6"
+   ],
+   "fields": [
+    {
+     "name": "veh",
+     "type": "u8",
+     "expr": "[[rcx+0x18]+0xe8]"
+    },
+    {
+     "name": "sys_vt",
+     "type": "ptr",
+     "expr": "[rcx]"
+    }
+   ],
+   "max_per_sec": 400,
+   "max_events": 8000
+  },
+  {
+   "id": "t113.apply_tuning",
+   "test": "T113",
+   "kind": "func_start",
+   "sig": {
+    "id": "car.setup_apply_tuning",
+    "section": ".xtls",
+    "pattern": "41 57 41 56 56 57 53 48 83 EC 70 C5 78 29 44 24 60 C5 F8 29 7C 24 50 C5 F8 29 74 24 40 48 8B 41 28",
+    "anchor": 0,
+    "resolve": {
+     "kind": "addr"
+    },
+    "rva": "0xc11550"
+   },
+   "args": 3,
+   "fields": [
+    {
+     "name": "veh",
+     "type": "u8",
+     "expr": "[[rcx+0x28]+0xe8]"
+    },
+    {
+     "name": "mask",
+     "type": "u64",
+     "expr": "[rdx]"
+    },
+    {
+     "name": "sel",
+     "type": "u8",
+     "expr": "[r8+0x158]"
+    },
+    {
+     "name": "blk_a",
+     "type": "hex[168]",
+     "expr": "r8+0x8"
+    },
+    {
+     "name": "blk_b",
+     "type": "hex[168]",
+     "expr": "r8+0xb0"
+    }
+   ],
+   "ret": true,
+   "bt": 4,
+   "max_per_sec": 100,
+   "max_events": 2000
+  },
+  {
+   "id": "t113.tuning_applied",
+   "test": "T113",
+   "kind": "mid",
+   "sig": {
+    "id": "car.setup_tuning_applied",
+    "section": ".xtls",
+    "pattern": "48 8B 47 08 48 8B 88 80 05 00 00 E8",
+    "anchor": 0,
+    "resolve": {
+     "kind": "addr"
+    },
+    "expect": "48 8B 47 08 48 8B 88 80 05 00 00",
+    "rva": "0xc13721"
+   },
+   "regs": [
+    "rdi",
+    "rsi"
+   ],
+   "fields": [
+    {
+     "name": "veh",
+     "type": "u8",
+     "expr": "[[rdi+8]+0xe8]"
+    },
+    {
+     "name": "diff_on",
+     "type": "f32",
+     "expr": "[[[rdi+8]+0x578]+0xf0]"
+    },
+    {
+     "name": "diff_off",
+     "type": "f32",
+     "expr": "[[[rdi+8]+0x578]+0xec]"
+    },
+    {
+     "name": "eng_brk",
+     "type": "f32",
+     "expr": "[[[rdi+8]+0x530]+0x252c]"
+    },
+    {
+     "name": "bias",
+     "type": "f32",
+     "expr": "[[[rdi+8]+0x550]+0x21d8]"
+    },
+    {
+     "name": "pressure",
+     "type": "f32",
+     "expr": "[[[rdi+8]+0x550]+0x21dc]"
+    },
+    {
+     "name": "fuel",
+     "type": "f32",
+     "expr": "[[[rdi+8]+0x540]+0x100]"
+    },
+    {
+     "name": "comz",
+     "type": "f32",
+     "expr": "[[[rdi+8]+0x558]+0x158]"
+    }
+   ],
+   "max_per_sec": 100,
+   "max_events": 2000
+  },
+  {
+   "id": "t119.car_built",
+   "test": "T119",
+   "kind": "mid",
+   "sig": {
+    "id": "car.live_car_built",
+    "section": ".xtls",
+    "pattern": "E8 ?? ?? ?? ?? 48 89 F9 48 81 C1 30 02 00 00",
+    "anchor": 5,
+    "resolve": {
+     "kind": "addr"
+    },
+    "expect": "48 89 F9 48 81 C1 30 02 00 00",
+    "rva": "0x4629969"
+   },
+   "regs": [
+    "rdi",
+    "r12"
+   ],
+   "fields": [
+    {
+     "name": "id",
+     "type": "u8",
+     "expr": "[rdi+0xe8]"
+    },
+    {
+     "name": "n",
+     "type": "u32",
+     "expr": "[rdi+0x398]"
+    },
+    {
+     "name": "hv",
+     "type": "i32",
+     "expr": "[rdi+0x9f40]"
+    },
+    {
+     "name": "eqp",
+     "type": "u32",
+     "expr": "[rdi+0x12c]"
+    },
+    {
+     "name": "engine",
+     "type": "u64",
+     "expr": "[rdi+0x530]"
+    },
+    {
+     "name": "susp",
+     "type": "u64",
+     "expr": "[rdi+0x580]"
+    },
+    {
+     "name": "dyn",
+     "type": "u64",
+     "expr": "[rdi+0x900]"
+    }
+   ],
+   "bt": 4,
+   "max_per_sec": 64,
+   "max_events": 1000
+  },
+  {
+   "id": "t119.car_removed",
+   "test": "T119",
+   "kind": "mid",
+   "sig": {
+    "id": "car.vehicle_table_remove",
+    "section": ".xtls",
+    "pattern": "74 07 41 88 89 E8 00 00 00 FE C8 88 05",
+    "anchor": 11,
+    "resolve": {
+     "kind": "addr"
+    },
+    "expect": "88 05 93 B5 5A 02",
+    "rva": "0x473d143"
+   },
+   "regs": [
+    "rax"
+   ],
+   "max_per_sec": 64,
+   "max_events": 1000
+  },
+  {
+   "id": "t120.create_systems",
+   "test": "T120",
+   "kind": "func_start",
+   "sig": {
+    "id": "car.assets_create_system_for_performance_mode",
+    "section": ".xtls",
+    "pattern": "41 57 41 56 41 55 41 54 56 57 55 53 48 81 EC C8 00 00 00 48 89 D6 48 89 CF 48 8B 49 10",
+    "anchor": 0,
+    "resolve": {
+     "kind": "addr"
+    },
+    "rva": "0x4742790"
+   },
+   "args": 2,
+   "fields": [
+    {
+     "name": "id",
+     "type": "u8",
+     "expr": "[[rdx+0x10]+0xe8]"
+    },
+    {
+     "name": "n",
+     "type": "u32",
+     "expr": "[rdx+0x18]"
+    },
+    {
+     "name": "eqp",
+     "type": "u32",
+     "expr": "[[rdx+0x10]+0x12c]"
+    }
+   ],
+   "bt": 4,
+   "max_per_sec": 64,
+   "max_events": 2000
+  },
+  {
+   "id": "t121.register",
+   "test": "T121",
+   "kind": "mid",
+   "sig": {
+    "id": "car.register_vehicle_id",
+    "section": ".xtls",
+    "pattern": "0F B6 05 ?? ?? ?? ?? 88 87 E8 00 00 00",
+    "anchor": 7,
+    "resolve": {
+     "kind": "addr"
+    },
+    "expect": "88 87 E8 00 00 00",
+    "rva": "0x462963e"
+   },
+   "regs": [
+    "rax",
+    "rdi"
+   ],
+   "fields": [
+    {
+     "name": "id",
+     "type": "u8",
+     "expr": "rax"
+    },
+    {
+     "name": "res",
+     "type": "u64",
+     "expr": "[rdi+0x9f48]"
+    },
+    {
+     "name": "asset",
+     "type": "u64",
+     "expr": "[rdi+0x4a8]"
+    }
+   ],
+   "bt": 3,
+   "max_per_sec": 64,
+   "max_events": 500
+  },
+  {
+   "id": "t123.set_mode_net",
+   "test": "T123",
+   "kind": "mid",
+   "sig": {
+    "id": "car.fuel_mode_set_call_net",
+    "section": ".xtls",
+    "pattern": "E8 ?? ?? ?? ?? 80 3D ?? ?? ?? ?? 01 75 7E B8 8E 00 00 00",
+    "anchor": 0,
+    "resolve": {
+     "kind": "addr"
+    },
+    "expect": "E8 DA 2E 44 01",
+    "rva": "0x324b7c1"
+   },
+   "regs": [
+    "rcx",
+    "rdx"
+   ],
+   "fields": [
+    {
+     "name": "veh",
+     "type": "u8",
+     "expr": "[[rcx+8]+0xe8]"
+    },
+    {
+     "name": "ai",
+     "type": "u32",
+     "expr": "[[rcx+8]+0x124]"
+    },
+    {
+     "name": "mode",
+     "type": "u32",
+     "expr": "rdx"
+    },
+    {
+     "name": "cur",
+     "type": "i32",
+     "expr": "[rcx+0x128]"
+    }
+   ],
+   "bt": 3,
+   "max_per_sec": 4,
+   "max_events": 1500
+  },
+  {
+   "id": "t123.set_mode_pose",
+   "test": "T123",
+   "kind": "mid",
+   "sig": {
+    "id": "car.fuel_mode_set_call_pose",
+    "section": ".xtls",
+    "pattern": "41 5D 41 5E 41 5F C3 E8 ?? ?? ?? ?? E9",
+    "anchor": 7,
+    "resolve": {
+     "kind": "addr"
+    },
+    "expect": "E8 A8 2A DF 00",
+    "rva": "0x389bbf3"
+   },
+   "regs": [
+    "rcx",
+    "rdx"
+   ],
+   "fields": [
+    {
+     "name": "veh",
+     "type": "u8",
+     "expr": "[[rcx+8]+0xe8]"
+    },
+    {
+     "name": "ai",
+     "type": "u32",
+     "expr": "[[rcx+8]+0x124]"
+    },
+    {
+     "name": "mode",
+     "type": "u32",
+     "expr": "rdx"
+    },
+    {
+     "name": "cur",
+     "type": "i32",
+     "expr": "[rcx+0x128]"
+    }
+   ],
+   "bt": 3,
+   "max_per_sec": 4,
+   "max_events": 1500
+  },
+  {
+   "id": "t123.set_mode_tyre_damage",
+   "test": "T123",
+   "kind": "mid",
+   "sig": {
+    "id": "car.fuel_mode_set_call_tyre_damage",
+    "section": ".xtls",
+    "pattern": "E8 ?? ?? ?? ?? 49 8B 8F A8 05 00 00",
+    "anchor": 0,
+    "resolve": {
+     "kind": "addr"
+    },
+    "expect": "E8 19 06 F8 FF",
+    "rva": "0x470e082"
+   },
+   "regs": [
+    "rcx",
+    "rdx"
+   ],
+   "fields": [
+    {
+     "name": "veh",
+     "type": "u8",
+     "expr": "[[rcx+8]+0xe8]"
+    },
+    {
+     "name": "ai",
+     "type": "u32",
+     "expr": "[[rcx+8]+0x124]"
+    },
+    {
+     "name": "mode",
+     "type": "u32",
+     "expr": "rdx"
+    },
+    {
+     "name": "cur",
+     "type": "i32",
+     "expr": "[rcx+0x128]"
+    }
+   ],
+   "when": [
+    "u32:[[rcx+8]+0x124] == 0"
+   ],
+   "bt": 3,
+   "max_per_sec": 4,
+   "max_events": 1500
+  }
+ ]
+}

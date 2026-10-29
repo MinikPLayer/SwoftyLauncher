@@ -1,0 +1,6 @@
+{
+  "requires": [
+    { "record": "vehicle:swofty.classic-seasons-2017/ferrari" },
+    { "record": "content.package:swofty.classic-seasons-2017/f1_2017" }
+  ]
+}

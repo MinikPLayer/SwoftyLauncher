@@ -1,0 +1,12 @@
+{
+ "log": {"max_mb": 4, "on_full": "stop", "summary_every_s": 60},
+ "limits": {"max_events_total": 200, "max_read": 64},
+ "hooks": [
+  {"id": "t128.reserve_target", "test": "T128", "sig": "gamedb.reserve_target", "regs": ["rcx"],
+   "fields": ["file_count=u32:[r14]", "num_elements=u64:[r12+0xd0]", "mask=u64:[r12+0xd8]"],
+   "bt": 0, "max_per_sec": 4, "max_events": 20},
+  {"id": "t128.insert_grow", "test": "T128", "sig": "gamedb.insert_grow_call", "regs": ["rcx", "rdx"],
+   "fields": ["num_elements=u64:[rcx+0x28]", "mask=u64:[rcx+0x30]", "max_allowed=u64:[rcx+0x38]", "info_inc=u32:[rcx+0x40]"],
+   "bt": 4, "max_per_sec": 4, "max_events": 20}
+ ]
+}

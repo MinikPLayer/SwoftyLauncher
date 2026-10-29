@@ -15,7 +15,7 @@
 
 namespace swofty::career {
 
-enum class Result { ok, late, unavailable, invalid };
+enum class Result { ok, late, unavailable, invalid, refused };
 
 enum class Mode : uint32_t { none = SWOFTY_CAREER_NONE, my_team = SWOFTY_CAREER_MY_TEAM, driver_career = SWOFTY_CAREER_DRIVER };
 
@@ -187,7 +187,11 @@ inline const char *name(Start k)
 
 inline const char *name(Result r)
 {
-    return r == Result::ok ? "ok" : r == Result::late ? "late" : r == Result::unavailable ? "unavailable" : "invalid";
+    return r == Result::ok            ? "ok"
+           : r == Result::late        ? "late"
+           : r == Result::unavailable ? "unavailable"
+           : r == Result::refused     ? "refused"
+                                      : "invalid";
 }
 
 inline Mode mode(const State &s)

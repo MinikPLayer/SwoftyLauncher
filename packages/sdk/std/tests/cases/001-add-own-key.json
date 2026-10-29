@@ -1,0 +1,128 @@
+{
+  "name": "add puts a record under the addon's own id",
+  "rule": "add(key) in addon X makes the record X/<key>; a layer by full id changes another record (registry.md#ids, registry.md#the-handle)",
+  "registries": {
+    "engine_sound": {
+      "applies": "boot"
+    },
+    "vehicle": {
+      "applies": "boot"
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "engine_sound",
+      "key": "ferrari_2025",
+      "value": {
+        "bundle": "audio/2025/bundles/ferrari_2025.bdl",
+        "settings_from": null,
+        "tuning_from": null
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "vehicle",
+      "key": "ferrari_2025",
+      "value": {
+        "label": "ferrari_2025",
+        "engine_sound": "game/ferrari_2025",
+        "tyre_wear_scale": 1.0
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.esp",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "engine_sound",
+          "key": "v10_screamer",
+          "value": {
+            "bundle": "sounds/v10_screamer.bdl",
+            "settings_from": "game/ferrari_2025",
+            "tuning_from": null
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "vehicle",
+          "target": "game/ferrari_2025",
+          "patch": {
+            "engine_sound": "mod.esp/v10_screamer"
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "engine_sound": {
+          "mod.esp/v10_screamer": {
+            "status": "ok",
+            "value": {
+              "bundle": "sounds/v10_screamer.bdl",
+              "settings_from": "game/ferrari_2025",
+              "tuning_from": null
+            },
+            "origins": {}
+          },
+          "game/ferrari_2025": {
+            "status": "ok",
+            "value": {
+              "bundle": "audio/2025/bundles/ferrari_2025.bdl",
+              "settings_from": null,
+              "tuning_from": null
+            },
+            "origins": {}
+          },
+          "v10_screamer": {
+            "status": "no_record"
+          },
+          "mod.other/v10_screamer": {
+            "status": "no_record"
+          }
+        },
+        "vehicle": {
+          "game/ferrari_2025": {
+            "status": "ok",
+            "value": {
+              "label": "ferrari_2025",
+              "engine_sound": "mod.esp/v10_screamer",
+              "tyre_wear_scale": 1.0
+            },
+            "origins": {
+              "/engine_sound": "mod.esp"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [],
+      "lists": [
+        {
+          "registry": "engine_sound",
+          "prefix": "",
+          "ids": [
+            "game/ferrari_2025",
+            "mod.esp/v10_screamer"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "wearable.season_set": {
+    "$select": [
+      {
+        "ids": "swofty.classic-seasons-2016/*",
+        "where": {
+          "season": 2016
+        },
+        "patch": {
+          "gloves": "mod.kit/gloves_2016"
+        }
+      }
+    ]
+  }
+}

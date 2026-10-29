@@ -559,6 +559,7 @@ impl Store {
         p.normalise();
         self.adopt_builtins(&mut p);
         self.save_profile(&p)?;
+        crate::addon_storage::profile_created(&self.root, name, from)?;
         Ok(p)
     }
 
@@ -579,6 +580,7 @@ impl Store {
         if overlay.is_dir() {
             std::fs::rename(&overlay, self.profile_dir(to)).map_err(io_err(&overlay))?;
         }
+        crate::addon_storage::profile_deleted(&self.root, from)?;
         if self.config().active_profile.as_deref().unwrap_or(DEFAULT_PROFILE) == from {
             self.set_active_profile(to)?;
         }
@@ -670,6 +672,7 @@ impl Store {
                 return Err(io_err(path)(e));
             }
         }
+        crate::addon_storage::profile_deleted(&self.root, name)?;
         Ok(plan)
     }
 

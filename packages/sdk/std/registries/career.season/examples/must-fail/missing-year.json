@@ -1,0 +1,8 @@
+{
+  "career.season": {
+    "missing_year": {
+      "$comment": "year is required",
+      "data_group": "f1_career_progressive"
+    }
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "name": "a person/ id names the last driver in load order that is that person, and a person/ id nobody is dangles",
+  "rule": "a person/<key> in a driver.identity reference resolves when an enabled driver identity declares that person, and in a driver.person reference when a person record has that key; any other person/ id is a missing reference (std/systems/drivers.md#people)",
+  "registries": {
+    "driver.person": {
+      "applies": "boot"
+    },
+    "driver.identity": {
+      "applies": "boot",
+      "refs": {
+        "/person": "driver.person"
+      }
+    },
+    "content.package": {
+      "applies": "boot",
+      "refs": {
+        "/driver": "driver.identity"
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.f2012",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "driver.person",
+          "key": "mika_salo",
+          "value": {
+            "name": "Mika Salo"
+          }
+        },
+        {
+          "op": "add",
+          "registry": "driver.identity",
+          "key": "salo",
+          "value": {
+            "person": "person/mika_salo",
+            "look": "mod.f2012/salo_look"
+          }
+        },
+        {
+          "op": "add",
+          "registry": "driver.identity",
+          "key": "ghost",
+          "value": {
+            "person": "person/ghost",
+            "look": "mod.f2012/salo_look"
+          }
+        },
+        {
+          "op": "add",
+          "registry": "content.package",
+          "key": "seated",
+          "value": {
+            "driver": "person/mika_salo"
+          }
+        },
+        {
+          "op": "add",
+          "registry": "content.package",
+          "key": "empty",
+          "value": {
+            "driver": "person/nobody"
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "driver.identity": {
+          "mod.f2012/salo": {
+            "status": "ok",
+            "value": {
+              "person": "person/mika_salo",
+              "look": "mod.f2012/salo_look"
+            },
+            "origins": {}
+          },
+          "mod.f2012/ghost": {
+            "status": "invalid"
+          }
+        },
+        "content.package": {
+          "mod.f2012/seated": {
+            "status": "ok",
+            "value": {
+              "driver": "person/mika_salo"
+            },
+            "origins": {}
+          },
+          "mod.f2012/empty": {
+            "status": "invalid"
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

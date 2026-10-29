@@ -1,0 +1,153 @@
+{
+  "name": "an ids selector reaches every record under a prefix, including ones added later",
+  "rule": "\"ids\": \"<prefix>*\" matches ids that start with the prefix, from any provider and whatever their place in load order; the prefix is compared as a plain string (layers.md#selectors)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.s",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "select": {
+            "ids": "swofty.cs/*"
+          },
+          "patch": {
+            "kind": "classic"
+          }
+        }
+      ]
+    },
+    {
+      "id": "swofty.cs",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "test.thing",
+          "key": "a",
+          "value": {
+            "name": "cs_a",
+            "n": 0,
+            "kind": "f1",
+            "items": []
+          }
+        },
+        {
+          "op": "add",
+          "registry": "test.thing",
+          "key": "b",
+          "value": {
+            "name": "cs_b",
+            "n": 0,
+            "kind": "f1",
+            "items": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "swofty.cs2",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "test.thing",
+          "key": "x",
+          "value": {
+            "name": "cs2_x",
+            "n": 0,
+            "kind": "f1",
+            "items": []
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 0,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {}
+          },
+          "swofty.cs/a": {
+            "status": "ok",
+            "value": {
+              "name": "cs_a",
+              "n": 0,
+              "kind": "classic",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.s"
+            }
+          },
+          "swofty.cs/b": {
+            "status": "ok",
+            "value": {
+              "name": "cs_b",
+              "n": 0,
+              "kind": "classic",
+              "items": []
+            },
+            "origins": {
+              "/kind": "mod.s"
+            }
+          },
+          "swofty.cs2/x": {
+            "status": "ok",
+            "value": {
+              "name": "cs2_x",
+              "n": 0,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

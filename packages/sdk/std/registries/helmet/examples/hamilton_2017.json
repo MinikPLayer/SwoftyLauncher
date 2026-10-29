@@ -1,0 +1,18 @@
+{
+  "helmet": {
+    "hamilton_2017": {
+      "archive": "helmets/hamilton_2017_helmet.erp",
+      "from": "game/lewis_hamilton",
+      "name": {
+        "literal": "Hamilton 2017 (HX)"
+      },
+      "driver": "game/lewis_hamilton",
+      "colours": [
+        "#FFE600",
+        "#00A19B",
+        "#7A2A8B",
+        "#FFFFFF"
+      ]
+    }
+  }
+}

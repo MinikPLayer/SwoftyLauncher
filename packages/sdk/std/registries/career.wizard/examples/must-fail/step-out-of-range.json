@@ -1,0 +1,14 @@
+{
+  "career.wizard": {
+    "bad_step": {
+      "$comment": "a replaced step is a number up to 255",
+      "data_group": "f1_career_progressive",
+      "replace_steps": [
+        {
+          "at": 3,
+          "with": 300
+        }
+      ]
+    }
+  }
+}

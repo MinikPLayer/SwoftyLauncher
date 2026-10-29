@@ -1,0 +1,8 @@
+{
+  "vehicle": {
+    "game/ferrari_2025": {
+      "$comment": "performance_class is an enum value",
+      "performance_class": "hypercar"
+    }
+  }
+}

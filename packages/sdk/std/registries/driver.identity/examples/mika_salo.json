@@ -1,0 +1,29 @@
+{
+  "driver.identity": {
+    "mika_salo": {
+      "extends": "game/jarno_opmeer",
+      "person": "person/mika_salo",
+      "names": {
+        "first": {
+          "literal": "Mika"
+        },
+        "last": {
+          "literal": "Salo"
+        },
+        "full": {
+          "literal": "Mika Salo"
+        },
+        "code": "SAL"
+      },
+      "nationality": "finland",
+      "number": 17,
+      "head": "game/male_ls222",
+      "look": "swofty.driver-manager/mika_salo_look",
+      "audio_name": "salo",
+      "pools": [
+        "f1_2026_driver_pool",
+        "f1_2025_driver_pool"
+      ]
+    }
+  }
+}

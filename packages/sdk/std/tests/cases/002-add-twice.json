@@ -1,0 +1,87 @@
+{
+  "name": "the same key added twice by one addon: the later add wins",
+  "rule": "a second add of the same key by the same addon replaces the first and is listed as a provider clash (providers.md#one-provider-per-record)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.a",
+      "ops": [
+        {
+          "op": "add",
+          "registry": "test.thing",
+          "key": "x",
+          "value": {
+            "name": "first",
+            "n": 1,
+            "kind": "f1",
+            "items": []
+          }
+        },
+        {
+          "op": "add",
+          "registry": "test.thing",
+          "key": "x",
+          "value": {
+            "name": "second",
+            "n": 2,
+            "kind": "f1",
+            "items": []
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "mod.a/x": {
+            "status": "ok",
+            "value": {
+              "name": "second",
+              "n": 2,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {}
+          }
+        }
+      },
+      "conflicts": [
+        {
+          "kind": "provider",
+          "registry": "test.thing",
+          "id": "mod.a/x",
+          "pointer": "",
+          "addons": [
+            "mod.a"
+          ],
+          "winner": "mod.a"
+        }
+      ],
+      "refusals": []
+    }
+  ]
+}

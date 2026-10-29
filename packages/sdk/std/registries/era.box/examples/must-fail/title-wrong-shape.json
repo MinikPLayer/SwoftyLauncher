@@ -1,0 +1,11 @@
+{
+  "era.box": {
+    "title_wrong_shape": {
+      "$comment": "a literal Text is {\"literal\": \"...\"}; \"text\" is not its key",
+      "package": "swofty.classic-seasons-2017/f1_2017",
+      "title": {
+        "text": "F1 2017"
+      }
+    }
+  }
+}

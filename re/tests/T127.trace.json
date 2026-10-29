@@ -1,0 +1,10 @@
+{
+ "log": {"max_mb": 4, "on_full": "stop", "summary_every_s": 60},
+ "limits": {"max_events_total": 200, "max_read": 64},
+ "hooks": [
+  {"id": "t127.reserve_target", "test": "T127", "sig": "gamedb.reserve_target", "regs": ["rcx", "r12", "r14", "r15"],
+   "fields": ["file_count=u32:[r14]", "loop_bound=u64:[rsp+0x88]", "num_elements=u64:[r12+0xd0]", "mask=u64:[r12+0xd8]",
+              "max_allowed=u64:[r12+0xe0]", "info_inc=u32:[r12+0xe8]", "loaded=u8:[r12+0xf0]"],
+   "bt": 2, "max_per_sec": 4, "max_events": 20}
+ ]
+}

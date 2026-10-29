@@ -10,12 +10,14 @@
 // sprint_f1_2026, in the game's TRACK_DATA system (fuel_logic.hpp). It puts the saved bytes back when the
 // career reaches 2026, when the career unloads, and when any other career or mode starts. Nothing is written
 // unless Melbourne and Silverstone show their stock values in all four sets. A separate DLL, so a failure here
-// leaves the rest of Progressive running.
+// leaves the rest of Progressive running. On a core with tracks::set_track_fuel (SwoftyCareerOps version 4) the
+// core makes the copy and puts it back; on an older core this file does it.
 
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <string>
@@ -23,6 +25,7 @@
 
 #include <swofty/career.hpp>
 #include <swofty/events.hpp>
+#include <swofty/json.hpp>
 #include <swofty/mem.hpp>
 #include <swofty/mixin.hpp>
 
@@ -157,8 +160,57 @@ size_t copy(const pf::Set &dst, const pf::Set &src, std::vector<pf::Saved> &save
     return done;
 }
 
+const SwoftyCareerOps *core_fuel()
+{
+    static const SwoftyCareerOps *ops = [] {
+        HMODULE core = GetModuleHandleW(L"swofty_core.dll");
+        auto get = core ? reinterpret_cast<SwoftyCoreCareerOpsFn>(GetProcAddress(core, "SwoftyCoreCareerOps")) : nullptr;
+        const SwoftyCareerOps *t = get ? get() : nullptr;
+        return t && t->version >= 4 && t->set_track_fuel ? t : nullptr;
+    }();
+    return ops;
+}
+
+bool g_core_patched = false;
+
+int core_request(const std::string &request, swofty::json::Value &report)
+{
+    std::string out(4096, '\0');
+    size_t len = 0;
+    int r = core_fuel()->set_track_fuel({request.data(), request.size()}, out.data(), out.size(), &len);
+    if (r == SWOFTY_TOO_SMALL) {
+        out.assign(len + 1, '\0');
+        r = core_fuel()->set_track_fuel({request.data(), request.size()}, out.data(), out.size(), &len);
+    }
+    out.resize(std::min(len, out.size()));
+    report = swofty::json::parse(out);
+    return r;
+}
+
+void apply_core(int year)
+{
+    swofty::json::Value rep;
+    int r = core_request("{\"track\":\"*\",\"copy\":[{\"set\":\"f1_2026\",\"from\":\"f1_2025\"},{\"set\":\"sprint_f1_2026\","
+                         "\"from\":\"sprint_f1_2025\"}],\"why\":\"progressive season " +
+                             std::to_string(year) + "\"}",
+                         rep);
+    std::string why(rep["why"].as_string("no report"));
+    if (r != SWOFTY_ASSET_OK) {
+        if (why != g_last_why)
+            swofty::log("[progressive] fuel %d: the 2026 fuel stays (the core's set_track_fuel: %s)", year, why.c_str());
+        g_last_why = why;
+        return;
+    }
+    g_last_why.clear();
+    g_core_patched = true;
+    g_patched_year = year;
+    swofty::log("[progressive] fuel %d: the 2025 fuel through the core's set_track_fuel: %s", year, why.c_str());
+}
+
 void apply(int year)
 {
+    if (core_fuel())
+        return apply_core(year);
     std::string why;
     GameMem m;
     std::vector<pf::Set> sets;
@@ -194,6 +246,14 @@ void apply(int year)
 
 void restore(const char *why)
 {
+    if (g_core_patched) {
+        swofty::json::Value rep;
+        int r = core_request(std::string("{\"restore\":true,\"why\":\"") + why + "\"}", rep);
+        swofty::log("[progressive] fuel: the core put the 2026 fuel back (%s): %s", why,
+                    r == SWOFTY_ASSET_OK ? std::string(rep["why"].as_string("")).c_str() : "the restore was refused");
+        g_core_patched = false;
+        g_patched_year = 0;
+    }
     if (g_saved.empty())
         return;
     GameMem m;
@@ -232,7 +292,7 @@ void frame(double, void *)
     int year = names_year();
     bool want = year >= kFirstYear && year <= kLastYear;
     if (!want) {
-        if (!g_saved.empty())
+        if (!g_saved.empty() || g_core_patched)
             restore(year ? "the career reached 2026" : "no Progressive season before 2026 is shown");
         g_patched_year = 0;
         g_last_why.clear();

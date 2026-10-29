@@ -7,9 +7,49 @@ description: A viewer and editor for F1 25's menu scenes. Browse every .idf in t
 
 # Swofty UI
 
-Swofty UI is a viewer and editor for F1 25's menu [scenes](./idf). It runs on your computer and opens in your browser. It reads the game's UI archives without changing them, draws each scene with the game's own textures and colours, and exports edited scenes ready to ship in an [addon](./editing-menus).
+Swofty UI is a viewer and editor for F1 25's menu [scenes](./idf) that runs on your computer, opens in your browser, reads the game's UI archives without changing them, draws each scene with the game's own textures and colours, and exports edited scenes ready to ship in an [addon](./editing-menus).
 
 ![Swofty UI with the R&D overview scene open: the hierarchy on the left, the scene drawn with its textures in the middle, and tile_4 selected in the inspector on the right](/swofty-ui/overview.png)
+
+## A session in full
+
+Start it from the extracted launcher folder:
+
+```sh
+bin/swofty-ui
+```
+
+```text
+Swofty UI
+Reading the UI archives in C:\Program Files (x86)\Steam\steamapps\common\F1 25\2025_asset_groups\ui_package (found via Steam)
+Indexed 5208 scenes in 435 archives (0.8s)
+Exports go to C:\Users\you\AppData\Local\Swofty\swofty-ui\exports
+
+Swofty UI is running at http://127.0.0.1:7341/ — close this window or press Ctrl+C to stop
+```
+
+Your browser opens the editor. Everything the editor does also works over HTTP; this clones `tile_4` into `tile_5` one row lower and exports it:
+
+```sh
+base=http://127.0.0.1:7341
+doc=$(curl -s "$base/api/open?eaid=art/screens/career/rnd_overview.idf" | jq -r .doc)
+curl -s "$base/api/export" -H 'Content-Type: application/json' -d '{
+  "doc": "'"$doc"'",
+  "ops": [
+    { "op": "clone", "key": "0.0.2.5.0", "name": "tile_5", "position": [0, -2.52, 0] }
+  ]
+}' | jq '{file, operationsFile, ok: .checks.ok}'
+```
+
+```json
+{
+  "file": "C:\\Users\\you\\AppData\\Local\\Swofty\\swofty-ui\\exports\\rnd_overview.idf",
+  "operationsFile": "C:\\Users\\you\\AppData\\Local\\Swofty\\swofty-ui\\exports\\rnd_overview.erp.json",
+  "ok": true
+}
+```
+
+[Editing menus with an addon](./editing-menus) takes the export into the game.
 
 ## Get it
 
@@ -17,10 +57,8 @@ Swofty UI is a viewer and editor for F1 25's menu [scenes](./idf). It runs on yo
 
 Launcher releases after 1.0.6 include Swofty UI. Install the launcher as in [Installation](/guide/installation), then:
 
-| System | Start Swofty UI |
-|---|---|
-| Windows | Double-click `bin\swofty-ui.exe` in the install folder |
-| Linux and Steam Deck | Run `bin/swofty-ui` from a terminal. The install folder also has a desktop entry and icons under `share/` |
+- **Windows:** double-click `bin\swofty-ui.exe` in the install folder.
+- **Linux and Steam Deck:** run `bin/swofty-ui` from a terminal. The install folder also has a desktop entry and icons under `share/`.
 
 It needs no Python.
 
@@ -34,18 +72,15 @@ cd SwoftyLauncher
 python3 tools/swofty-ui/serve.py
 ```
 
-## Start it
-
-Swofty UI finds the game, reads the list of scenes, and opens the editor in your default browser. Its window shows where everything is:
+Without either, it stops with:
 
 ```text
-Swofty UI
-Reading the UI archives in C:\Program Files (x86)\Steam\steamapps\common\F1 25\2025_asset_groups\ui_package (found via Steam)
-Indexed 5208 scenes in 435 archives (0.8s)
-Exports go to C:\Users\you\AppData\Local\Swofty\swofty-ui\exports
-
-Swofty UI is running at http://127.0.0.1:7341/ — close this window or press Ctrl+C to stop
+Reading the game archives needs zstd: run Python 3.14 or newer, or install the zstandard module or the zstd command.
 ```
+
+## Start it
+
+Swofty UI finds the game, reads the list of scenes, and opens the editor in your default browser.
 
 - It listens on port 7341. When another program uses that port, it takes the next free one and opens that address instead.
 - Close the window, or press <kbd>Ctrl</kbd>+<kbd>C</kbd>, to stop it.
@@ -70,20 +105,26 @@ bin\swofty-ui.exe --game "D:\SteamLibrary\steamapps\common\F1 25"
 bin/swofty-ui --game "$HOME/.local/share/Steam/steamapps/common/F1 25"
 ```
 
-Swofty UI never writes to the game folder. It only reads the archives, writes exports to its export folder, and refuses an export folder inside the game folder.
+Swofty UI never writes to the game folder. It only reads the archives, writes exports to its export folder, and refuses an export folder inside the game folder:
+
+```text
+The export folder … is inside the game folder. Swofty UI never writes to the game folder; pick another --export-dir.
+```
 
 ### Options
 
-| Option | Effect |
-|---|---|
-| `--game <folder>` | The game folder to read |
-| `--no-game` | Start without the game, to open `.idf` files from disk |
-| `--open <scene>` | Open a scene first: a path such as `art/screens/career/rnd_overview.idf`, or an `.idf` file |
-| `--export-dir <folder>` | Where exports go. The default is `swofty-ui/exports` in the launcher's data folder: `%LOCALAPPDATA%\Swofty` on Windows, `~/.local/share/swofty` on Linux |
-| `--port <n>` | The first port to try, `7341` by default |
-| `--host <address>` | The address to listen on, `127.0.0.1` by default |
-| `--no-browser` | Don't open the browser |
-| `--check-refs` | Check every scene reference in the game's UI archives, print the result and exit. See [Check every reference](#check-every-reference) |
+```text
+--game <folder>         the game folder to read
+--no-game               start without the game, to open .idf files from disk
+--open <scene>          open a scene first: a path such as art/screens/career/rnd_overview.idf, or an .idf file
+--export-dir <folder>   where exports go; default swofty-ui/exports in the launcher's data folder:
+                        %LOCALAPPDATA%\Swofty on Windows, ~/.local/share/swofty on Linux
+--port <n>              the first port to try, 7341 by default
+--host <address>        the address to listen on, 127.0.0.1 by default
+--no-browser            don't open the browser
+--check-refs            check every scene reference in the game's UI archives, print the result and exit
+                        (see Check every reference)
+```
 
 ## Open a scene
 
@@ -102,15 +143,13 @@ When several archives hold the scene, the picker next to its path in the title b
 
 ### Display
 
-| Option | Key | Effect |
-|---|---|---|
-| Textures + colours | <kbd>T</kbd> | Draws each element's mesh with its BC7 texture and material colour, decoded from the archives |
-| Outlines | <kbd>O</kbd> | Draws each element's box, coloured by class |
-| Text placeholders | | Writes each text element's name in its box |
-| Reveal anim-collapsed | | Shows elements the game keeps at a scale near 0 until an animation or live data grows them |
-| XRef contents | <kbd>X</kbd> | Draws the scene each `eXRef` loads in game inside it, clipped by `eWindow` elements |
-| 1920x1080 frame | | Draws the screen as 19.2 × 10.8 units, centred on the origin |
-| Grid, Pivots, Labels | | Draw the grid, each element's origin and element names |
+- **Textures + colours** (<kbd>T</kbd>): draws each element's mesh with its BC7 texture and material colour, decoded from the archives.
+- **Outlines** (<kbd>O</kbd>): draws each element's box, coloured by class.
+- **Text placeholders**: writes each text element's name in its box.
+- **Reveal anim-collapsed**: shows elements the game keeps at a scale near 0 until an animation or live data grows them.
+- **XRef contents** (<kbd>X</kbd>): draws the scene each `eXRef` loads in game inside it, clipped by `eWindow` elements.
+- **1920x1080 frame**: draws the screen as 19.2 × 10.8 units, centred on the origin.
+- **Grid, Pivots, Labels**: draw the grid, each element's origin and element names.
 
 ![The R&D development-potential pie: on the left its four wedges are collapsed, on the right Reveal anim-collapsed shows them at full size](/swofty-ui/reveal.png)
 
@@ -131,16 +170,14 @@ A referenced scene that itself holds such a reference gets a yellow note in the 
 
 ## Edit
 
-| Edit | How |
-|---|---|
-| Move | Drag the element, or press the arrow keys: 0.01 units a press, 0.1 with <kbd>Shift</kbd>. Hold <kbd>Shift</kbd> while dragging to keep to one axis. A move changes the element's local `position`. |
-| Transform | Type a position, scale or rotation in the inspector. **Z angle** rotates the element in the screen plane. |
-| Params | Edit numbers, vectors and toggles in the inspector's params. Text params are read-only. |
-| Clone | <kbd>Ctrl</kbd>+<kbd>D</kbd> or **Clone**. The copy is a new sibling with the next free name, such as `tile_5` for `tile_4`. When the element has a numbered sibling before it, the copy continues the spacing between them. |
-| Rename | Type a new name in the inspector. Names must be unique in the scene and can't contain `.`. |
-| Retarget | Type a scene path in the inspector's **XRef** section and press **Retarget**. It sets `fileRef`, the `xref` id the game loads by, and `XrefMaterialBinding` together. Editing `fileRef` alone isn't possible. |
-| Delete | <kbd>Del</kbd> or **Delete** |
-| Undo, redo | <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> |
+- **Move:** drag the element, or press the arrow keys: 0.01 units a press, 0.1 with <kbd>Shift</kbd>. Hold <kbd>Shift</kbd> while dragging to keep to one axis. A move changes the element's local `position`.
+- **Transform:** type a position, scale or rotation in the inspector. **Z angle** rotates the element in the screen plane.
+- **Params:** edit numbers, vectors and toggles in the inspector's params. Text params are read-only.
+- **Clone:** <kbd>Ctrl</kbd>+<kbd>D</kbd> or **Clone**. The copy is a new sibling with the next free name, such as `tile_5` for `tile_4`. When the element has a numbered sibling before it, the copy continues the spacing between them.
+- **Rename:** type a new name in the inspector. Names must be unique in the scene and can't contain `.`.
+- **Retarget:** type a scene path in the inspector's **XRef** section and press **Retarget**. It sets `fileRef`, the `xref` id the game loads by, and `XrefMaterialBinding` together. Editing `fileRef` alone isn't possible.
+- **Delete:** <kbd>Del</kbd> or **Delete**.
+- **Undo, redo:** <kbd>Ctrl</kbd>+<kbd>Z</kbd>, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd>.
 
 Clone, rename and delete keep the scene's ids valid: they set each changed element's `elementId` to the djb2 of its new path, give clones new guids, and rebuild `nodeidlookup`. See [Identity](./idf#identity).
 
@@ -150,26 +187,43 @@ Your browser keeps unsaved edits for each scene. When you open a scene you edite
 
 Press <kbd>Ctrl</kbd>+<kbd>S</kbd> or **Export .idf**. Swofty UI replays your edits on the original bytes, checks the result, and writes three files to its export folder:
 
-| File | Contents |
-|---|---|
-| `<scene>.idf` | The edited scene |
-| `<scene>.erp.json` | The [ERP operations](/reference/ops/erp#scenes) that ship it: one `replace-resource` per archive that holds the scene, with `source` set to `ui/<scene>.idf` |
-| `<scene>.edits.json` | The source scene and archive, the SHA-1 of the source and the export, and the edit list |
+```text
+<scene>.idf          the edited scene
+<scene>.erp.json     the ERP operations that ship it: one replace-resource per archive that holds the scene,
+                     with source set to ui/<scene>.idf
+<scene>.edits.json   the source scene and archive, the SHA-1 of the source and the export, and the edit list
+```
 
-An export replaces an earlier export of the same scene. The dialog also has **Download .idf** and **Open export folder**.
+```json [rnd_overview.edits.json]
+{
+ "source": { "kind": "erp", "eaid": "eaid://ui_package/art/screens/career/rnd_overview.idf", "erp": "flow_career_hub.erp", "label": "art/screens/career/rnd_overview.idf" },
+ "sourceErps": ["flow_career_hub.erp", "flow_team_hq.erp"],
+ "sourceSha1": "…",
+ "exportSha1": "…",
+ "exportedAt": "2026-10-27T10:00:00+1100",
+ "ops": [ { "op": "clone", "key": "0.0.2.5.0", "name": "tile_5", "position": [0, -2.52, 0] } ]
+}
+```
+
+An export replaces an earlier export of the same scene. The [ERP operations](/reference/ops/erp#scenes) file holds one stanza per archive. The dialog also has **Download .idf** and **Open export folder**.
 
 ### Export checks
 
-| Check | Passes when |
-|---|---|
-| Re-parses | The file reads back as a scene |
-| Round-trips | Reading and writing it again gives the same bytes |
-| elementIds | Every `elementId` is the djb2 of its element's dotted path |
-| nodeidlookup | `nodeidlookup` is the sorted, de-duplicated djb2 of every element name |
-| componentId | The scene's `componentId` is unchanged, so the build accepts it for the same `.idf` |
-| References | Every `eXRef`'s `xref` id is md5-64 of its `fileRef`: the game loads the scene `fileRef` names |
+The export's `checks` object, as `/api/export` returns it:
 
-When the References check fails, Swofty UI writes nothing. The dialog lists each reference, its `fileRef` and the scene the game loads instead. Retarget each one, then export again. Swofty UI's own edits keep references consistent; a mismatch comes from a scene another tool wrote.
+```text
+reparse              the file reads back as a scene
+roundtrip            reading and writing it again gives the same bytes
+elementIdsOk         every elementId is the djb2 of its element's dotted path (elementIdsBad lists up to 10 paths)
+nodeidlookupOk       nodeidlookup is the sorted, de-duplicated djb2 of every element name
+componentIdsKept     the scene's componentId is unchanged, so the build accepts it for the same .idf
+xrefIdsOk            every eXRef's xref id is md5-64 of its fileRef: the game loads the scene fileRef names
+                     (xrefMismatches lists the ones that aren't)
+identicalToSource    the file is byte-identical to the source
+ok                   roundtrip, elementIdsOk, nodeidlookupOk, componentIdsKept and xrefIdsOk all hold
+```
+
+When the references check fails, Swofty UI writes nothing. The dialog lists each reference, its `fileRef` and the scene the game loads instead. Retarget each one, then export again. Swofty UI's own edits keep references consistent; a mismatch comes from a scene another tool wrote.
 
 The dialog also says whether the file differs from the source. An export with no edits is identical to the source, and the same edits always give the same bytes.
 
@@ -231,57 +285,56 @@ The R&D overview screen lays out four department tiles in a fixed 2 × 2 grid. E
 
 ## HTTP API
 
-Swofty UI's editor talks to its server over HTTP on the same address, and scripts can too. Open a scene to get a `doc` id, then send edits to it:
-
-```sh
-base=http://127.0.0.1:7341
-doc=$(curl -s "$base/api/open?eaid=art/screens/career/rnd_overview.idf" | jq -r .doc)
-curl -s "$base/api/export" -H 'Content-Type: application/json' -d '{
-  "doc": "'"$doc"'",
-  "ops": [
-    { "op": "clone", "key": "0.0.2.5.0", "name": "tile_5", "position": [0, -2.52, 0] }
-  ]
-}' | jq .checks
-```
-
-To replay an export's edits on a fresh copy of the scene, send its `ops`:
+Swofty UI's editor talks to its server over HTTP on the same address, and scripts can too. Open a scene to get a `doc` id, then send edits to it, as in [a session in full](#a-session-in-full). To replay an export's edits on a fresh copy of the scene, send its `ops`:
 
 ```sh
 curl -s "$base/api/export" -H 'Content-Type: application/json' \
   -d "$(jq -c --arg doc "$doc" '{doc: $doc, ops: .ops}' rnd_overview.edits.json)" | jq .checks.ok
 ```
 
-| Endpoint | Purpose |
-|---|---|
-| `GET /api/catalog` | Every scene with the indexes of the archives that hold it, and the export folder |
-| `GET /api/open?eaid=<path>[&erp=<archive>]` | Open a scene from the archives. Returns `doc` and the scene model |
-| `GET /api/open-file?path=<file>` | Open an `.idf` file |
-| `POST /api/upload?name=<name>` | Open the `.idf` in the request body |
-| `POST /api/apply` | `{ doc, ops }`: replay the edits and return the model, with each edit's result |
-| `POST /api/export` | `{ doc, ops, name? }`: write and check an export. Returns the file paths, `operations`, `size` and `checks` |
-| `POST /api/reveal` | Open the export folder in the file manager |
-| `GET /api/xref?eaid=<path>[&reveal=1]` | The flattened boxes and geoms of a referenced scene, with nested references resolved by `xref` id, and `mismatches` for references inside it whose `xref` and `fileRef` disagree |
-| `POST /api/visuals` | `{ items: [{ res, mat, erp }] }`: the mesh, material params and texture names of each geom |
-| `GET /api/texture?name=<.tif.image>` | The top mip's BC7 bytes, with its size in `X-Tex-Width` and `X-Tex-Height` |
-| `GET /api/resources?erp=&prefix=`, `GET /api/resource?erp=&name=&frag=` | List an archive's resources, read one fragment |
+```text
+GET  /api/health                                  { ok: true, app: "swofty-ui" }
+GET  /api/catalog                                 every scene with the indexes of the archives that hold it, and the export folder
+GET  /api/open?eaid=<path>[&erp=<archive>]        open a scene from the archives; returns doc and the scene model
+GET  /api/open-file?path=<file>                   open an .idf file
+POST /api/upload?name=<name>                      open the .idf in the request body
+POST /api/apply      { doc, ops }                 replay the edits and return the model, with each edit's result
+POST /api/export     { doc, ops, name? }          write and check an export; returns the file paths, operations, size and checks
+GET  /api/download?f=<file>                       the exported .idf
+POST /api/reveal                                  open the export folder in the file manager
+GET  /api/xref?eaid=<path>[&reveal=1]             the flattened boxes and geoms of a referenced scene, nested references resolved by
+                                                  xref id, and mismatches for references inside it whose xref and fileRef disagree
+POST /api/visuals    { items: [{ res, mat, erp }] }   the mesh, material params and texture names of each geom
+GET  /api/texture?name=<.tif.image>               the top mip's BC7 bytes, size in X-Tex-Width and X-Tex-Height
+GET  /api/resources?erp=&prefix=                  list an archive's resources
+GET  /api/resource?erp=&name=&frag=               read one fragment
+```
 
 ### Edits
 
 `ops` is a list of edits, applied in order. `key` addresses an element by child indexes: `0` is the root of the first scene, `0.0` its first child, and `0.0.2.5.0` is `tile_4` in `rnd_overview.idf`. Keys refer to the tree as it is when that edit runs, so an edit after a clone or delete can address the new tree. The inspector shows each element's key.
 
-| `op` | Fields | Edit |
-|---|---|---|
-| `set` | `key`, `field`, `value` | Set `position` or `scale` (`[x, y, z]`) or `rotation` (`[x, y, z, w]`) |
-| `param` | `key`, `name`, `value` | Set a number, vector or toggle param |
-| `clone` | `key`, `name`, optional `position` | Copy the element as a new sibling named `name` |
-| `rename` | `key`, `name` | Rename the element |
-| `delete` | `key` | Delete the element and its children |
-| `retarget` | `key`, `fileRef` | Point an `eXRef` at the scene `fileRef` (a path such as `art/components/career/rnd_tree/rnd_dev_potential.idf`): sets `fileRef`, `xref` and `XrefMaterialBinding` |
+```json
+[
+  { "op": "set",      "key": "0.0.2.5.0", "field": "position", "value": [0, -2.52, 0] },   // position or scale [x, y, z], rotation [x, y, z, w]
+  { "op": "param",    "key": "0.0.2.5.0", "name": "pivotTrans", "value": [0, 0, 0, 0] },    // a number, vector or toggle param
+  { "op": "clone",    "key": "0.0.2.5.0", "name": "tile_5", "position": [0, -2.52, 0] },    // a new sibling named name; position is optional
+  { "op": "rename",   "key": "0.0.2.5.0", "name": "tile_four" },
+  { "op": "delete",   "key": "0.0.2.5.0" },                                                  // the element and its children
+  { "op": "retarget", "key": "0.0.2.5.0", "fileRef": "art/components/career/rnd_tree/rnd_dev_potential.idf" }
+                                                                                             // sets fileRef, xref and XrefMaterialBinding
+]
+```
 
 Each element in the model has `fileRef`, `xref` and, for an `eXRef`, `ref`: `{ path, id, pathId, ok, scene }`, where `scene` is the scene the game loads by `id` and `ok` is `id == pathId`. A `param` edit can't change `fileRef`; use `retarget`.
 
-`/api/export` answers HTTP 422 with `error`, `checks` and `exported: false` when a reference's `xref` and `fileRef` disagree, and writes nothing.
+### Errors
 
-An edit that fails returns HTTP 400 with `error` and the failing edit's `opIndex`.
+```text
+400   an edit failed: { error: "edit #N failed: …", opIndex: N-1 }
+410   the doc id expired: "document expired; reopen it"
+422   /api/export only: a reference's xref and fileRef disagree; { error, checks, exported: false }, nothing written
+403   a request with an unexpected Host header, or a cross-origin POST
+```
 
-On its default address, the server only answers requests addressed to `127.0.0.1` or `localhost` on its port, and refuses requests that other sites' pages send.
+On a loopback address, the server only answers requests addressed to `127.0.0.1`, `localhost` or `[::1]` on its port, and refuses requests that other sites' pages send.

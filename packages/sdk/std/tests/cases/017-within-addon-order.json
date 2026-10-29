@@ -1,0 +1,170 @@
+{
+  "name": "within one addon: scope first, then selectors before single ids",
+  "rule": "an addon's layers apply in scope order (global, profile, career); within one scope its selector layers come before its single-id layers, whatever the registration order (layers.md#selectors, layers.md#precedence)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "b",
+      "value": {
+        "name": "b",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.a",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "n": 1
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "select": {
+            "ids": "*"
+          },
+          "patch": {
+            "n": 2
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/b",
+          "patch": {
+            "n": 3
+          }
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/b",
+          "patch": {
+            "n": 4
+          },
+          "scope": "profile",
+          "profile": "p1"
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "p1",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 1,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.a"
+            }
+          },
+          "game/b": {
+            "status": "ok",
+            "value": {
+              "name": "b",
+              "n": 4,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.a"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    },
+    {
+      "context": {
+        "profile": "p2",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 1,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.a"
+            }
+          },
+          "game/b": {
+            "status": "ok",
+            "value": {
+              "name": "b",
+              "n": 3,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "mod.a"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

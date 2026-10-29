@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "addon.option 1.0",
+  "x-registry": "addon.option",
+  "x-version": "1.0",
+  "x-applies": "read",
+  "x-snapshot": false,
+  "description": "ui::AddonOption: one option of an addon, as ADDON SETTINGS and the launcher edit it. Each option of an addon's swofty.json provides one, under the addon's id and the option's id.",
+  "type": "object",
+  "properties": {
+    "type": {
+      "enum": [
+        "toggle",
+        "slider",
+        "choice"
+      ]
+    },
+    "states": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/state"
+      }
+    },
+    "value": {
+      "type": [
+        "boolean",
+        "number",
+        "string"
+      ],
+      "description": "the current value; settings::get reads the state whose value equals it"
+    },
+    "extends": {
+      "description": "Data files only: this record is a variant of that record, and its value is a merge patch on the base.",
+      "type": "string",
+      "x-ref": "addon.option",
+      "x-missing": {
+        "default": "required",
+        "allow": [
+          "required"
+        ]
+      }
+    }
+  },
+  "required": [
+    "type",
+    "value"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "state": {
+      "description": "ui::OptionState: one state of the option.",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "value": {
+          "type": [
+            "boolean",
+            "number",
+            "string"
+          ]
+        }
+      },
+      "required": [
+        "text",
+        "value"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,4 +1,5 @@
 #include "runtime.hpp"
+#include "registry/older.hpp"
 
 #include <safetyhook.hpp>
 #include <swofty/game.hpp>
@@ -8,6 +9,7 @@
 #include <atomic>
 #include <cctype>
 #include <cstring>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -555,25 +557,47 @@ void load()
     json::Value doc;
     if (text.empty() || !json::parse(text, doc))
         return;
+    namespace older = swofty_core::registry::older;
+    auto &st = runtime::older_store();
+    std::map<std::string, const json::Value *> manifests;
     for (auto &m : doc.field("addons", "mods").a) {
         const json::Value &h = m["hub_tab"];
         if (h.type != json::Value::Obj || (m["enabled"].type == json::Value::Bool && !m["enabled"].b))
             continue;
-        HubTab t;
+        manifests[m["id"].str()] = &m;
+        older::HubTab t;
         t.addon = m["id"].str();
         t.name = h["name"].str();
         t.title = h["title"].str(m["name"].str(t.addon.c_str()).c_str());
         t.group = h["data_group"].str();
         if (t.name.empty() || t.group.empty())
             continue;
+        for (auto &id : h["options"].a)
+            t.options.push_back(id.str());
+        older::put(st, t.addon, older::HUB_TAB, t.name, older::hub_record(t), "hub_tab manifest field");
+    }
+    for (auto &m : doc.field("addons", "mods").a)
+        if (!manifests.count(m["id"].str()) && m["options"].type == json::Value::Arr)
+            manifests[m["id"].str()] = &m;
+    for (auto &id : older::in_load_order(st, older::HUB_TAB)) {
+        older::HubTab r = older::hub_from(id, older::effective(st, older::HUB_TAB, id));
+        if (r.name.empty() || r.group.empty())
+            continue;
+        HubTab t;
+        t.addon = r.addon;
+        t.name = r.name;
+        t.title = r.title;
+        t.group = r.group;
         t.lng = "lng_swofty_hub_" + t.name;
         t.content = "swofty_hub_" + t.name;
         t.data = "view_model_data.hud_swofty_hub_" + t.name;
         t.key = runtime::fnv32(t.content.c_str());
-        for (auto &id : h["options"].a)
-            for (auto &o : m["options"].a)
-                if (o["id"].str() == id.str())
-                    t.options.push_back({id.str(), o["label"].str(id.str().c_str()), o["description"].str()});
+        auto at = manifests.find(t.addon);
+        for (auto &oid : r.options)
+            if (at != manifests.end())
+                for (auto &o : (*at->second)["options"].a)
+                    if (o["id"].str() == oid)
+                        t.options.push_back({oid, o["label"].str(oid.c_str()), o["description"].str()});
         tabs.push_back(std::move(t));
     }
 }

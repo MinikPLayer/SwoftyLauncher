@@ -1,0 +1,59 @@
+{
+  "career.season": {
+    "full": {
+      "data_group": "f1_career_whatif",
+      "year": 2016,
+      "box": "swofty.classic-seasons-2016/f1_2016?",
+      "calendar": null,
+      "teams": [
+        {
+          "slot": 1,
+          "team": "game/mercedes",
+          "seats": [
+            "game/lewis_hamilton",
+            "game/nico_rosberg"
+          ]
+        },
+        {
+          "slot": 10,
+          "team": "constructor/manor",
+          "seats": [
+            "person/rio_haryanto",
+            "person/pascal_wehrlein"
+          ]
+        },
+        {
+          "slot": 11,
+          "team": null,
+          "seats": [
+            null,
+            null
+          ]
+        }
+      ],
+      "changes": [
+        {
+          "round": 13,
+          "slot": 10,
+          "seat": 0,
+          "out": "person/rio_haryanto",
+          "in": "person/esteban_ocon",
+          "kind": "swap"
+        },
+        {
+          "round": 5,
+          "slot": 1,
+          "seat": 1,
+          "out": "game/nico_rosberg",
+          "in": "game/esteban_gutierrez",
+          "kind": "stand_in",
+          "until_round": 6
+        }
+      ],
+      "$protect": [
+        "teams"
+      ],
+      "reserve": "game/stoffel_vandoorne"
+    }
+  }
+}

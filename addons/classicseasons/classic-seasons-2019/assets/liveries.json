@@ -1,0 +1,145 @@
+{
+ "schema_version": 1,
+ "ops": [
+  {
+   "op": "file.put",
+   "source": "cars/teams/mercedes/wep/mercedes.erp",
+   "target": "2025_asset_groups/cs_2019_vehicle_package/teams/mercedes/wep/mercedes.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/cs_2019_vehicle_package/teams/mercedes/wep/mercedes.assetgroup",
+   "erps": [
+    "2025_asset_groups/cs_2019_vehicle_package/teams/common.erp",
+    "2025_asset_groups/cs_2019_vehicle_package/teams/mercedes/wep/mercedes.erp"
+   ],
+   "template": "asset_groups/f1_2025_vehicle_package/teams/mercedes/wep/mercedes.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "cars/teams/redbull/wep/redbull.erp",
+   "target": "2025_asset_groups/cs_2019_vehicle_package/teams/redbull/wep/redbull.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/cs_2019_vehicle_package/teams/redbull/wep/redbull.assetgroup",
+   "erps": [
+    "2025_asset_groups/cs_2019_vehicle_package/teams/common.erp",
+    "2025_asset_groups/cs_2019_vehicle_package/teams/redbull/wep/redbull.erp"
+   ],
+   "template": "asset_groups/f1_2025_vehicle_package/teams/redbull/wep/redbull.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "cars/teams/ferrari/wep/ferrari.erp",
+   "target": "2025_asset_groups/cs_2019_vehicle_package/teams/ferrari/wep/ferrari.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/cs_2019_vehicle_package/teams/ferrari/wep/ferrari.assetgroup",
+   "erps": [
+    "2025_asset_groups/cs_2019_vehicle_package/teams/common.erp",
+    "2025_asset_groups/cs_2019_vehicle_package/teams/ferrari/wep/ferrari.erp"
+   ],
+   "template": "asset_groups/f1_2025_vehicle_package/teams/ferrari/wep/ferrari.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "cars/teams/williams/wep/williams.erp",
+   "target": "2025_asset_groups/cs_2019_vehicle_package/teams/williams/wep/williams.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/cs_2019_vehicle_package/teams/williams/wep/williams.assetgroup",
+   "erps": [
+    "2025_asset_groups/cs_2019_vehicle_package/teams/common.erp",
+    "2025_asset_groups/cs_2019_vehicle_package/teams/williams/wep/williams.erp"
+   ],
+   "template": "asset_groups/f1_2025_vehicle_package/teams/williams/wep/williams.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "cars/teams/force_india/wep/force_india.erp",
+   "target": "2025_asset_groups/cs_2019_vehicle_package/teams/force_india/wep/force_india.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/cs_2019_vehicle_package/teams/force_india/wep/force_india.assetgroup",
+   "erps": [
+    "2025_asset_groups/cs_2019_vehicle_package/teams/common.erp",
+    "2025_asset_groups/cs_2019_vehicle_package/teams/force_india/wep/force_india.erp"
+   ],
+   "template": "asset_groups/f1_2025_vehicle_package/teams/force_india/wep/force_india.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "cars/teams/lotus/wep/lotus.erp",
+   "target": "2025_asset_groups/cs_2019_vehicle_package/teams/lotus/wep/lotus.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/cs_2019_vehicle_package/teams/lotus/wep/lotus.assetgroup",
+   "erps": [
+    "2025_asset_groups/cs_2019_vehicle_package/teams/common.erp",
+    "2025_asset_groups/cs_2019_vehicle_package/teams/lotus/wep/lotus.erp"
+   ],
+   "template": "asset_groups/f1_2025_vehicle_package/teams/lotus/wep/lotus.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "cars/teams/toro_rosso/wep/toro_rosso.erp",
+   "target": "2025_asset_groups/cs_2019_vehicle_package/teams/toro_rosso/wep/toro_rosso.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/cs_2019_vehicle_package/teams/toro_rosso/wep/toro_rosso.assetgroup",
+   "erps": [
+    "2025_asset_groups/cs_2019_vehicle_package/teams/common.erp",
+    "2025_asset_groups/cs_2019_vehicle_package/teams/toro_rosso/wep/toro_rosso.erp"
+   ],
+   "template": "asset_groups/f1_2025_vehicle_package/teams/toro_rosso/wep/toro_rosso.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "cars/teams/sauber/wep/sauber.erp",
+   "target": "2025_asset_groups/cs_2019_vehicle_package/teams/sauber/wep/sauber.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/cs_2019_vehicle_package/teams/sauber/wep/sauber.assetgroup",
+   "erps": [
+    "2025_asset_groups/cs_2019_vehicle_package/teams/common.erp",
+    "2025_asset_groups/cs_2019_vehicle_package/teams/sauber/wep/sauber.erp"
+   ],
+   "template": "asset_groups/f1_2025_vehicle_package/teams/sauber/wep/sauber.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "cars/teams/mclaren/wep/mclaren.erp",
+   "target": "2025_asset_groups/cs_2019_vehicle_package/teams/mclaren/wep/mclaren.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/cs_2019_vehicle_package/teams/mclaren/wep/mclaren.assetgroup",
+   "erps": [
+    "2025_asset_groups/cs_2019_vehicle_package/teams/common.erp",
+    "2025_asset_groups/cs_2019_vehicle_package/teams/mclaren/wep/mclaren.erp"
+   ],
+   "template": "asset_groups/f1_2025_vehicle_package/teams/mclaren/wep/mclaren.assetgroup"
+  },
+  {
+   "op": "file.put",
+   "source": "cars/teams/haas/wep/haas.erp",
+   "target": "2025_asset_groups/cs_2019_vehicle_package/teams/haas/wep/haas.erp"
+  },
+  {
+   "op": "group.register",
+   "group": "asset_groups/cs_2019_vehicle_package/teams/haas/wep/haas.assetgroup",
+   "erps": [
+    "2025_asset_groups/cs_2019_vehicle_package/teams/common.erp",
+    "2025_asset_groups/cs_2019_vehicle_package/teams/haas/wep/haas.erp"
+   ],
+   "template": "asset_groups/f1_2025_vehicle_package/teams/haas/wep/haas.assetgroup"
+  }
+ ]
+}

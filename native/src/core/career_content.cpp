@@ -11,6 +11,7 @@
 #include <string>
 
 #include "career_content_logic.hpp"
+#include "registry/older.hpp"
 
 std::string settings_addon(const void *from, std::string &dll);
 
@@ -102,7 +103,11 @@ struct Slot {
     std::string why;
     void **vt = nullptr;
     content::Retry retry;
+    content::Desc given;
+    std::string record;
 };
+
+void shown_from_records();
 
 struct Bound {
     uintptr_t site, route, gate, predicate_vt, select_vt, add_tile, construct, populate_2026, populate_2025,
@@ -544,6 +549,7 @@ void site_entry(SwoftyContext *c)
         return;
     }
     resolve_all(true);
+    shown_from_records();
     last_list = list;
     uint32_t career = content::career_of(runtime::career_start_picked());
     uint8_t *root = nullptr;
@@ -722,6 +728,31 @@ std::string caller(const void *from)
     return id.empty() ? (dll.empty() ? std::string("unknown module") : dll) : id;
 }
 
+namespace older = swofty_core::registry::older;
+
+older::ContentDesc to_older(const content::Desc &d)
+{
+    return {d.id, d.title, d.description, d.data_group, d.suffix, d.mode, d.entitlement, d.model, d.car_group, d.badge, d.careers};
+}
+
+void shown_from_records()
+{
+    auto &st = runtime::older_store();
+    for (size_t i = 0; i < used(); i++) {
+        Slot &s = slots[i];
+        if (s.record.empty())
+            continue;
+        older::ContentDesc d = to_older(s.given);
+        older::content_shown(older::effective(st, older::CONTENT, s.record), d);
+        s.desc.title = d.title;
+        s.desc.description = d.description;
+        s.desc.badge = d.badge;
+        s.desc.car_group = d.car_group;
+        s.desc.entitlement = d.entitlement;
+        s.desc.careers = d.careers;
+    }
+}
+
 int api_available()
 {
     return runtime::enabled("career", nullptr) && !off.load();
@@ -762,7 +793,12 @@ int api_add(const SwoftyCareerContentDesc *d)
     }
     Slot &s = slots[n];
     s.desc = desc;
+    s.given = desc;
     s.owner = who;
+    std::string addon = runtime::older_addon(__builtin_return_address(0));
+    if (older::put(runtime::older_store(), addon, older::CONTENT, desc.id, older::content_record(to_older(desc)),
+                   "career::content::add") == SWOFTY_ASSET_OK)
+        s.record = addon + "/" + desc.id;
     uint32_t state = off ? SWOFTY_CAREER_CONTENT_OFF : live ? SWOFTY_CAREER_CONTENT_LIVE : SWOFTY_CAREER_CONTENT_QUEUED;
     if (off)
         s.why = off_why;
@@ -838,6 +874,22 @@ int api_pressed(char *out, size_t cap)
 }
 
 const SwoftyCareerContent table = {api_available, api_add, api_info, api_data_group, api_pressed};
+
+}
+
+namespace runtime {
+
+std::string career_content_owner(const std::string &data_group, std::string *save_name)
+{
+    std::lock_guard<std::mutex> g(lock);
+    for (size_t i = 0; i < used(); i++)
+        if (slots[i].desc.data_group == data_group) {
+            if (save_name)
+                *save_name = slots[i].desc.mode;
+            return slots[i].owner;
+        }
+    return {};
+}
 
 }
 

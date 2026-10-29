@@ -75,6 +75,19 @@ struct GameModeContext {
 };
 static_assert(offsetof(GameModeContext, championship_holder) == 0x88);
 
+struct SaveSlotInfo {
+    uint64_t slot_id; // L2 experimental
+    uint64_t slot_guid; // L2 experimental
+};
+static_assert(offsetof(SaveSlotInfo, slot_id) == 0x0);
+static_assert(offsetof(SaveSlotInfo, slot_guid) == 0x8);
+
+struct SaveSlotManager {
+    uint8_t _pad_0x0[0x280];
+    SaveSlotInfo *current; // L2 experimental
+};
+static_assert(offsetof(SaveSlotManager, current) == 0x280);
+
 struct ScheduleComponent {
     uint8_t _pad_0x0[0x410];
     ScheduleSeason *seasons_begin; // L2 experimental
@@ -163,6 +176,8 @@ using Game_CareerActivities_AddActivity_t = void(void *calendar, const void *act
 inline constexpr fn<"Game_CareerActivities_AddActivity", Game_CareerActivities_AddActivity_t> Game_CareerActivities_AddActivity{}; // L2 experimental
 using Game_CareerActivities_RemoveActivity_t = void(void *calendar, const void *activity, uint16_t day);
 inline constexpr fn<"Game_CareerActivities_RemoveActivity", Game_CareerActivities_RemoveActivity_t> Game_CareerActivities_RemoveActivity{}; // L2 experimental
+using Game_CareerContinue_HandleCommand_t = uint64_t(void *vm, NeStr **cmd, void *value);
+inline constexpr fn<"Game_CareerContinue_HandleCommand", Game_CareerContinue_HandleCommand_t> Game_CareerContinue_HandleCommand{}; // L2 experimental
 using Game_CareerSetup_ResetEntrants_t = void(void *setup);
 inline constexpr fn<"Game_CareerSetup_ResetEntrants", Game_CareerSetup_ResetEntrants_t> Game_CareerSetup_ResetEntrants{}; // L2 experimental
 using Game_CareerWizard_PushNextStep_t = void(void *wizard);
@@ -220,7 +235,7 @@ inline constexpr fn<"Game_PitLane_MoveDownSpline", Game_PitLane_MoveDownSpline_t
 inline constexpr address<"Game_PitLane_VehicleEnteringInternal"> Game_PitLane_VehicleEnteringInternal{}; // L2 experimental
 inline constexpr address<"Game_Pitlane_Multiplayer_teleportToGarage"> Game_Pitlane_Multiplayer_teleportToGarage{}; // L2 experimental
 inline constexpr address<"Game_Pitlane_SetVehicleStatus"> Game_Pitlane_SetVehicleStatus{}; // L2 experimental
-using Game_Place_Vehicle_t = void(void *teleport_req, const char *tag, int priority, const float *mtx44_a, const float *mtx44_b, float dt, uint32_t flags);
+using Game_Place_Vehicle_t = void(void *car, const char *tag, int priority, const float *mtx44_a, const float *mtx44_b, float dt, uint32_t flags);
 inline constexpr fn<"Game_Place_Vehicle", Game_Place_Vehicle_t> Game_Place_Vehicle{}; // L2 experimental
 using Game_PracticeTrackAcclimatisation_RefreshState_t = void(void *self);
 inline constexpr fn<"Game_PracticeTrackAcclimatisation_RefreshState", Game_PracticeTrackAcclimatisation_RefreshState_t> Game_PracticeTrackAcclimatisation_RefreshState{}; // L2 experimental
@@ -242,6 +257,8 @@ using Game_SaveData_SerialiseContainer_t = int *(SaveDataContainer *self, int *r
 inline constexpr fn<"Game_SaveData_SerialiseContainer", Game_SaveData_SerialiseContainer_t> Game_SaveData_SerialiseContainer{}; // L2 experimental
 using Game_SaveData_WriteBag_t = int(NeBagCodec *codec, void *bag);
 inline constexpr fn<"Game_SaveData_WriteBag", Game_SaveData_WriteBag_t> Game_SaveData_WriteBag{}; // L3 stable
+using Game_SaveMgr_RequestProfileSave_Thunk_t = bool(void *save_mgr, void *callback, uint8_t a3, uint8_t a4);
+inline constexpr fn<"Game_SaveMgr_RequestProfileSave_Thunk", Game_SaveMgr_RequestProfileSave_Thunk_t> Game_SaveMgr_RequestProfileSave_Thunk{}; // L2 experimental
 using Game_SceneManagerSpawn_SpawnScene_t = void *(void *mgr, const uint8_t *opts, void *scene, const float *mtx44, void *ov_a, void *ov_b, uint64_t p7);
 inline constexpr fn<"Game_SceneManagerSpawn_SpawnScene", Game_SceneManagerSpawn_SpawnScene_t> Game_SceneManagerSpawn_SpawnScene{}; // L2 experimental
 using Game_SeasonLength_ApplyPreset_t = void(void *component, uint8_t preset);
@@ -252,6 +269,10 @@ using Game_Set_VehicleController_Thunk_t = void(void *system, uint64_t vehicle, 
 inline constexpr fn<"Game_Set_VehicleController_Thunk", Game_Set_VehicleController_Thunk_t> Game_Set_VehicleController_Thunk{}; // L2 experimental
 using Game_SpeechSystem_PostLine_t = void(void *speech, void *line, uint8_t retrigger);
 inline constexpr fn<"Game_SpeechSystem_PostLine", Game_SpeechSystem_PostLine_t> Game_SpeechSystem_PostLine{}; // L2 experimental
+using Game_TeamHQAdvanceViewModel_OnCommandRaised_t = uint64_t(void *vm, NeStr **cmd, void *data);
+inline constexpr fn<"Game_TeamHQAdvanceViewModel_OnCommandRaised", Game_TeamHQAdvanceViewModel_OnCommandRaised_t> Game_TeamHQAdvanceViewModel_OnCommandRaised{}; // L2 experimental, game::TeamHQAdvanceViewModel::onCommandRaised,
+using Game_TeamHQAdvanceViewModel_Update_t = uint64_t(void *vm);
+inline constexpr fn<"Game_TeamHQAdvanceViewModel_Update", Game_TeamHQAdvanceViewModel_Update_t> Game_TeamHQAdvanceViewModel_Update{}; // L2 experimental
 using Game_Teleport_Vehicle_t = void(void *car, const char *name, float *prev_mtx, float *new_mtx, float dt, uint32_t flags);
 inline constexpr fn<"Game_Teleport_Vehicle", Game_Teleport_Vehicle_t> Game_Teleport_Vehicle{}; // L2 experimental
 inline constexpr data<"g_Game_FlowLinkStay", uint32_t> g_Game_FlowLinkStay{}; // L2 experimental
@@ -279,12 +300,14 @@ inline constexpr site<"site_Game_SaveData_ContainersChildren"> site_Game_SaveDat
 inline constexpr site<"site_Game_SaveData_ContainersCount"> site_Game_SaveData_ContainersCount{}; // L3 stable
 inline constexpr site<"site_Game_SaveData_ContainersDone"> site_Game_SaveData_ContainersDone{}; // L2 experimental
 inline constexpr site<"site_Game_SaveData_UnclaimedChild"> site_Game_SaveData_UnclaimedChild{}; // L3 stable
+inline constexpr site<"site_Game_SaveSlot_Selected"> site_Game_SaveSlot_Selected{}; // L2 experimental
 inline constexpr site<"site_Game_TeamSelect_NumberResult"> site_Game_TeamSelect_NumberResult{}; // L2 experimental
 inline constexpr call<"site_Game_TeamSelect_TeamLogoFormat"> site_Game_TeamSelect_TeamLogoFormat{}; // L2 experimental
 inline constexpr vtable<"vt_Game_CareerDLCSelectViewModel", 19> vt_Game_CareerDLCSelectViewModel{}; // L2 experimental
 inline constexpr vtable<"vt_Game_CareerWizardSettingsSelectViewModel", 19> vt_Game_CareerWizardSettingsSelectViewModel{}; // L2 experimental, CareerWizardSettingsSelectViewModel.
 inline constexpr vtable<"vt_Game_DriverCareerDriverSelectViewModel", 22> vt_Game_DriverCareerDriverSelectViewModel{}; // L2 experimental
 inline constexpr vtable<"vt_Game_DriverCareerSlotPredicate", 6> vt_Game_DriverCareerSlotPredicate{}; // L2 experimental
+inline constexpr vtable<"vt_Game_FECareerViewModel", 19> vt_Game_FECareerViewModel{}; // L2 experimental, game::FECareerViewModel,
 inline constexpr vtable<"vt_Game_SaveDataRootContainer", 7> vt_Game_SaveDataRootContainer{}; // L3 stable
 inline constexpr vtable<"vt_Game_TrackListComponent", 79> vt_Game_TrackListComponent{}; // L2 experimental, TrackListComponent
 

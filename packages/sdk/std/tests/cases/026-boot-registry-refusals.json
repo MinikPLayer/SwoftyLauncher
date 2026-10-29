@@ -1,0 +1,173 @@
+{
+  "name": "a boot registry refuses .in() filters and late writes",
+  "rule": "on an Applies::boot registry a layer with \"in\" is refused (boot_filtered), and add, variant and layer outside SWOFTY_REGISTER (\"stage\": \"on_load\") are refused as late; the same late layer on a read registry applies (layers.md#where-a-layer-applies, providers.md#threads-and-timing)",
+  "registries": {
+    "vehicle": {
+      "applies": "boot"
+    },
+    "test.thing": {
+      "applies": "read"
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "vehicle",
+      "key": "ferrari_2025",
+      "value": {
+        "label": "ferrari_2025",
+        "performance_tier": 0,
+        "tyre_wear_scale": 1.0
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "vehicle",
+      "key": "redbull_2025",
+      "value": {
+        "label": "redbull_2025",
+        "performance_tier": 0,
+        "tyre_wear_scale": 1.0
+      }
+    },
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 0,
+        "kind": "f1",
+        "items": []
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "someone.gp-livery",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "vehicle",
+          "target": "game/ferrari_2025",
+          "patch": {
+            "label": "gp"
+          },
+          "in": [
+            {
+              "mode": "grand_prix"
+            }
+          ]
+        },
+        {
+          "op": "layer",
+          "registry": "vehicle",
+          "target": "game/redbull_2025",
+          "patch": {
+            "label": "late"
+          },
+          "stage": "on_load"
+        },
+        {
+          "op": "add",
+          "registry": "vehicle",
+          "key": "car",
+          "value": {
+            "label": "car",
+            "performance_tier": 0,
+            "tyre_wear_scale": 1.0
+          },
+          "stage": "on_load"
+        },
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "n": 4
+          },
+          "stage": "on_load"
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": "grand_prix",
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "vehicle": {
+          "game/ferrari_2025": {
+            "status": "ok",
+            "value": {
+              "label": "ferrari_2025",
+              "performance_tier": 0,
+              "tyre_wear_scale": 1.0
+            },
+            "origins": {}
+          },
+          "game/redbull_2025": {
+            "status": "ok",
+            "value": {
+              "label": "redbull_2025",
+              "performance_tier": 0,
+              "tyre_wear_scale": 1.0
+            },
+            "origins": {}
+          },
+          "someone.gp-livery/car": {
+            "status": "no_record"
+          }
+        },
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 4,
+              "kind": "f1",
+              "items": []
+            },
+            "origins": {
+              "/n": "someone.gp-livery"
+            }
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": [
+        {
+          "addon": "someone.gp-livery",
+          "registry": "vehicle",
+          "id": "game/ferrari_2025",
+          "op": 0,
+          "reason": "boot_filtered"
+        },
+        {
+          "addon": "someone.gp-livery",
+          "registry": "vehicle",
+          "id": "game/redbull_2025",
+          "op": 1,
+          "reason": "late"
+        },
+        {
+          "addon": "someone.gp-livery",
+          "registry": "vehicle",
+          "id": "someone.gp-livery/car",
+          "op": 2,
+          "reason": "late"
+        }
+      ]
+    }
+  ]
+}

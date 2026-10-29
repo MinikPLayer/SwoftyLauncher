@@ -1,0 +1,8 @@
+{
+  "suit": {
+    "no_archive": {
+      "$comment": "archive is required",
+      "team": "game/mercedes"
+    }
+  }
+}

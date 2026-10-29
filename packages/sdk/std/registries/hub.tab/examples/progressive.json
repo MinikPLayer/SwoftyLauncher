@@ -1,0 +1,13 @@
+{
+  "hub.tab": {
+    "progressive": {
+      "name": "progressive",
+      "title": "Progressive",
+      "data_group": "f1_career_progressive",
+      "options": [
+        "follow_mode",
+        "names_year"
+      ]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "career.driver_ratings": {
+    "rating_as_string": {
+      "$comment": "a rating is an integer, not a string",
+      "season": "swofty.progressive/2017",
+      "driver": "game/lewis_hamilton",
+      "racecraft": "93"
+    }
+  }
+}

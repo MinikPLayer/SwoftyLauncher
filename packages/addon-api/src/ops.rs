@@ -75,6 +75,19 @@ pub struct DbReport {
     pub track_removals: usize,
     /// Each `add-row` applied, in order.
     pub added_rows: Vec<AddedRow>,
+    /// Each `add-row` whose `stat_id` a row added earlier held, in order.
+    pub moved_stat_ids: Vec<MovedStatId>,
+}
+
+/// An `add-row` that set a `stat_id` a row added earlier holds, and the id it got instead.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MovedStatId {
+    pub row: String,
+    pub label: Option<String>,
+    pub old: i64,
+    pub new: i64,
+    pub holder: String,
+    pub holder_label: Option<String>,
 }
 
 /// An `add-row` applied: the source row's path and the new row's path.
@@ -470,6 +483,7 @@ struct Db<'a> {
     index: HashMap<u64, usize>,
     removed: Vec<usize>,
     added_rows: HashSet<String>,
+    moved: HashMap<(String, String), String>,
 }
 
 impl<'a> Db<'a> {
@@ -483,6 +497,7 @@ impl<'a> Db<'a> {
             index,
             removed: Vec::new(),
             added_rows: HashSet::new(),
+            moved: HashMap::new(),
         }
     }
 
@@ -589,6 +604,13 @@ fn select_row(db: &Db, table: &Base, row: &str, field: &str, want: &str) -> std:
     let count = match table {
         Base::Path(t) if !row.is_empty() => db.instance_count(t, row),
         _ => None,
+    };
+    let want = match table {
+        Base::Path(t) if field == "stat_id" => db
+            .moved
+            .get(&(format!("{t}.{row}"), want.to_owned()))
+            .map_or(want, String::as_str),
+        _ => want,
     };
     let mut hits = Vec::new();
     for idx in 0..count.unwrap_or(4096) {
@@ -1046,6 +1068,29 @@ fn stat_ids(db: &Db, table: &str, row: &str, rows: usize, skip: &HashSet<String>
         .collect()
 }
 
+// The row added earlier that holds `id`, unless a stock row holds it too.
+fn added_holder(
+    db: &Db,
+    names: &dyn FieldNames,
+    table: &str,
+    row: &str,
+    rows: usize,
+    id: i64,
+) -> Option<String> {
+    let mut holder = None;
+    for i in 0..rows {
+        let key = fnv1a64(format!("{table}.{row}_{i}.stat_id"));
+        if db.text(key).and_then(|v| v.trim().parse::<i64>().ok()) != Some(id) {
+            continue;
+        }
+        if names.stock(key) || names.track(key) {
+            return None;
+        }
+        holder.get_or_insert_with(|| format!("{table}.{row}_{i}"));
+    }
+    holder
+}
+
 fn add_row(db: &mut Db, names: &dyn FieldNames, cx: &mut Cx, op: AddRow) -> Result<()> {
     let AddRow {
         table,
@@ -1173,16 +1218,45 @@ fn add_row(db: &mut Db, names: &dyn FieldNames, cx: &mut Cx, op: AddRow) -> Resu
             indexed && top_level
         }
     };
-    if fresh && let Some(r) = rows.iter_mut().find(|r| r.key == stat_key) {
-        let old = String::from_utf8_lossy(&r.value).into_owned();
-        let next = stat_ids(db, &path, row, n, &HashSet::new())
+    let next = || {
+        stat_ids(db, &path, row, n, &HashSet::new())
             .into_iter()
             .max()
-            .map_or(0, |m| m + 1);
+            .map_or(0, |m| m + 1)
+    };
+    if fresh && let Some(r) = rows.iter_mut().find(|r| r.key == stat_key) {
+        let old = String::from_utf8_lossy(&r.value).into_owned();
+        let next = next();
         r.value = next.to_string().into_bytes();
         cx.report
             .lines
             .push(format!("{what}: stat_id {next} (the source's is {old})"));
+    }
+    let asked = set.get("stat_id").and_then(|v| v.trim().parse::<i64>().ok());
+    if let Some(old) = asked
+        && top_level
+        && indexed()
+        && let Some(holder) = added_holder(db, names, &path, row, n, old)
+        && let Some(r) = rows.iter_mut().find(|r| r.key == stat_key)
+    {
+        let new = next();
+        r.value = new.to_string().into_bytes();
+        let label = set.get("_metadata_").cloned();
+        let holder_label = db.text(fnv1a64(format!("{holder}._metadata_")));
+        cx.report.lines.push(format!(
+            "{what}: stat_id {old} is taken by {holder} ({}); stat_id {new}",
+            holder_label.as_deref().unwrap_or("no label")
+        ));
+        db.moved
+            .insert((format!("{path}.{row}"), old.to_string()), new.to_string());
+        cx.report.moved_stat_ids.push(MovedStatId {
+            row: dst_path.clone(),
+            label,
+            old,
+            new,
+            holder,
+            holder_label,
+        });
     }
     cx.report
         .lines
@@ -1950,6 +2024,116 @@ mod tests {
         );
         apply_db_ops_report(&mut db, &fresh, &catalogue(&[]), &mut DbReport::default()).unwrap();
         assert_eq!(db.get_text("modes.mode_2.stat_id").as_deref(), Some("4"));
+    }
+
+    struct Stocked {
+        names: Catalogue,
+        stock: HashSet<u64>,
+    }
+
+    impl FieldNames for Stocked {
+        fn fields(&self, table: &str, row: &str) -> Option<Vec<String>> {
+            self.names.fields(table, row)
+        }
+
+        fn row_keys(&self, shape: &str) -> Option<&[String]> {
+            self.names.row_keys(shape)
+        }
+
+        fn stock(&self, key: u64) -> bool {
+            self.stock.contains(&key)
+        }
+    }
+
+    fn stocked(db: &Gvdb) -> Stocked {
+        Stocked {
+            names: catalogue(&[]),
+            stock: db.records.iter().map(|r| r.key).collect(),
+        }
+    }
+
+    fn add_labelled(label: &str, stat_id: &str, then: &str) -> DbOps {
+        ops(&format!(
+            r#"{{"schema_version":1,"ops":[{{"op":"add-row","table":"modes","from":"modes.mode[_metadata_=f1]",
+            "set":{{"_metadata_":"{label}"{stat_id}}}}}{then}]}}"#
+        ))
+    }
+
+    #[test]
+    fn an_explicit_stat_id_an_added_row_holds_gets_the_next_free_one() {
+        let mut db = modes(["3", "7"]);
+        let names = stocked(&db);
+        let mut report = DbReport::default();
+        apply_db_ops_report(&mut db, &add_labelled("first", "", ""), &names, &mut report).unwrap();
+        assert_eq!(db.get_text("modes.mode_2.stat_id").as_deref(), Some("8"));
+        let mut report = DbReport::default();
+        let ours = add_labelled(
+            "second",
+            r#","stat_id":"8""#,
+            r#",{"op":"set","select":"modes.mode[stat_id=8]","field":"player.driver.preloaded","value":"False"},
+            {"op":"set","select":"modes.mode_0","field":"player.driver.preloaded","value_from":"modes.mode[_metadata_=second].stat_id"}"#,
+        );
+        apply_db_ops_report(&mut db, &ours, &names, &mut report).unwrap();
+        assert_eq!(db.get_text("modes.mode_3.stat_id").as_deref(), Some("9"));
+        assert_eq!(
+            report.moved_stat_ids,
+            [MovedStatId {
+                row: "modes.mode_3".into(),
+                label: Some("second".into()),
+                old: 8,
+                new: 9,
+                holder: "modes.mode_2".into(),
+                holder_label: Some("first".into()),
+            }]
+        );
+        assert!(
+            report.lines.iter().any(|l| l
+                == "add-row modes.mode_3 (from modes.mode[_metadata_=f1]): stat_id 8 is taken by modes.mode_2 (first); stat_id 9"),
+            "{:?}",
+            report.lines
+        );
+        assert_eq!(
+            db.get_text("modes.mode_3.player.driver.preloaded").as_deref(),
+            Some("False")
+        );
+        assert_eq!(
+            db.get_text("modes.mode_2.player.driver.preloaded").as_deref(),
+            Some("True")
+        );
+        assert_eq!(
+            db.get_text("modes.mode_0.player.driver.preloaded").as_deref(),
+            Some("9")
+        );
+    }
+
+    #[test]
+    fn explicit_stat_ids_without_a_clash_or_shared_with_a_stock_row_stay() {
+        for (id, want) in [("40", "40"), ("7", "7")] {
+            let mut db = modes(["3", "7"]);
+            let names = stocked(&db);
+            apply_db_ops(&mut db, &add_labelled("first", "", ""), &names).unwrap();
+            let mut report = DbReport::default();
+            let ours = add_labelled("second", &format!(r#","stat_id":"{id}""#), "");
+            apply_db_ops_report(&mut db, &ours, &names, &mut report).unwrap();
+            assert_eq!(db.get_text("modes.mode_3.stat_id").as_deref(), Some(want));
+            assert!(report.moved_stat_ids.is_empty(), "{:?}", report.moved_stat_ids);
+            assert!(
+                !report.lines.iter().any(|l| l.contains("is taken by")),
+                "{:?}",
+                report.lines
+            );
+        }
+        let mut db = modes(["3", "7"]);
+        let names = stocked(&db);
+        let keep = ops(
+            r#"{"schema_version":1,"ops":[{"op":"add-row","table":"modes","from":"modes.mode_0",
+            "stat_id":"keep","set":{"_metadata_":"x"}},{"op":"add-row","table":"modes","from":"modes.mode_0",
+            "set":{"_metadata_":"y","stat_id":"3"}}]}"#,
+        );
+        let mut report = DbReport::default();
+        apply_db_ops_report(&mut db, &keep, &names, &mut report).unwrap();
+        assert_eq!(db.get_text("modes.mode_3.stat_id").as_deref(), Some("3"));
+        assert!(report.moved_stat_ids.is_empty());
     }
 
     #[test]

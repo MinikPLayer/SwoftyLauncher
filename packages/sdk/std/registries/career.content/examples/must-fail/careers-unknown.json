@@ -1,0 +1,9 @@
+{
+  "career.content": {
+    "careers_unknown": {
+      "$comment": "careers is driver, my_team or both",
+      "data_group": "f1_career_1990",
+      "careers": "f2"
+    }
+  }
+}

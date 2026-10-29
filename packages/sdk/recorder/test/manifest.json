@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "t.recorder",
+  "name": "Recorder test",
+  "version": "1.0.0",
+  "options": [ { "id": "wear", "type": "choice", "values": ["normal", "high"], "default": "high" } ]
+}

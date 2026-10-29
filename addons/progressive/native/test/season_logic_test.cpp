@@ -108,6 +108,12 @@ void years()
     EXPECT(season::year_for(2026, 3) == 2026);
     EXPECT(season::year_for(2010, 0) == 2016);
     EXPECT(season::year_for(2030, 0) == 2026);
+    EXPECT(season::season_moment(-1, 0, true, false));
+    EXPECT(!season::season_moment(-1, 0, false, false));
+    EXPECT(!season::season_moment(0, 0, true, false));
+    EXPECT(!season::season_moment(-1, 0, true, true));
+    EXPECT(season::season_moment(0, 1, true, false));
+    EXPECT(season::season_moment(1, 3, true, false));
 }
 
 void parsed()
@@ -426,6 +432,26 @@ bool released(const season::Plan &p, const std::string &driver)
     return std::find(p.releases.begin(), p.releases.end(), id(driver)) != p.releases.end();
 }
 
+void new_teams_are_named_only_by_a_team_label()
+{
+    EXPECT(!season::names_new_teams(g_data, 2017));
+    season::Data d = g_data;
+    int cadillac = slot_of("gm_cadillac_26");
+    int mercedes = slot_of("mercedes_26");
+    season::Year &y = d.years[2017];
+    y.teams[mercedes].team_id = d.slots[mercedes].team;
+    EXPECT(!season::names_new_teams(d, 2017));
+    y.teams[mercedes].team_id = "team_2012_lotus";
+    EXPECT(season::names_new_teams(d, 2017));
+    EXPECT(!season::names_new_teams(d, 2018));
+    season::Plan p;
+    p.year = 2017;
+    p.closed[cadillac] = true;
+    EXPECT(season::season_team(d, p, mercedes) == "team_2012_lotus");
+    EXPECT(season::season_team(d, p, slot_of("ferrari_26")) == d.slots[slot_of("ferrari_26")].team);
+    EXPECT(season::season_team(d, p, cadillac).empty());
+}
+
 void ten_team_years_close_slot_11()
 {
     auto rows = career("lando_norris");
@@ -553,6 +579,57 @@ void season_start_standings_follow_the_previous_year()
     EXPECT(at_(stroll) >= static_cast<long>(want_first.size()));
 }
 
+void added_team_names_leave_the_dressed_slot_alone()
+{
+    season::IdentityNames ig = [](const std::string &team) -> std::optional<std::array<std::string, 3>> {
+        if (team == "ig.teampack/ig_racing")
+            return std::array<std::string, 3>{"IG Racing", "IG", "IGR"};
+        return std::nullopt;
+    };
+    auto stock = season::team_name_writes(g_data, 2016, ig);
+    auto key11 = g_data.slots[10].name_keys;
+    std::string manor = g_data.year(2016)->teams[10].name;
+    EXPECT(!manor.empty());
+    size_t seen = 0;
+    for (auto &w : stock)
+        if (w.key == key11[0] || w.key == key11[1] || w.key == key11[2]) {
+            EXPECT(!w.clear && w.text == manor);
+            ++seen;
+        }
+    EXPECT(seen == 3);
+
+    season::Data layered = g_data;
+    layered.years.at(2016).teams[10].team_id = "ig.teampack/ig_racing";
+    auto got = season::team_name_writes(layered, 2016, ig);
+    EXPECT(got.size() == stock.size());
+    for (size_t i = 0; i < got.size() && i < stock.size(); ++i) {
+        bool slot11 = got[i].key == key11[0] || got[i].key == key11[1] || got[i].key == key11[2];
+        if (!slot11)
+            EXPECT(got[i].key == stock[i].key && got[i].text == stock[i].text && got[i].clear == stock[i].clear);
+    }
+    for (size_t k = 0; k < 3; ++k)
+        for (auto &w : got)
+            if (w.key == key11[k])
+                EXPECT(!w.clear && w.text == (k == 0 ? "IG Racing" : k == 1 ? "IG" : "IGR"));
+
+    auto none = season::team_name_writes(layered, 2016, nullptr);
+    for (auto &w : none)
+        if (w.key == key11[0])
+            EXPECT(w.clear);
+
+    auto wizard = season::added_team_name_writes(layered, 2016, ig);
+    EXPECT(wizard.size() == 3);
+    for (size_t k = 0; k < wizard.size() && k < 3; ++k)
+        EXPECT(wizard[k].key == key11[k] && !wizard[k].clear && wizard[k].text == (k == 0 ? "IG Racing" : k == 1 ? "IG" : "IGR"));
+    EXPECT(season::added_team_name_writes(g_data, 2016, ig).empty());
+    EXPECT(season::added_team_name_writes(layered, 2017, ig).empty());
+    EXPECT(season::added_team_name_writes(layered, 2016, nullptr).empty());
+    EXPECT(season::added_team_logo(layered, 2016, g_data.slots[10].team) == "ig_racing");
+    EXPECT(season::added_team_logo(layered, 2016, g_data.slots[0].team).empty());
+    EXPECT(season::added_team_logo(g_data, 2016, g_data.slots[10].team).empty());
+    EXPECT(season::added_team_logo(layered, 2017, g_data.slots[10].team).empty());
+}
+
 } // namespace
 
 int main(int argc, char **argv)
@@ -580,11 +657,13 @@ int main(int argc, char **argv)
     player_added_as_a_third_race_seat();
     empty_team_filled_from_free_agents();
     follow_player_left_on_his_2026_team_with_another_car();
+    new_teams_are_named_only_by_a_team_label();
     ten_team_years_close_slot_11();
     ten_team_years_keep_the_players_slot();
     ten_team_years_bring_cadillac_back_in_2026();
     season_start_standings_follow_the_previous_year();
     season_start_standings_skip_a_closed_slot();
+    added_team_names_leave_the_dressed_slot_alone();
     if (failures) {
         std::printf("season_logic_test: %d failure(s)\n", failures);
         return EXIT_FAILURE;

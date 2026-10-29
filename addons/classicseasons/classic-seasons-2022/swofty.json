@@ -31,7 +31,8 @@
  ],
  "operations": {
   "database": [
-   "db/season.json"
+   "db/season.json",
+   "db/records.json"
   ],
   "assets": [
    "lang/season.json",

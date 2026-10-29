@@ -1,0 +1,195 @@
+{
+  "name": "variants extend variants; a missing base leaves the variant unresolved",
+  "rule": "a chain resolves from the root, and layers on every record of the chain flow down; a variant whose base nothing provides has status no_record (bases.md#how-a-variant-resolves)",
+  "registries": {
+    "test.thing": {
+      "applies": "read",
+      "key_fields": {
+        "/items": [
+          "key"
+        ]
+      }
+    }
+  },
+  "bases": [
+    {
+      "addon": "game",
+      "registry": "test.thing",
+      "key": "a",
+      "value": {
+        "name": "a",
+        "n": 1,
+        "kind": "f1",
+        "items": [
+          {
+            "key": "k1",
+            "v": 1
+          }
+        ]
+      }
+    }
+  ],
+  "tags": {},
+  "addons": [
+    {
+      "id": "mod.v",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "test.thing",
+          "key": "a2",
+          "base": "game/a",
+          "patch": {
+            "name": "a2"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.w",
+      "ops": [
+        {
+          "op": "variant",
+          "registry": "test.thing",
+          "key": "a3",
+          "base": "mod.v/a2",
+          "patch": {
+            "kind": "f2"
+          }
+        },
+        {
+          "op": "variant",
+          "registry": "test.thing",
+          "key": "a4",
+          "base": "mod.gone/x",
+          "patch": {
+            "kind": "f2"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.l",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "mod.v/a2",
+          "patch": {
+            "n": 7
+          }
+        }
+      ]
+    },
+    {
+      "id": "mod.m",
+      "ops": [
+        {
+          "op": "layer",
+          "registry": "test.thing",
+          "target": "game/a",
+          "patch": {
+            "items": [
+              {
+                "key": "k2",
+                "v": 2
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "context": {
+        "profile": "default",
+        "career": null,
+        "mode": null,
+        "content": null,
+        "data_group": null,
+        "setup_mode": null,
+        "options": {},
+        "settings": {},
+        "disabled": []
+      },
+      "expect": {
+        "test.thing": {
+          "game/a": {
+            "status": "ok",
+            "value": {
+              "name": "a",
+              "n": 1,
+              "kind": "f1",
+              "items": [
+                {
+                  "key": "k1",
+                  "v": 1
+                },
+                {
+                  "key": "k2",
+                  "v": 2
+                }
+              ]
+            },
+            "origins": {
+              "/items/key=k2": "mod.m"
+            }
+          },
+          "mod.v/a2": {
+            "status": "ok",
+            "value": {
+              "name": "a2",
+              "n": 7,
+              "kind": "f1",
+              "items": [
+                {
+                  "key": "k1",
+                  "v": 1
+                },
+                {
+                  "key": "k2",
+                  "v": 2
+                }
+              ]
+            },
+            "origins": {
+              "/name": "mod.v",
+              "/n": "mod.l",
+              "/items/key=k2": "mod.m"
+            }
+          },
+          "mod.w/a3": {
+            "status": "ok",
+            "value": {
+              "name": "a2",
+              "n": 7,
+              "kind": "f2",
+              "items": [
+                {
+                  "key": "k1",
+                  "v": 1
+                },
+                {
+                  "key": "k2",
+                  "v": 2
+                }
+              ]
+            },
+            "origins": {
+              "/name": "mod.v",
+              "/n": "mod.l",
+              "/kind": "mod.w",
+              "/items/key=k2": "mod.m"
+            }
+          },
+          "mod.w/a4": {
+            "status": "no_record"
+          }
+        }
+      },
+      "conflicts": [],
+      "refusals": []
+    }
+  ]
+}

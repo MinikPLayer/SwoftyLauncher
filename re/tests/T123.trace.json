@@ -1,0 +1,16 @@
+{
+ "log": {"max_mb": 16, "on_full": "stop", "summary_every_s": 60},
+ "limits": {"max_events_total": 20000, "max_read": 64},
+ "hooks": [
+  {"id": "t123.set_mode_net", "test": "T123", "sig": "car.fuel_mode_set_call_net", "regs": ["rcx", "rdx"],
+   "fields": ["veh=u8:[[rcx+8]+0xe8]", "ai=u32:[[rcx+8]+0x124]", "mode=u32:rdx", "cur=i32:[rcx+0x128]"],
+   "bt": 3, "max_per_sec": 4, "max_events": 1500},
+  {"id": "t123.set_mode_pose", "test": "T123", "sig": "car.fuel_mode_set_call_pose", "regs": ["rcx", "rdx"],
+   "fields": ["veh=u8:[[rcx+8]+0xe8]", "ai=u32:[[rcx+8]+0x124]", "mode=u32:rdx", "cur=i32:[rcx+0x128]"],
+   "bt": 3, "max_per_sec": 4, "max_events": 1500},
+  {"id": "t123.set_mode_tyre_damage", "test": "T123", "sig": "car.fuel_mode_set_call_tyre_damage", "regs": ["rcx", "rdx"],
+   "fields": ["veh=u8:[[rcx+8]+0xe8]", "ai=u32:[[rcx+8]+0x124]", "mode=u32:rdx", "cur=i32:[rcx+0x128]"],
+   "when": ["u32:[[rcx+8]+0x124] == 0"],
+   "bt": 3, "max_per_sec": 4, "max_events": 1500}
+ ]
+}
