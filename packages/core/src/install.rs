@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use crate::baseline::{
-    Baseline, DepotHashes, Hashes, Identity, Objects, sha256_bytes, sha256_file, sha256_opt,
+    Baseline, DepotHashes, FileRecord, Hashes, Identity, Objects, sha256_bytes, sha256_file, sha256_opt,
 };
 use crate::journal::{Journal, Op, State};
 use crate::placed::{self, Placed};
@@ -742,8 +742,40 @@ impl<'a> Installer<'a> {
                 .clone();
             let now = hashes.sha256(&path)?;
             if now != rec.sha256 {
+                let owned = placed.wrote(rel, &now) || after[rel.as_str()] == now;
+                if !owned {
+                    match self.depot.stock(rel, &path)? {
+                        Some(true) => {
+                            let size = std::fs::metadata(&path).map_err(io_err(&path))?.len();
+                            let sha256 = objects.put_file(&path)?;
+                            baseline.files.insert(
+                                rel.clone(),
+                                FileRecord {
+                                    size,
+                                    sha256,
+                                    source: crate::baseline::Source::Depot,
+                                },
+                            );
+                            (self.out)(&format!(
+                                "{rel} matches Steam's copy; its recorded original was out of date and has been replaced"
+                            ));
+                            continue;
+                        }
+                        Some(false) => {
+                            (self.out)(&format!(
+                                "{rel} is not Steam's copy and swofty did not write it: {}",
+                                describe_file(&path, &now)
+                            ));
+                            return Err(Error::NotStock(vec![rel.clone()]));
+                        }
+                        None => (self.out)(&format!(
+                            "{rel} differs from its recorded original and cannot be checked against Steam's list: {}",
+                            describe_file(&path, &now)
+                        )),
+                    }
+                }
                 conflicts.push(Conflict {
-                    owned: placed.wrote(rel, &now) || after[rel.as_str()] == now,
+                    owned,
                     path: rel.clone(),
                     sha256: Some(now),
                     replaced: true,
@@ -1034,6 +1066,18 @@ fn remove_empty(dir: &Path) -> Result<bool> {
         with_retry(dir, || std::fs::remove_dir(dir))?;
     }
     Ok(empty)
+}
+
+fn describe_file(path: &Path, sha256: &str) -> String {
+    let meta = std::fs::metadata(path).ok();
+    let size = meta
+        .as_ref()
+        .map_or_else(|| "?".to_owned(), |m| m.len().to_string());
+    let mtime = meta
+        .and_then(|m| m.modified().ok())
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map_or_else(|| "?".to_owned(), |d| d.as_secs().to_string());
+    format!("size {size}, modified {mtime} (unix seconds), sha256 {sha256}")
 }
 
 #[cfg(test)]

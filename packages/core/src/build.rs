@@ -34,7 +34,9 @@ use crate::planner::{
 use crate::profile::Profile;
 use crate::registry::Host;
 use crate::resolver::resolve;
-use crate::runtime::{Prebuilt, Runtime, db_edits, overlay_fits, runtime_record_room};
+use crate::runtime::{
+    Prebuilt, Runtime, db_edits, overlay_fits, runtime_loaded_estimate, runtime_record_room,
+};
 use crate::settings::{
     SessionMod, SessionSettings, SessionUi, render_ops, render_text, screen_file, screens,
 };
@@ -1115,8 +1117,9 @@ pub(crate) fn build_as(store: &Store, profile: &str, game: &Game, checking: bool
         }
         let cars = grid_size(&db);
         if let Some(staged) = staged {
-            let room = runtime_record_room(staged.records.len());
-            let created = db.records.len().saturating_sub(staged.records.len());
+            let room = runtime_record_room(runtime_loaded_estimate(staged.records.len()));
+            let known: HashSet<u64> = staged.records.iter().map(|r| r.key).collect();
+            let created = db.records.iter().filter(|r| !known.contains(&r.key)).count();
             match db_edits(&staged, &db) {
                 Ok(_) if created > room => built.lines.push(format!(
                     "database: built into the game file; the addons add {created} record(s) and the game's \
@@ -3672,7 +3675,7 @@ mod tests {
     }
 
     #[test]
-    fn keeps_the_entrant_lists_an_addon_renames_or_removes() {
+    fn warns_of_the_entrant_lists_an_addon_renames_or_removes() {
         use swofty_formats::gvdb::Record;
         if loader_dir().is_some() {
             return;
@@ -3750,8 +3753,8 @@ mod tests {
             .unwrap();
 
         let built = build(&store, "default", &game).unwrap();
-        let line = "Old Team Pack: kept the entrant list(s) f2_2026 that it renames or removes; \
-                    the game crashes when a list it looks up by name is missing";
+        let line =
+            "Old Team Pack: renames or removes the entrant list(s) f2_2026; F2 menus may crash with it";
         assert!(built.warnings.iter().any(|w| w == line), "{:?}", built.warnings);
         assert_eq!(
             built.report.kept_lists,
@@ -3761,28 +3764,15 @@ mod tests {
         assert_eq!(
             out.get_text(&format!("{lists}._entrant_list_instancecount_"))
                 .as_deref(),
-            Some("4")
+            Some("2")
         );
         assert_eq!(
             out.get_text(&format!("{lists}.entrant_list_1._metadata_"))
                 .as_deref(),
             Some("f2_2025")
         );
-        for (field, value) in [
-            ("_metadata_", "f2_2026"),
-            ("stat_id", "104"),
-            ("display_name", "lng_f2_2026"),
-        ] {
-            assert_eq!(
-                out.get_text(&format!("{lists}.entrant_list_3.{field}"))
-                    .as_deref(),
-                Some(value)
-            );
-        }
-        assert_eq!(
-            out.get_text(whitelist).as_deref(),
-            Some("f1_2026,f2_2025,f2_2026")
-        );
+        assert_eq!(out.get_text(&format!("{lists}.entrant_list_3._metadata_")), None);
+        assert_eq!(out.get_text(whitelist).as_deref(), Some("f1_2026,f2_2025"));
         std::fs::remove_dir_all(&root).ok();
     }
 

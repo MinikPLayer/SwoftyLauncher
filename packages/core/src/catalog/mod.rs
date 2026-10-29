@@ -635,8 +635,48 @@ pub fn download(v: &Version, to: &Path, progress: &dyn Fn(Stage)) -> Result<()> 
 
 fn downloads_dir(store: &Store) -> Result<PathBuf> {
     let dir = store.root.join(CACHE_DIR).join("downloads");
-    std::fs::create_dir_all(&dir).map_err(io_err(&dir))?;
+    ensure_dir(&store.root, &dir).map_err(io_err(&dir))?;
     Ok(dir)
+}
+
+fn ensure_dir(root: &Path, dir: &Path) -> std::io::Result<()> {
+    let first = match std::fs::create_dir_all(dir) {
+        Ok(()) => return Ok(()),
+        Err(e) => e,
+    };
+    let Ok(rel) = dir.strip_prefix(root) else {
+        return Err(first);
+    };
+    let mut at = root.to_path_buf();
+    for part in rel.components() {
+        at.push(part);
+        let Ok(meta) = std::fs::symlink_metadata(&at) else {
+            break;
+        };
+        if at.is_dir() {
+            continue;
+        }
+        if meta.file_type().is_symlink() || meta.file_type().is_dir() {
+            eprintln!("swofty-core: removing the broken link {}", at.display());
+            if std::fs::remove_file(&at).is_err() {
+                std::fs::remove_dir(&at)?;
+            }
+        } else {
+            let mut aside = at.clone().into_os_string();
+            aside.push(".stale");
+            let aside = PathBuf::from(aside);
+            eprintln!(
+                "swofty-core: {} is not a folder, moving it to {}",
+                at.display(),
+                aside.display()
+            );
+            if std::fs::rename(&at, &aside).is_err() {
+                std::fs::remove_file(&at)?;
+            }
+        }
+        break;
+    }
+    std::fs::create_dir_all(dir)
 }
 
 fn file_name(addon: &Addon, v: &Version) -> String {
@@ -657,6 +697,40 @@ fn file_name(addon: &Addon, v: &Version) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ensure_dir_moves_a_file_aside() {
+        let root = scratch("file");
+        let dir = root.join(CACHE_DIR).join("downloads");
+        std::fs::create_dir_all(dir.parent().unwrap()).unwrap();
+        std::fs::write(&dir, b"x").unwrap();
+        ensure_dir(&root, &dir).unwrap();
+        assert!(dir.is_dir());
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn ensure_dir_replaces_a_file_higher_up() {
+        let root = scratch("parent");
+        let dir = root.join(CACHE_DIR).join("downloads");
+        std::fs::create_dir_all(root.join("cache")).unwrap();
+        std::fs::write(root.join(CACHE_DIR), b"x").unwrap();
+        ensure_dir(&root, &dir).unwrap();
+        assert!(dir.is_dir());
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn ensure_dir_removes_a_dangling_link() {
+        let root = scratch("link");
+        let dir = root.join(CACHE_DIR).join("downloads");
+        std::fs::create_dir_all(dir.parent().unwrap()).unwrap();
+        std::os::unix::fs::symlink(root.join("gone"), &dir).unwrap();
+        ensure_dir(&root, &dir).unwrap();
+        assert!(dir.is_dir());
+        let _ = std::fs::remove_dir_all(&root);
+    }
 
     fn version(v: &str, launcher: Option<&str>) -> Version {
         Version {

@@ -165,7 +165,7 @@ These commands come from the built-in Team Simplified addon. Use them to manage 
 | Command | Purpose |
 |---|---|
 | `swofty saves list` | List the profile save backups in `$DATA/save-backups/`, newest first, with the profile, why each was taken, the addons the session left out, and the file count and size |
-| `swofty saves restore <backup>` | Copy a backup back over the profile save. It refuses while F1 25 runs and backs up the current save first |
+| `swofty saves restore <backup>` | Copy a backup back over the profile save. It refuses while F1 25 or Steam runs and backs up the current save first |
 
 Before a session whose profile leaves out an installed addon with [`saves.affects`](/reference/addons/manifest#saves), `swofty run` copies the Steam profile save (`savegame@profile#*` in `userdata/<id>/3059520/remote`) into `$DATA/save-backups/<time>-<profile>/` with a `manifest.json` of the files' sizes and SHA-256 hashes, and prints `saves: backed up the profile save before a session without <addon ids> (their careers are removed if the game saves): <folder>`. It keeps the newest 10 backups. The EA app copy's saves are not backed up.
 

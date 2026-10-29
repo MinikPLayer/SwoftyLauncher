@@ -50,9 +50,9 @@ A `remove-record` of a key in the game's stock database is skipped. The build wa
 
 A `remove-record` of a record that a track's activation adds is always skipped, with or without `allow_stock_removal`. The build warns once per addon with the count, such as `My Mod: 12 removal(s) of database records the tracks add skipped; the game crashes when a record it reads is missing`.
 
-### Keeping the game's entrant lists
+### Renamed and removed entrant lists
 
-The game looks up its entrant lists (`entrants.entrant_lists`) by name. When an addon's ops rename one of the stock lists, remove it, or lower `_entrant_list_instancecount_` so the list is past the count, the build adds the stock list back as a new row with its stock keys and `stat_id`. A count the addon lowers goes back up, and a list name it takes out of a content set's `available_entrant_lists` or an entrant setup mode's `entrant_lists` or `selectable_entrant_lists` goes back in. The build warns once per addon, such as `My Mod: kept the entrant list(s) f2_2026 that it renames or removes; the game crashes when a list it looks up by name is missing`. Database mods made from an older game version's database do this when the newer version added a list.
+The game looks up its entrant lists (`entrants.entrant_lists`) by name. When an addon's ops rename one of the stock lists, remove it, lower `_entrant_list_instancecount_` so the list is past the count, or take a list name out of a content set's `available_entrant_lists` or an entrant setup mode's `entrant_lists` or `selectable_entrant_lists`, the build applies the ops as written and warns once per addon, such as `My Mod: renames or removes the entrant list(s) f2_2026; F2 menus may crash with it`. Database mods made from an older game version's database do this when the newer version added a list.
 
 The game crashes on any key it reads that is missing; see [Missing keys](/reference/gamedb/reading#missing-keys). A build that removes a stock record writes the database into `gamedatabases.2025.bin` instead of editing it at runtime. **Export game files (.zip)** in the DB Editor skips the same removals and lists them.
 

@@ -420,3 +420,79 @@ fn a_parked_or_present_anti_cheat_launcher_is_not_missing() {
     f.write(&format!("{EAC}.bak"), b"stock exe");
     assert!(stock::check(&f.data, &f.game, &d).unwrap().missing.is_empty());
 }
+
+fn replace_plan(f: &Fixture) -> swofty_core::install::Plan {
+    let src = f.root.join("src");
+    std::fs::create_dir_all(&src).unwrap();
+    std::fs::write(src.join("db"), b"modded db").unwrap();
+    swofty_core::install::Plan {
+        profile: "MODDED".into(),
+        data: std::collections::BTreeMap::from([(DB.to_owned(), src.join("db"))]),
+        added: Default::default(),
+        loader: Default::default(),
+        registry_override: false,
+    }
+}
+
+fn stale_baseline(f: &Fixture) {
+    f.write(DB, b"old recorded db");
+    f.record_first_sight(DB);
+}
+
+#[test]
+fn a_stale_baseline_whose_file_matches_steam_is_rerecorded_and_the_install_goes_on() {
+    let f = Fixture::new("stale-match");
+    stale_baseline(&f);
+    f.write(DB, b"stock db");
+    let d = depots(&[(DB, b"stock db")]);
+    let inst = swofty_core::install::Installer {
+        depot: &d,
+        ..swofty_core::install::Installer::new(&f.data, &f.game)
+    };
+    inst.apply(&replace_plan(&f)).unwrap();
+    let rec = &f.baseline().files[DB];
+    assert_eq!(rec.source, Source::Depot);
+    assert_eq!(std::fs::read(f.objects().path(&rec.sha256)).unwrap(), b"stock db");
+    assert_eq!(std::fs::read(f.game.dir.join(DB)).unwrap(), b"modded db");
+}
+
+#[test]
+fn a_file_that_differs_from_steam_and_the_baseline_stops_with_the_not_stock_error() {
+    let f = Fixture::new("stale-mismatch");
+    stale_baseline(&f);
+    f.write(DB, b"a mod copied in by hand");
+    let d = depots(&[(DB, b"stock db")]);
+    let log = std::cell::RefCell::new(Vec::new());
+    let out = |s: &str| log.borrow_mut().push(s.to_owned());
+    let inst = swofty_core::install::Installer {
+        depot: &d,
+        out: &out,
+        ..swofty_core::install::Installer::new(&f.data, &f.game)
+    };
+    let err = inst.apply(&replace_plan(&f)).unwrap_err();
+    assert!(matches!(&err, swofty_core::Error::NotStock(files) if files == &[DB.to_owned()]));
+    assert!(err.to_string().contains("verify the game files"));
+    let want = sha256_file(&f.game.dir.join(DB)).unwrap();
+    assert!(
+        log.borrow()
+            .iter()
+            .any(|l| l.contains(&want) && l.contains("size 23"))
+    );
+    assert_eq!(
+        std::fs::read(f.game.dir.join(DB)).unwrap(),
+        b"a mod copied in by hand",
+        "the file is left alone"
+    );
+    assert_eq!(f.baseline().files[DB].source, Source::FirstSight);
+}
+
+#[test]
+fn without_steams_list_the_conflict_is_still_refused() {
+    let f = Fixture::new("stale-unknown");
+    stale_baseline(&f);
+    f.write(DB, b"stock db");
+    let inst = swofty_core::install::Installer::new(&f.data, &f.game);
+    let err = inst.apply(&replace_plan(&f)).unwrap_err();
+    assert!(matches!(&err, swofty_core::Error::Leftovers(c) if c.len() == 1 && !c[0].owned));
+    assert_eq!(std::fs::read(f.game.dir.join(DB)).unwrap(), b"stock db");
+}

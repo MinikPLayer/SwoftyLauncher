@@ -718,6 +718,18 @@ const PITLANE_CRASH: &str = "F1_25.exe+0x389a1d7 ";
 /// The entrant list search by name (fn 0x141738eb0) that runs off the end of the
 /// game's loaded lists when the name is missing.
 const ENTRANT_LIST_SEARCH: &str = "F1_25.exe+0x1738f30 ";
+/// F1 2012 Season (ByDaniX), and where F1 25 crashes as a session loads with
+/// it on, most often with Classic Seasons years too: the 27-car loop in Game_GameModule_OnSessionEnter
+/// (Steam fn 0x142f45960, EA fn 0x142f39940, called from OnSessionEnter+0x249),
+/// or the car powertrain step on a car it left half built.
+const SEASON_2012: &str = "bydanix.f1-2012-season";
+const SEASON_2012_CRASHES: &[&str] = &[
+    "fn base+0x2f45960+",
+    "fn base+0x2f39940+",
+    "Game_GameModule_OnSessionEnter+0x249",
+    "fn base+0x80b390+0x249",
+    "Car_Powertrain_Step+",
+];
 /// How long before the crash Manual Pit Lane's lines count, and after it.
 const PITLANE_SECS: f64 = 1.5;
 const PITLANE_AFTER_SECS: f64 = 0.5;
@@ -1357,6 +1369,32 @@ fn searched_name(report: &str) -> Option<String> {
     ok.then(|| String::from_utf8_lossy(&name).into_owned())
 }
 
+fn season_2012_crash(e: &Evidence) -> bool {
+    if !e.enabled.iter().any(|id| id == SEASON_2012) {
+        return false;
+    }
+    let at = |l: &str| SEASON_2012_CRASHES.iter().any(|s| l.contains(s));
+    let audio = heap_error(e).is_some_and(|(_, m)| m.contains("'AUDIO_BUNDLE'"));
+    audio || crash_lines(&e.loader).into_iter().any(at) || e.report.iter().flat_map(|r| r.lines()).any(at)
+}
+
+fn season_2012(e: &Evidence) -> Diagnosis {
+    let addon = name(e, SEASON_2012);
+    Diagnosis {
+        id: "season_2012_session",
+        title: format!("{addon} crashed F1 25 as the session loaded"),
+        what: format!(
+            "F1 25 crashed as the session loaded, in the code that sets up the cars, with {addon} on. \
+             The crash comes from the cars {addon} adds, and it happens with and without Classic Seasons on."
+        ),
+        steps: vec![
+            format!("Turn off {addon} in your profile, then press Play again."),
+            "Press Play again.".to_owned(),
+            format!("Report the crash to the author of {addon}."),
+        ],
+    }
+}
+
 fn missing_entrant_list(e: &Evidence) -> Diagnosis {
     let list = e.report.as_deref().and_then(searched_name);
     let addon = e
@@ -1493,6 +1531,9 @@ fn matched(e: &Evidence) -> Option<Diagnosis> {
         });
     }
     let windows = !wine(e, &loaded);
+    if season_2012_crash(e) {
+        return Some(season_2012(e));
+    }
     if let Some((code, message)) = heap_error(e) {
         if code == 0xc && message.contains("'GAME_DEFAULT'") {
             return Some(game_heap(e));
@@ -2372,6 +2413,38 @@ mod tests {
     0000000021500d10  00 6e 5f 70 61 63 6b 61 67 65 00 17 00 00 00 00  .n_package......
   r14=cb42b7f752c18f53: not a valid address
 ";
+
+    #[test]
+    fn season_2012_with_classic_seasons_names_the_session_load_crash() {
+        const CRASH: &str = "\
+2026-10-28 21:08:00.587 [43232] [crash]   #1  F1_25.exe+0x80c549 .xtls Game_GameModule_OnSessionEnter+0x249
+2026-10-28 21:08:00.587 [43232] [crash] unhandled ACCESS_VIOLATION (0xc0000005) at F1_25.exe+0x2f45c49 .xtls fn base+0x2f45960+0x2e9 reached the top-level filter; passing it to the game's filter
+";
+        let mut e = ev(CRASH, &["F1_25.exe"]);
+        e = with_names(e, &[(SEASON_2012, "F1 2012 Season")]);
+        e.enabled = vec![SEASON_2012.to_owned(), "swofty.classic-seasons-2016".to_owned()];
+        let d = diagnose(&e).unwrap();
+        assert_eq!(d.id, "season_2012_session");
+        assert_eq!(d.title, "F1 2012 Season crashed F1 25 as the session loaded");
+        assert!(d.what.contains("Classic Seasons"), "{}", d.what);
+
+        let ea = CRASH.replace("0x2f45960", "0x2f39940");
+        let mut b = ev(&ea, &["F1_25.exe"]);
+        b.enabled = vec![SEASON_2012.to_owned()];
+        assert_eq!(diagnose(&b).map(|d| d.id), Some("season_2012_session"));
+
+        let heap = "2026-10-28 19:00:35.049 [1] [crash] Ne heap error 0xc (fatal) on thread 1: Allocation error. Requested size:1, heap 00000000633149B0 'AUDIO_BUNDLE', capacity 45088768\n";
+        let mut a = ev(heap, &["F1_25.exe"]);
+        a.enabled = e.enabled.clone();
+        assert_eq!(diagnose(&a).map(|d| d.id), Some("season_2012_session"));
+
+        let mut alone = e.clone();
+        alone.enabled = vec![SEASON_2012.to_owned()];
+        assert_eq!(diagnose(&alone).map(|d| d.id), Some("season_2012_session"));
+        let mut no_addon = e.clone();
+        no_addon.enabled = vec!["swofty.classic-seasons-2016".to_owned()];
+        assert_ne!(diagnose(&no_addon).map(|d| d.id), Some("season_2012_session"));
+    }
 
     #[test]
     fn a_missing_entrant_list_names_the_list_and_the_addon_the_build_saw() {

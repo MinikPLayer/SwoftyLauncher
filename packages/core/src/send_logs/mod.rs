@@ -416,6 +416,10 @@ impl Bundle {
         if not_stock.is_file() {
             c.file("state/not-stock.json".into(), &not_stock, None);
         }
+        let blocked = store.root.join("state/blocked.json");
+        if blocked.is_file() {
+            c.file("state/blocked.json".into(), &blocked, None);
+        }
         for dir in &sessions {
             let session = file_name(dir);
             loader.extend(loader_line(

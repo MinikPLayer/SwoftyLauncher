@@ -262,6 +262,12 @@ pub fn runtime_record_room(loaded: usize) -> usize {
 
 pub const RUNTIME_RECORD_MARGIN: usize = 4096;
 
+pub const STOCK_LOADED_RECORDS: usize = 742_857;
+
+pub fn runtime_loaded_estimate(staged: usize) -> usize {
+    staged.max(STOCK_LOADED_RECORDS)
+}
+
 pub fn db_edits(base: &Gvdb, built: &Gvdb) -> std::result::Result<Vec<DbEdit>, String> {
     let stock: HashMap<u64, _> = base.records.iter().map(|r| (r.key, r)).collect();
     let kept: std::collections::HashSet<u64> = built.records.iter().map(|r| r.key).collect();
@@ -829,6 +835,16 @@ mod tests {
         );
         assert_eq!(table("all.lng").get("lng_c"), Some("every language"));
         std::fs::remove_dir_all(&out).ok();
+    }
+
+    #[test]
+    fn the_loaded_estimate_never_drops_below_the_stock_database() {
+        assert_eq!(runtime_loaded_estimate(734_637), 742_857);
+        assert_eq!(runtime_loaded_estimate(743_668), 743_668);
+        let room = |staged| runtime_record_room(runtime_loaded_estimate(staged));
+        assert!(room(734_637) < 100_127);
+        assert!(room(743_668) < 100_127);
+        assert_eq!(room(742_857), 838_860 - 742_857 - RUNTIME_RECORD_MARGIN);
     }
 
     #[test]

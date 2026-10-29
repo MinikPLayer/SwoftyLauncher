@@ -1664,3 +1664,14 @@ fn an_overlay_sessions_netplay_files_come_from_its_upper_dir() {
     assert!(got.iter().any(|n| n == "game/net-trace.log"), "{got:?}");
     std::fs::remove_dir_all(&root).ok();
 }
+
+#[test]
+fn carries_the_blocked_record_when_there_is_one() {
+    let root = tmp("blocked");
+    let (store, game) = fake_data(&root);
+    let bundle = Bundle::collect_with(&store, &report(&game), Limits::default(), "20261020-101010");
+    assert!(!bundle.entries.iter().any(|e| e.path == "state/blocked.json"));
+    put(&store.root.join("state/blocked.json"), "{\"files\":[]}");
+    let bundle = Bundle::collect_with(&store, &report(&game), Limits::default(), "20261020-101010");
+    assert!(bundle.entries.iter().any(|e| e.path == "state/blocked.json"));
+}

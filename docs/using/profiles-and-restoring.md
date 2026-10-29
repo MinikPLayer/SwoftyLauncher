@@ -54,6 +54,22 @@ The launcher won't put files from an old game build back over a newer one. If yo
 
 Your [data folder](/guide/installation#where-your-files-are-stored) holds the original files needed to undo changes, so keep it until restoration is complete.
 
+## Restoring a profile save
+
+When a session without an addon that affects saves shrinks the profile save, the Addons page offers **Restore**, and `swofty saves restore <backup>` does the same. Both refuse while F1 25 or Steam runs. Exit Steam completely (Steam menu > Exit) first, restore, then start Steam, which uploads the restored save. If Steam asks which copy to keep, keep the local files (this computer).
+
+Each restore first backs up the save it replaces, as `before restoring <backup>` in `swofty saves list`.
+
+### After a restore made the game report a corrupted save
+
+If F1 25 showed the corrupted save prompt after a restore and you accepted recovery, the game reset the profile. To get the old profile back:
+
+1. Close F1 25, then exit Steam completely (Steam menu > Exit).
+2. Run `swofty saves list`. Pick the backup taken before the restore: the one named `before restoring <backup>`, or the session backup from before it.
+3. Run `swofty saves restore <that backup>`.
+4. Start Steam. If it asks which copy to keep, choose the local files (this computer).
+5. Start F1 25.
+
 ## Next
 
 - [Uninstalling](/guide/uninstall): remove the launcher.

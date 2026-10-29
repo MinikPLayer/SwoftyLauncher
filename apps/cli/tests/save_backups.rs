@@ -54,7 +54,9 @@ fn lists_backups_and_refuses_an_unknown_one() {
     assert!(!out.status.success());
     let err = String::from_utf8_lossy(&out.stderr);
     assert!(
-        err.contains("no save backup named nope") || err.contains("F1 25 is running"),
+        err.contains("no save backup named nope")
+            || err.contains("F1 25 is running")
+            || err.contains("Steam is running"),
         "{err}"
     );
     assert_eq!(

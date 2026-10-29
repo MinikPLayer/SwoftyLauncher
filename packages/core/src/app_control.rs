@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::quarantine::is_virus_code;
 
+pub const ERROR_ACCESS_DENIED: i32 = 5;
 pub const ERROR_INVALID_IMAGE_HASH: i32 = 577;
 pub const ERROR_ACCESS_DISABLED_NO_SAFER_UI_BY_POLICY: i32 = 786;
 pub const ERROR_ACCESS_DISABLED_BY_POLICY: i32 = 1260;
@@ -28,6 +29,8 @@ pub enum Blocker {
     /// A group policy (Software Restriction Policies or AppLocker).
     Policy,
     Antivirus,
+    /// Access denied on start: an antivirus or Controlled folder access.
+    AccessDenied,
 }
 
 impl Blocker {
@@ -39,6 +42,7 @@ impl Blocker {
                 Some(Self::Policy)
             }
             c if is_virus_code(c) => Some(Self::Antivirus),
+            ERROR_ACCESS_DENIED => Some(Self::AccessDenied),
             _ => None,
         }
     }
@@ -84,6 +88,7 @@ impl Block {
     pub fn title(&self) -> &'static str {
         match self.blocker() {
             Some(Blocker::Antivirus) => "Your antivirus blocked a Swofty program",
+            Some(Blocker::AccessDenied) => "Windows denied access to a Swofty program",
             _ => "Windows blocked a Swofty program",
         }
     }
@@ -95,6 +100,7 @@ impl Block {
             Some(Blocker::SmartAppControl) => format!("Smart App Control blocked {name}"),
             Some(Blocker::Policy) => format!("a Windows policy on this PC blocked {name}"),
             Some(Blocker::Antivirus) => format!("an antivirus blocked {name} as a threat"),
+            Some(Blocker::AccessDenied) => format!("Windows denied access to {name}"),
             _ => format!("Smart App Control or an app control policy blocked {name}"),
         }
     }
@@ -117,6 +123,12 @@ impl Block {
                 self.folder()
             ),
             Some(Blocker::Antivirus) => restore(&self.folder()),
+            Some(Blocker::AccessDenied) => format!(
+                "An antivirus or Windows Controlled folder access most likely blocked it. Allow the folder {} \
+                 in your antivirus and in Windows Security > Virus & threat protection > Ransomware protection \
+                 > Allow an app through Controlled folder access, then try again.",
+                self.folder()
+            ),
             _ => format!(
                 "{turn_off} If it is already off, an app control policy set by whoever manages this PC \
                  blocked it."
@@ -169,10 +181,27 @@ mod tests {
         for code in [225, 226] {
             assert_eq!(Blocker::from_code(code), Some(Blocker::Antivirus), "{code}");
         }
-        for code in [0, 2, 5, 32, 193, 740, 4550, 4552, 4560] {
+        for code in [0, 2, 32, 193, 740, 4550, 4552, 4560] {
             assert_eq!(Blocker::from_code(code), None, "{code}");
             assert_eq!(Block::from_code(Path::new(CLI), code), None, "{code}");
         }
+    }
+
+    #[test]
+    fn access_denied_points_at_the_antivirus_and_the_folder() {
+        let b = Block::from_code(Path::new(CLI), 5).unwrap();
+        assert_eq!(b.blocker(), Some(Blocker::AccessDenied));
+        assert_eq!(b.title(), "Windows denied access to a Swofty program");
+        let text = b.text();
+        assert!(
+            text.starts_with("Windows denied access to swofty.exe (error 5). "),
+            "{text}"
+        );
+        assert!(text.contains("Controlled folder access"), "{text}");
+        assert!(
+            text.contains(r"Allow the folder C:\Users\Berni\AppData\Local\Programs\SwoftyLauncher\bin "),
+            "{text}"
+        );
     }
 
     #[test]

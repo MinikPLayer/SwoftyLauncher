@@ -1802,14 +1802,16 @@ fn launch(store: &Store, game: &Path, direct: bool, overlayfs: bool, mode: Launc
             c.arg("--use-overlayfs");
         }
         if let Some(g) = install.as_ref().filter(|_| !cfg!(windows)) {
-            let tool = steam::compat_tool(&g.steam_root).unwrap_or_default();
-            let proton = [
-                g.steam_root.join("compatibilitytools.d").join(&tool),
-                g.library.join("steamapps/common").join(&tool),
-            ]
-            .into_iter()
-            .find(|p| p.join("proton").is_file())
-            .context("could not find the Proton build Steam uses for F1 25")?;
+            let tool = steam::compat_tool(&g.steam_root)
+                .context("Steam has no Proton build set for F1 25 and no default; pick one in the game's Properties > Compatibility")?;
+            let search = steam::find_proton(&g.steam_root, Some(&g.library), &tool);
+            let proton = search.found.with_context(|| {
+                let looked: Vec<String> = search.searched.iter().map(|p| p.display().to_string()).collect();
+                format!(
+                    "could not find the Proton build Steam uses for F1 25 ({tool}); looked in {}",
+                    looked.join(", ")
+                )
+            })?;
             let runtime =
                 [&g.library, &g.steam_root].map(|l| l.join("steamapps/common/SteamLinuxRuntime_sniper"));
             let runtime = runtime.iter().find(|p| p.is_dir()).unwrap_or(&runtime[0]);

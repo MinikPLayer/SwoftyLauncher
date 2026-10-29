@@ -17,7 +17,7 @@ pub enum SavesCommand {
     )]
     List,
     #[command(
-        about = "Copy a backup back over the profile save (F1 25 must be closed); backs up the current save first"
+        about = "Copy a backup back over the profile save (F1 25 and Steam must be closed); backs up the current save first"
     )]
     Restore {
         #[arg(help = "The backup's name, as `swofty saves list` prints it")]
@@ -157,8 +157,8 @@ pub fn command(store: &Store, cmd: SavesCommand) -> Result<ExitCode> {
             }
         }
         SavesCommand::Restore { backup } => {
-            if swofty_core::process::game_running() {
-                bail!("F1 25 is running; close it, then restore the save");
+            if let Some(why) = save_backup::restore_blocker() {
+                bail!("{why}");
             }
             let b = save_backup::find(&store.root, &backup)?;
             let dir = match b.manifest.save_dir.is_dir() {
@@ -174,7 +174,7 @@ pub fn command(store: &Store, cmd: SavesCommand) -> Result<ExitCode> {
             }
             println!("restored {backup} into {}", dir.display());
             println!(
-                "Steam may ask which copy to keep the next time F1 25 starts; keep the local files (this computer)"
+                "start Steam to upload the restored save; if it asks which copy to keep, keep the local files (this computer)"
             );
         }
     }

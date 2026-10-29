@@ -118,7 +118,7 @@ pub fn track_removals_line(name: &str, n: usize) -> String {
     )
 }
 
-/// The build warning for the entrant `lists` addon `name` renamed or removed, which the build kept.
+/// The build warning for the entrant `lists` addon `name` renames or removes.
 pub fn kept_lists_line(name: &str, lists: &[String]) -> String {
     let shown: Vec<&str> = lists.iter().take(8).map(String::as_str).collect();
     let more = match lists.len() > shown.len() {
@@ -126,7 +126,7 @@ pub fn kept_lists_line(name: &str, lists: &[String]) -> String {
         false => String::new(),
     };
     format!(
-        "{name}: kept the entrant list(s) {}{more} that it renames or removes; the game crashes when a list it looks up by name is missing",
+        "{name}: renames or removes the entrant list(s) {}{more}; F2 menus may crash with it",
         shown.join(", ")
     )
 }
@@ -653,7 +653,7 @@ impl<'a> Planner<'a> {
                 *self.track_removals.entry(origin.addon.clone()).or_default() += ours.track_removals;
             }
             if let (Some(lists), Some(was)) = (lists, was) {
-                let kept = lists.keep(db, &was);
+                let kept = lists.missing(db, &was);
                 if !kept.is_empty() {
                     self.kept_lists
                         .entry(origin.addon.clone())
@@ -700,12 +700,12 @@ impl<'a> Planner<'a> {
         std::mem::take(&mut self.track_removals)
     }
 
-    /// Keeps the game's entrant `lists` when an addon's ops rename or remove one; see [`Planner::take_kept_lists`].
+    /// Watches the game's entrant `lists` for an addon's ops that rename or remove one; see [`Planner::take_kept_lists`].
     pub fn keep_entrant_lists(&mut self, lists: StockLists) {
         self.lists = Some(lists);
     }
 
-    /// Per addon id, the entrant lists the last `apply_db` kept that the addon renamed or removed.
+    /// Per addon id, the entrant lists the last `apply_db` found the addon renaming or removing.
     pub fn take_kept_lists(&mut self) -> BTreeMap<String, Vec<String>> {
         std::mem::take(&mut self.kept_lists)
     }

@@ -218,10 +218,90 @@ pub fn compat_tool(steam_root: &Path) -> Option<String> {
         "Steam",
         "CompatToolMapping",
     ])?;
-    map.get(&STEAM_APP_ID.to_string())?
-        .get("name")?
-        .str()
-        .map(str::to_owned)
+    let name = |key: &str| {
+        map.get(key)?
+            .get("name")?
+            .str()
+            .filter(|n| !n.is_empty())
+            .map(str::to_owned)
+    };
+    name(&STEAM_APP_ID.to_string()).or_else(|| name("0"))
+}
+
+fn valve_folder_name(tool: &str) -> Option<String> {
+    let rest = tool.strip_prefix("proton_")?;
+    match rest {
+        "experimental" => Some("Proton - Experimental".to_owned()),
+        "hotfix" => Some("Proton Hotfix".to_owned()),
+        v if !v.is_empty() && v.chars().all(|c| c.is_ascii_digit()) => Some(format!("Proton {v}.0")),
+        _ => None,
+    }
+}
+
+fn manifest_names(dir: &Path) -> Vec<String> {
+    let Some(v) = read_vdf(&dir.join("compatibilitytool.vdf")) else {
+        return Vec::new();
+    };
+    let Some(tools) = v.path(&["compatibilitytools", "compat_tools"]) else {
+        return Vec::new();
+    };
+    tools
+        .entries()
+        .flat_map(|(k, e)| {
+            [
+                Some(k.clone()),
+                e.get("display_name").and_then(Vdf::str).map(str::to_owned),
+            ]
+        })
+        .flatten()
+        .collect()
+}
+
+pub struct ProtonSearch {
+    pub found: Option<PathBuf>,
+    pub searched: Vec<PathBuf>,
+}
+
+/// The Proton directory (the one holding `proton`) for the compat tool name
+/// Steam records: a folder of that name, a tool whose compatibilitytool.vdf
+/// declares the name, or Valve's own folder for an internal name such as
+/// `proton_9`. Searches compatibilitytools.d and every library's
+/// steamapps/common, with `first` searched ahead of the rest.
+pub fn find_proton(steam_root: &Path, first: Option<&Path>, tool: &str) -> ProtonSearch {
+    let mut homes = vec![steam_root.join("compatibilitytools.d")];
+    let mut libs: Vec<PathBuf> = first.into_iter().map(Path::to_path_buf).collect();
+    libs.extend(libraries(steam_root));
+    for lib in libs {
+        let common = lib.join("steamapps/common");
+        if !homes.contains(&common) {
+            homes.push(common);
+        }
+    }
+    let valve = valve_folder_name(tool);
+    let matches = |dir: &Path| {
+        let folder = dir.file_name().map(|n| n.to_string_lossy().into_owned());
+        let named = |want: &str| folder.as_deref().is_some_and(|f| f.eq_ignore_ascii_case(want));
+        named(tool) || valve.as_deref().is_some_and(named) || manifest_names(dir).iter().any(|n| n == tool)
+    };
+    let mut found = None;
+    for home in &homes {
+        let Ok(rd) = std::fs::read_dir(home) else {
+            continue;
+        };
+        let mut dirs: Vec<PathBuf> = rd.flatten().map(|e| e.path()).collect();
+        dirs.sort();
+        if let Some(hit) = dirs
+            .into_iter()
+            .find(|d| d.join("proton").is_file() && matches(d))
+        {
+            found = Some(hit);
+            break;
+        }
+    }
+    ProtonSearch {
+        found,
+        searched: homes,
+    }
 }
 
 const STEAMID64_BASE: u64 = 76_561_197_960_265_728;
@@ -286,6 +366,105 @@ mod tests {
 
     fn vdf_path(p: &Path) -> String {
         p.display().to_string().replace('\\', "\\\\")
+    }
+
+    fn proton_tree(tag: &str) -> PathBuf {
+        let root = std::env::temp_dir().join(format!("swofty-proton-{tag}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(root.join("steamapps")).unwrap();
+        std::fs::create_dir_all(root.join("config")).unwrap();
+        root
+    }
+
+    fn put_proton(dir: &Path) {
+        std::fs::create_dir_all(dir).unwrap();
+        std::fs::write(dir.join("proton"), "").unwrap();
+    }
+
+    fn mapping(root: &Path, body: &str) {
+        std::fs::write(
+            root.join("config/config.vdf"),
+            format!(
+                "\"InstallConfigStore\" {{ \"Software\" {{ \"Valve\" {{ \"Steam\" {{ \"CompatToolMapping\" {{ {body} }} }} }} }} }}"
+            ),
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn compat_tool_falls_back_to_global_default() {
+        let root = proton_tree("global");
+        mapping(&root, "\"0\" { \"name\" \"proton_9\" }");
+        assert_eq!(compat_tool(&root).as_deref(), Some("proton_9"));
+        mapping(
+            &root,
+            "\"0\" { \"name\" \"proton_9\" } \"3059520\" { \"name\" \"GE-Proton9-1\" }",
+        );
+        assert_eq!(compat_tool(&root).as_deref(), Some("GE-Proton9-1"));
+        mapping(&root, "\"3059520\" { \"name\" \"\" }");
+        assert_eq!(compat_tool(&root), None);
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn finds_valve_proton_by_internal_name_in_main_library() {
+        let root = proton_tree("valve");
+        put_proton(&root.join("steamapps/common/Proton 9.0"));
+        put_proton(&root.join("steamapps/common/Proton - Experimental"));
+        let other = root.join("drive2");
+        std::fs::create_dir_all(other.join("steamapps/common/F1 25")).unwrap();
+        let hit = find_proton(&root, Some(&other), "proton_9");
+        assert_eq!(hit.found, Some(root.join("steamapps/common/Proton 9.0")));
+        let hit = find_proton(&root, Some(&other), "proton_experimental");
+        assert_eq!(
+            hit.found,
+            Some(root.join("steamapps/common/Proton - Experimental"))
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn finds_proton_in_listed_library_and_by_manifest_name() {
+        let root = proton_tree("libs");
+        let lib = std::env::temp_dir().join(format!("swofty-proton-libs2-{}", std::process::id()));
+        put_proton(&lib.join("steamapps/common/Proton 10.0"));
+        std::fs::write(
+            root.join("steamapps/libraryfolders.vdf"),
+            format!(
+                "\"libraryfolders\" {{ \"1\" {{ \"path\" \"{}\" }} }}",
+                vdf_path(&lib)
+            ),
+        )
+        .unwrap();
+        let custom = root.join("compatibilitytools.d/some-folder");
+        put_proton(&custom);
+        std::fs::write(
+            custom.join("compatibilitytool.vdf"),
+            "\"compatibilitytools\" { \"compat_tools\" { \"my-tool\" { \"install_path\" \".\" \"display_name\" \"My Tool\" } } }",
+        )
+        .unwrap();
+        assert_eq!(
+            find_proton(&root, None, "proton_10").found,
+            Some(lib.join("steamapps/common/Proton 10.0"))
+        );
+        assert_eq!(find_proton(&root, None, "my-tool").found, Some(custom.clone()));
+        assert_eq!(find_proton(&root, None, "My Tool").found, Some(custom));
+        let miss = find_proton(&root, None, "nothing");
+        assert!(miss.found.is_none());
+        assert!(miss.searched.contains(&lib.join("steamapps/common")));
+        let _ = std::fs::remove_dir_all(&root);
+        let _ = std::fs::remove_dir_all(&lib);
+    }
+
+    #[test]
+    fn exact_folder_name_still_resolves() {
+        let root = proton_tree("exact");
+        put_proton(&root.join("compatibilitytools.d/proton-cachyos-10.0-20260425-slr-x86_64"));
+        assert_eq!(
+            find_proton(&root, None, "proton-cachyos-10.0-20260425-slr-x86_64").found,
+            Some(root.join("compatibilitytools.d/proton-cachyos-10.0-20260425-slr-x86_64"))
+        );
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]

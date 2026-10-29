@@ -1347,7 +1347,7 @@ impl Shell {
                 )
                 .child(div().flex_1().min_w_0().child(format!(
                     "The profile save shrank from {} to {} bytes in a session without {}; their careers may be \
-                     gone. Backup {} holds the save from before that session.",
+                     gone. Backup {} holds the save from before that session. Exit Steam completely before you restore.",
                     notice.before,
                     notice.after,
                     notice.absent.join(", "),
@@ -1374,8 +1374,8 @@ impl Shell {
     }
 
     fn restore_save(&mut self, name: &str, window: &mut Window, cx: &mut Context<Self>) {
-        if swofty_core::process::game_running() {
-            window.push_notification(Notification::warning("Close F1 25, then restore the save."), cx);
+        if let Some(why) = save_backup::restore_blocker() {
+            window.push_notification(Notification::warning(why), cx);
             return;
         }
         let root = self.store.root.clone();

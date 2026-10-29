@@ -303,8 +303,28 @@ pub fn compare(backup: &Backup, save_dir: &Path) -> Result<Option<Shrink>> {
     }))
 }
 
+pub const CLOSE_STEAM: &str = "Exit Steam completely (Steam menu > Exit), then restore again. Starting Steam afterwards uploads the restored save.";
+
+fn blocker_of(game: bool, steam: bool) -> Option<String> {
+    match (game, steam) {
+        (true, _) => Some(format!("F1 25 is running; close it first. {CLOSE_STEAM}")),
+        (false, true) => Some(format!(
+            "Steam is running and would call the restored save corrupted. {CLOSE_STEAM}"
+        )),
+        (false, false) => None,
+    }
+}
+
+/// Why a restore must wait: F1 25 or Steam is running.
+pub fn restore_blocker() -> Option<String> {
+    blocker_of(
+        crate::process::game_running(),
+        crate::steam_client::status().state != crate::steam_client::State::Stopped,
+    )
+}
+
 /// Copies a backup back over the profile save after backing up the current
-/// files; returns that new backup. The caller checks that F1 25 is closed.
+/// files; returns that new backup. The caller checks that F1 25 and Steam are closed.
 pub fn restore(root: &Path, name: &str, save_dir: &Path, stamp: &str) -> Result<Option<Backup>> {
     let b = find(root, name)?;
     for f in &b.manifest.files {
@@ -488,6 +508,16 @@ mod tests {
         assert!(s.text().contains("swofty saves restore 20261027-010203-default"));
         write_notice(&root, &s).unwrap();
         assert_eq!(read_notice(&root), Some(s));
+    }
+
+    #[test]
+    fn restore_waits_for_the_game_and_steam() {
+        assert_eq!(blocker_of(false, false), None);
+        assert!(blocker_of(true, false).unwrap().contains("F1 25 is running"));
+        let steam = blocker_of(false, true).unwrap();
+        assert!(steam.contains("Steam is running"));
+        assert!(steam.contains("Exit Steam completely"));
+        assert!(blocker_of(true, true).unwrap().contains("Exit Steam completely"));
     }
 
     #[test]
